@@ -10,6 +10,7 @@ import InvestmentsPage from './pages/InvestmentsPage';
 import LoansPage from './pages/LoansPage';
 import SubscriptionsPage from './pages/SubscriptionsPage';
 import SettingsPage from './pages/SettingsPage';
+import CategoriesPage from './pages/CategoriesPage';
 import JWTInspector from './pages/JWTInspector';
 
 function Protected({ children }) {
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="investments" element={<InvestmentsPage />} />
         <Route path="loans" element={<LoansPage />} />
         <Route path="subscriptions" element={<SubscriptionsPage />} />
+        <Route path="categories" element={<CategoriesPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="jwt" element={<JWTInspector />} />
       </Route>

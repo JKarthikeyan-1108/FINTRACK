@@ -130,6 +130,12 @@ export function AuthProvider({ children }) {
     setTokenPayload(null);
   };
 
+  const updateProfile = async (data) => {
+    const { data: result } = await authAPI.updateProfile(data);
+    if (result.user) setUser(result.user);
+    return result;
+  };
+
   const tokenStatus = secsLeft <= CRITICAL_SECS ? 'critical' : secsLeft <= WARN_SECS ? 'warning' : 'valid';
 
   const fmtCountdown = seconds => {
@@ -155,6 +161,7 @@ export function AuthProvider({ children }) {
         emailLogin,
         emailRegister,
         refreshToken,
+        updateProfile,
         logout,
       }}
     >

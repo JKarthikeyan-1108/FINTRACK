@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Eye, EyeOff, KeyRound, Mail, Phone, ShieldCheck, WalletCards } from 'lucide-react';
+import { ArrowLeft, ChartPie, Eye, EyeOff, KeyRound, Mail, Phone, ShieldCheck, TrendingUp, WalletCards } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button, Card, IconButton, SegmentedControl, TextInput } from '../components/ui/CashewUI';
 
@@ -124,6 +124,10 @@ export default function AuthPage() {
 
   return (
     <main className="auth-page">
+      <div className="auth-bg-shapes">
+        <span /><span /><span /><span />
+      </div>
+
       <section className="auth-shell">
         <div className="auth-brand">
           <div className="auth-logo"><WalletCards size={30} /></div>
@@ -234,6 +238,24 @@ export default function AuthPage() {
             </>
           )}
         </Card>
+
+        <div className="auth-features">
+          <div className="auth-feature">
+            <div className="auth-feature-icon mint"><WalletCards size={20} /></div>
+            <strong>Track Spending</strong>
+            <small>Smart categorized expenses</small>
+          </div>
+          <div className="auth-feature">
+            <div className="auth-feature-icon blue"><ChartPie size={20} /></div>
+            <strong>Budget Goals</strong>
+            <small>Monthly spending limits</small>
+          </div>
+          <div className="auth-feature">
+            <div className="auth-feature-icon purple"><TrendingUp size={20} /></div>
+            <strong>Investments</strong>
+            <small>Portfolio tracking</small>
+          </div>
+        </div>
 
         <p className="auth-version">Secured with JWT HS256 - FinTrack v2.0</p>
       </section>

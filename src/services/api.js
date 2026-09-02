@@ -58,6 +58,7 @@ export const authAPI = {
   refresh:         ()        => api.post('/auth/refresh'),
   logout:          ()        => api.post('/auth/logout'),
   me:              ()        => api.get('/auth/me'),
+  updateProfile:   data      => api.put('/auth/me',             data),
 };
 
 // ── Dashboard ──────────────────────────────────────────

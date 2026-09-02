@@ -13,6 +13,7 @@ import {
   Repeat2,
   Settings,
   ShieldCheck,
+  Tag,
   TrendingUp,
 } from 'lucide-react';
 
@@ -27,6 +28,7 @@ const MORE_NAV = [
   { path: '/investments', Icon: TrendingUp, label: 'Investments', sub: 'Portfolio and plans' },
   { path: '/goals', Icon: Flag, label: 'Goals', sub: 'Savings targets' },
   { path: '/loans', Icon: Landmark, label: 'Loans & EMI', sub: 'Debt tracker' },
+  { path: '/categories', Icon: Tag, label: 'Categories', sub: 'Manage spending tags' },
   { path: '/settings', Icon: Settings, label: 'Settings', sub: 'Account preferences' },
   { path: '/jwt', Icon: ShieldCheck, label: 'JWT Inspector', sub: 'Developer security view' },
 ];

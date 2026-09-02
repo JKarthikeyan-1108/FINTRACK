@@ -10,4 +10,5 @@ router.post('/email/register', c.emailRegister);
 router.post('/refresh',     c.refresh);
 router.post('/logout',      c.logout);
 router.get('/me',           authenticate, c.me);
+router.put('/me',           authenticate, c.updateProfile);
 module.exports = router;

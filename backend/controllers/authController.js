@@ -287,3 +287,40 @@ exports.emailLogin = async (req, res, next) => {
     });
   } catch(err){ next(err); }
 };
+
+// ── UPDATE PROFILE ────────────────────────────────────
+exports.updateProfile = async (req, res, next) => {
+  try {
+    const { name, currency } = req.body;
+    const updates = [];
+    const values = [];
+
+    if (name && name.trim()) {
+      updates.push('name=?');
+      values.push(name.trim());
+    }
+    if (currency) {
+      updates.push('currency=?');
+      values.push(currency);
+    }
+
+    if (!updates.length) {
+      return res.status(400).json({ error: 'Nothing to update' });
+    }
+
+    updates.push('updated_at=CURRENT_TIMESTAMP');
+    values.push(req.user.id);
+
+    await db.query(
+      `UPDATE users SET ${updates.join(', ')} WHERE id=?`,
+      values
+    );
+
+    const [rows] = await db.query(
+      'SELECT uuid, name, email, phone, auth_method, avatar_url, currency, created_at FROM users WHERE id=?',
+      [req.user.id]
+    );
+
+    res.json({ success: true, user: rows[0] });
+  } catch (err) { next(err); }
+};
