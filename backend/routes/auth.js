@@ -1,14 +1,11 @@
-const router = require('express').Router();
-const c = require('../controllers/authController');
+const express = require('express');
+const router = express.Router();
+const authController = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 
-router.post('/send-otp',    c.sendOTP);
-router.post('/verify-otp',  c.verifyOTP);
-router.post('/google',      c.googleLogin);
-router.post('/email/login', c.emailLogin);
-router.post('/email/register', c.emailRegister);
-router.post('/refresh',     c.refresh);
-router.post('/logout',      c.logout);
-router.get('/me',           authenticate, c.me);
-router.put('/me',           authenticate, c.updateProfile);
+// Login, registration, Google sign-in and password reset are handled by Firebase Auth.
+// These routes only expose the signed-in user's Firestore profile.
+router.get('/me', authenticate, authController.me);
+router.put('/me', authenticate, authController.updateProfile);
+
 module.exports = router;

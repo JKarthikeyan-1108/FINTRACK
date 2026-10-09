@@ -30,3 +30,8 @@ mysql_data/
 # SQLite
 *.sqlite
 *.sqlite-journal
+
+# Firebase service-account keys (never commit)
+serviceAccountKey.json
+**/serviceAccountKey.json
+*-firebase-adminsdk-*.json

@@ -217,6 +217,39 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleExportCSV() {
+    setExporting(true);
+    try {
+      const { data } = await txnAPI.getAll({ limit: 9999 });
+      const transactions = data.data || [];
+      const csvRows = ['ID,Type,Amount,Title,Category,Account,Date,Note'];
+      transactions.forEach(t => {
+        csvRows.push([
+          t.id, t.type, t.amount,
+          `"${(t.title || '').replace(/"/g, '""')}"`,
+          `"${(t.category_name || '').replace(/"/g, '""')}"`,
+          `"${(t.account_name || '').replace(/"/g, '""')}"`,
+          t.date,
+          `"${(t.note || '').replace(/"/g, '""')}"`
+        ].join(','));
+      });
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fintrack_transactions_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${transactions.length} transactions as CSV`);
+    } catch {
+      toast.error('CSV Export failed');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   // ── Logout ─────────────────────────────────
   async function handleLogout() {
     if (!confirm('Sign out of FinTrack?')) return;
@@ -236,7 +269,8 @@ export default function SettingsPage() {
 
   const links = [
     { Icon: Tag, label: 'Manage Categories', sub: 'Organize your transactions', action: () => navigate('/categories') },
-    { Icon: Download, label: 'Export Data', sub: 'Download transactions as JSON', action: handleExport, loading: exporting },
+    { Icon: Download, label: 'Export Data (JSON)', sub: 'Download full backup as JSON', action: handleExport, loading: exporting },
+    { Icon: Download, label: 'Export Data (CSV)', sub: 'Download transactions as CSV for Excel', action: handleExportCSV, loading: exporting },
     { Icon: ShieldCheck, label: 'JWT Inspector', sub: 'Developer security view', action: () => navigate('/jwt'), badge: 'DEV' },
     { Icon: HelpCircle, label: 'Help & Support', sub: 'Get help with FinTrack', action: () => toast('help@fintrack.app') },
     { Icon: Star, label: 'Rate FinTrack', sub: 'Share your experience', action: () => toast('Thank you!') },

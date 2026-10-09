@@ -1,52 +1,86 @@
 // src/firebase/authService.js
-// Wraps Firebase Auth methods. Falls back gracefully to demo/JWT mode.
+// Thin wrapper over Firebase Auth. Every sign-in method throws a user-friendly Error.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// When Firebase is configured, uncomment these imports:
-// import {
-//   signInWithPopup, GoogleAuthProvider,
-//   signInWithEmailAndPassword, createUserWithEmailAndPassword,
-//   signInWithPhoneNumber, RecaptchaVerifier,
-//   signOut, onAuthStateChanged,
-// } from 'firebase/auth';
-// import { auth } from './config';
+import {
+  signInWithPopup, GoogleAuthProvider,
+  signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  updateProfile, sendPasswordResetEmail,
+  signOut, onIdTokenChanged,
+} from 'firebase/auth';
+import { auth } from './config';
+
+const ERROR_MESSAGES = {
+  'auth/invalid-credential':      'Invalid email or password',
+  'auth/invalid-email':           'Enter a valid email address',
+  'auth/user-not-found':          'Invalid email or password',
+  'auth/wrong-password':          'Invalid email or password',
+  'auth/email-already-in-use':    'Email already registered',
+  'auth/weak-password':           'Password must be at least 6 characters',
+  'auth/too-many-requests':       'Too many attempts. Try again later',
+  'auth/user-disabled':           'This account has been disabled',
+  'auth/network-request-failed':  'Network error. Check your connection',
+  'auth/popup-closed-by-user':    'Sign-in popup was closed before finishing',
+  'auth/cancelled-popup-request': 'Sign-in popup was closed before finishing',
+  'auth/popup-blocked':           'Popup blocked by the browser. Allow popups and retry',
+  'auth/operation-not-allowed':   'This sign-in method is not enabled in the Firebase console',
+};
+
+function requireAuth() {
+  if (!auth) {
+    throw new Error('Firebase Auth not configured. Please add VITE_FIREBASE_* to .env');
+  }
+  return auth;
+}
+
+async function wrap(fn) {
+  try {
+    return await fn();
+  } catch (err) {
+    if (err?.code && ERROR_MESSAGES[err.code]) throw new Error(ERROR_MESSAGES[err.code]);
+    throw err;
+  }
+}
 
 // ── Google Sign-In ────────────────────────────────────────────────────────────
-export async function firebaseGoogleSignIn() {
-  // const provider = new GoogleAuthProvider();
-  // const result   = await signInWithPopup(auth, provider);
-  // return { uid: result.user.uid, email: result.user.email, name: result.user.displayName };
-  throw new Error('Firebase not configured — using JWT backend instead');
+export function firebaseGoogleSignIn() {
+  return wrap(async () => {
+    const result = await signInWithPopup(requireAuth(), new GoogleAuthProvider());
+    return result.user;
+  });
 }
 
 // ── Email / Password ──────────────────────────────────────────────────────────
-export async function firebaseEmailSignIn(email, password) {
-  // const cred = await signInWithEmailAndPassword(auth, email, password);
-  // return { uid: cred.user.uid, email: cred.user.email };
-  throw new Error('Firebase not configured — using JWT backend instead');
+export function firebaseEmailSignIn(email, password) {
+  return wrap(async () => {
+    const cred = await signInWithEmailAndPassword(requireAuth(), email, password);
+    return cred.user;
+  });
 }
 
-export async function firebaseEmailSignUp(email, password) {
-  // const cred = await createUserWithEmailAndPassword(auth, email, password);
-  // return { uid: cred.user.uid, email: cred.user.email };
-  throw new Error('Firebase not configured');
+export function firebaseEmailSignUp(name, email, password) {
+  return wrap(async () => {
+    const cred = await createUserWithEmailAndPassword(requireAuth(), email, password);
+    if (name) {
+      await updateProfile(cred.user, { displayName: name });
+      await cred.user.getIdToken(true); // refresh so the new name is in the token claims
+    }
+    return cred.user;
+  });
 }
 
-// ── Phone OTP ─────────────────────────────────────────────────────────────────
-export async function firebaseSendOTP(phoneNumber, recaptchaContainer = 'recaptcha-container') {
-  // const verifier  = new RecaptchaVerifier(recaptchaContainer, { size:'invisible' }, auth);
-  // const confirm   = await signInWithPhoneNumber(auth, phoneNumber, verifier);
-  // return confirm; // call confirm.confirm(otp) to verify
-  throw new Error('Firebase not configured');
+// ── Password reset (Firebase emails a secure reset link) ──────────────────────
+export function firebasePasswordReset(email) {
+  return wrap(() => sendPasswordResetEmail(requireAuth(), email));
 }
 
 // ── Sign Out ──────────────────────────────────────────────────────────────────
 export async function firebaseSignOut() {
-  // await signOut(auth);
+  if (auth) await signOut(auth);
 }
 
-// ── Auth State Listener ───────────────────────────────────────────────────────
-export function onFirebaseAuthState(callback) {
-  // return onAuthStateChanged(auth, callback);
-  return () => {}; // no-op unsubscribe in demo mode
+// ── ID token / auth state listener (fires on sign-in, sign-out, and token refresh) ──
+export function onFirebaseIdToken(callback) {
+  if (!auth) return () => {};
+  return onIdTokenChanged(auth, callback);
 }

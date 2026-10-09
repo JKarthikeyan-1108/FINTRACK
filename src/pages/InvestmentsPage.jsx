@@ -24,8 +24,11 @@ import {
   ShieldCheck,
   TrendingUp,
   WalletCards,
+  Lightbulb,
+  ExternalLink,
+  AlertTriangle,
 } from 'lucide-react';
-import { investAPI } from '../services/api';
+import { investAPI, dashAPI } from '../services/api';
 import {
   BottomSheet,
   Button,
@@ -115,12 +118,16 @@ function useCountUp(target, duration = 900) {
 export default function InvestmentsPage() {
   const [myInvests, setMyInvests] = useState([]);
   const [openCat, setOpenCat] = useState(null);
-  const [tab, setTab] = useState('plans');
+  const [tab, setTab] = useState('suggestions');
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(blankForm());
+  const [dash, setDash] = useState(null);
+  const [riskPref, setRiskPref] = useState('medium');
+  const [horizonPref, setHorizonPref] = useState('medium');
 
   useEffect(() => {
     investAPI.getAll().then(({ data }) => setMyInvests(data.data || [])).catch(() => {});
+    dashAPI.overview().then(({ data }) => setDash(data)).catch(() => {});
   }, []);
 
   const totalInvested = myInvests.reduce((sum, inv) => sum + Number(inv.invested_amount), 0);
@@ -208,10 +215,159 @@ export default function InvestmentsPage() {
             value={tab}
             onChange={setTab}
             options={[
+              { value: 'suggestions', label: 'Suggestions', icon: <Lightbulb /> },
               { value: 'plans', label: 'Plans', icon: <Landmark /> },
               { value: 'portfolio', label: 'Portfolio', icon: <WalletCards /> },
             ]}
           />
+
+          {tab === 'suggestions' && (
+            <div style={{ marginTop: 14 }}>
+              <Card tone="amber" style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <AlertTriangle style={{ color: '#c58a21', flexShrink: 0 }} />
+                  <div>
+                    <strong style={{ fontSize: 13, color: '#c58a21' }}>Educational Suggestion Only</strong>
+                    <p style={{ fontSize: 12, marginTop: 4, lineHeight: 1.4 }}>
+                      These suggestions are generated based on simple rules to help you discover options. 
+                      This is not financial advice. Please do your own research before investing.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              {dash && (
+                <Card style={{ marginBottom: 14 }}>
+                  <div className="section-title" style={{ marginTop: 0 }}><span>Financial Capacity</span></div>
+                  <div className="metric-grid">
+                    <MetricCard label="Monthly Savings" value={money(dash.savings)} helper="Available to invest" tone={dash.savings > 0 ? 'mint' : 'pink'} />
+                    <MetricCard label="Liquid Cash" value={money(dash.net_worth - dash.portfolio)} helper="In accounts" tone="blue" />
+                  </div>
+                  
+                  <div className="section-title"><span>Preferences</span></div>
+                  <div className="field-row">
+                    <SelectInput label="Risk Tolerance" value={riskPref} onChange={e => setRiskPref(e.target.value)}>
+                      <option value="low">Low (Capital Protection)</option>
+                      <option value="medium">Medium (Balanced)</option>
+                      <option value="high">High (Aggressive Growth)</option>
+                    </SelectInput>
+                    <SelectInput label="Time Horizon" value={horizonPref} onChange={e => setHorizonPref(e.target.value)}>
+                      <option value="short">Short (&lt; 3 years)</option>
+                      <option value="medium">Medium (3-7 years)</option>
+                      <option value="long">Long (7+ years)</option>
+                    </SelectInput>
+                  </div>
+                </Card>
+              )}
+
+              <div className="section-title"><span>Recommended Options</span></div>
+              <div className="budget-list">
+                {(() => {
+                  if (!dash) return <p>Loading suggestions...</p>;
+                  
+                  const suggestions = [];
+                  const liquid = dash.net_worth - dash.portfolio;
+                  
+                  // Rule 1: Emergency Fund
+                  if (liquid < dash.expenses * 3) {
+                    suggestions.push({
+                      type: 'Priority',
+                      title: 'Emergency Fund',
+                      desc: `You have ${money(liquid)} in liquid cash. Aim for at least 3-6 months of expenses (${money(dash.expenses * 3)} - ${money(dash.expenses * 6)}) in a high-yield savings account or liquid mutual fund before making risky investments.`,
+                      tone: 'pink',
+                      link: 'https://www.investopedia.com/terms/e/emergency_fund.asp',
+                    });
+                  }
+
+                  // Rule 2: Based on Horizon and Risk
+                  if (horizonPref === 'short') {
+                    suggestions.push({
+                      type: 'Fixed Income',
+                      title: 'Fixed Deposits (FDs) / Liquid Funds',
+                      desc: 'For short-term goals (< 3 years), capital preservation is key. Avoid equities. Consider Bank FDs, Recurring Deposits (RD), or Liquid Mutual Funds.',
+                      tone: 'blue',
+                      link: 'https://www.amfiindia.com/investor-corner/knowledge-center/liquid-funds.html',
+                    });
+                  } else if (horizonPref === 'medium') {
+                    if (riskPref === 'low') {
+                      suggestions.push({
+                        type: 'Fixed Income',
+                        title: 'Corporate Bonds / Post Office Schemes',
+                        desc: 'Offers better yields than bank FDs with relatively low risk. Consider Post Office Time Deposits, NSC, or high-rated Corporate Bond Funds.',
+                        tone: 'blue',
+                        link: 'https://www.indiapost.gov.in/Financial/Pages/Content/Post-Office-Saving-Schemes.aspx',
+                      });
+                    } else {
+                      suggestions.push({
+                        type: 'Balanced',
+                        title: 'Hybrid / Balanced Advantage Funds',
+                        desc: 'A mix of equity and debt that automatically adjusts based on market conditions. Great for medium-term horizons to reduce volatility.',
+                        tone: 'purple',
+                        link: 'https://www.amfiindia.com/investor-corner/knowledge-center/hybrid-funds.html',
+                      });
+                    }
+                  } else if (horizonPref === 'long') {
+                    if (riskPref === 'high') {
+                      suggestions.push({
+                        type: 'Equities',
+                        title: 'Direct Stocks / Small-Cap Funds',
+                        desc: 'For high risk and long horizons (7+ years), allocating to Small-Cap Mutual Funds or direct stock portfolios can maximize wealth creation, despite high short-term volatility.',
+                        tone: 'pink',
+                        link: 'https://www.investopedia.com/terms/e/equityfund.asp',
+                      });
+                    } else if (riskPref === 'medium') {
+                      suggestions.push({
+                        type: 'Equities',
+                        title: 'Index Funds / Large-Cap Funds',
+                        desc: 'A low-cost Nifty 50 or Sensex Index Fund is ideal for long-term wealth creation. It reliably tracks the market and beats most active funds over 10+ years.',
+                        tone: 'mint',
+                        link: 'https://www.amfiindia.com/investor-corner/knowledge-center/index-funds.html',
+                      });
+                    } else {
+                      suggestions.push({
+                        type: 'Conservative',
+                        title: 'Public Provident Fund (PPF)',
+                        desc: 'An excellent tax-free (EEE) long-term investment option backed by the Government of India. Comes with a 15-year lock-in.',
+                        tone: 'amber',
+                        link: 'https://www.indiapost.gov.in/Financial/Pages/Content/Post-Office-Saving-Schemes.aspx',
+                      });
+                    }
+                  }
+
+                  // Rule 3: Excess Savings suggestion
+                  if (dash.savings > 0) {
+                    suggestions.push({
+                      type: 'Strategy',
+                      title: 'Systematic Investment Plan (SIP)',
+                      desc: `You have ${money(dash.savings)} in monthly savings. Consider starting an automated SIP with 20-30% of this amount to take advantage of rupee-cost averaging.`,
+                      tone: 'mint',
+                      link: 'https://www.amfiindia.com/investor-corner/knowledge-center/sip.html',
+                    });
+                  }
+
+                  return suggestions.map((sug, idx) => (
+                    <Card key={idx} tone="plain">
+                      <div className="budget-row-title">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <Chip tone={sug.tone}>{sug.type}</Chip>
+                          <strong>{sug.title}</strong>
+                        </div>
+                      </div>
+                      <p style={{ marginTop: 10, fontSize: 13, lineHeight: 1.5 }}>{sug.desc}</p>
+                      <a 
+                        href={sug.link} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 12, fontSize: 12, color: 'var(--blue)', fontWeight: 800, textDecoration: 'none' }}
+                      >
+                        View Official Details <ExternalLink size={12} />
+                      </a>
+                    </Card>
+                  ));
+                })()}
+              </div>
+            </div>
+          )}
 
           {tab === 'plans' && (
             <div className="budget-list" style={{ marginTop: 14 }}>

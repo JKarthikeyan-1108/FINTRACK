@@ -1,6 +1,6 @@
-// middleware/auth.js — protect routes with JWT
-const { verifyAccessToken } = require('../config/jwt');
-const db = require('../config/db');
+// middleware/auth.js — protect routes with Firebase ID tokens
+const { auth } = require('../config/firebase');
+const { ensureUser } = require('../utils/firestoreHelpers');
 
 async function authenticate(req, res, next) {
   try {
@@ -10,27 +10,34 @@ async function authenticate(req, res, next) {
     }
 
     const token = header.split(' ')[1];
-    const decoded = verifyAccessToken(token);
 
-    // Optionally verify user still exists & is active
-    const [rows] = await db.query(
-      'SELECT id, uuid, name, email, phone, is_active FROM users WHERE uuid = ?',
-      [decoded.sub]
-    );
+    let decoded;
+    try {
+      decoded = await auth().verifyIdToken(token);
+    } catch (err) {
+      if (err.code === 'auth/id-token-expired') {
+        return res.status(401).json({ error: 'Token expired', code: 'TOKEN_EXPIRED' });
+      }
+      return res.status(401).json({ error: 'Invalid token', code: 'TOKEN_INVALID' });
+    }
 
-    if (!rows.length || !rows[0].is_active) {
+    // First sign-in → create profile + default account
+    const profile = await ensureUser(decoded);
+    if (profile.is_active === false) {
       return res.status(401).json({ error: 'User not found or deactivated' });
     }
 
-    req.user = { ...rows[0], ...decoded };
+    // `id` is the Firebase UID — every controller scopes its queries by req.user.id
+    req.user = {
+      id:    decoded.uid,
+      uuid:  decoded.uid,
+      name:  profile.name,
+      email: profile.email || decoded.email || null,
+      phone: profile.phone || decoded.phone_number || null,
+      is_active: true,
+    };
     next();
   } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: 'Token expired', code: 'TOKEN_EXPIRED' });
-    }
-    if (err.name === 'JsonWebTokenError') {
-      return res.status(401).json({ error: 'Invalid token', code: 'TOKEN_INVALID' });
-    }
     next(err);
   }
 }

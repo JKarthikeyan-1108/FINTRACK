@@ -139,6 +139,48 @@ export function SelectInput({ label, children, className = '', ...props }) {
   );
 }
 
+export function VisualCategorySelect({ categories, value, onChange, label = "Category" }) {
+  return (
+    <div className="field">
+      <span>{label}</span>
+      <div className="visual-selector-grid">
+        {categories.map(cat => (
+          <button 
+            key={cat.id} 
+            type="button" 
+            className={`visual-selector-btn ${value === String(cat.id) ? 'active' : ''}`}
+            onClick={() => onChange(String(cat.id))}
+          >
+            <span className="visual-icon">{cat.icon || '📦'}</span>
+            <span className="visual-label">{cat.name}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function VisualAccountSelect({ accounts, value, onChange, label = "Account" }) {
+  return (
+    <div className="field">
+      <span>{label}</span>
+      <div className="visual-selector-grid">
+        {accounts.map(acc => (
+          <button 
+            key={acc.id} 
+            type="button" 
+            className={`visual-selector-btn ${value === String(acc.id) ? 'active' : ''}`}
+            onClick={() => onChange(String(acc.id))}
+          >
+            <span className="visual-icon" style={{ color: acc.color || '#4a9eff' }}>💳</span>
+            <span className="visual-label">{acc.name}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function BottomSheet({ title, onClose, children }) {
   return (
     <div className="sheet-overlay" onClick={event => event.target === event.currentTarget && onClose()}>

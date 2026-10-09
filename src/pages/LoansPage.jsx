@@ -13,19 +13,22 @@ import {
   Page,
   PageHeader,
   ProgressBar,
+  SegmentedControl,
   SelectInput,
   TextInput,
+  VisualCategorySelect,
 } from '../components/ui/CashewUI';
 import { money } from '../lib/format';
 
 const TYPES = ['home', 'car', 'personal', 'education', 'other'];
 const TYPE_INFO = {
-  home: { Icon: Home, tone: 'blue' },
-  car: { Icon: Car, tone: 'amber' },
-  personal: { Icon: WalletCards, tone: 'purple' },
-  education: { Icon: GraduationCap, tone: 'mint' },
-  other: { Icon: Landmark, tone: 'plain' },
+  home: { id: 'home', name: 'Home Loan', Icon: Home, icon: '🏠', tone: 'blue' },
+  car: { id: 'car', name: 'Vehicle Loan', Icon: Car, icon: '🚗', tone: 'amber' },
+  personal: { id: 'personal', name: 'Personal Loan', Icon: WalletCards, icon: '💳', tone: 'purple' },
+  education: { id: 'education', name: 'Education Loan', Icon: GraduationCap, icon: '🎓', tone: 'mint' },
+  other: { id: 'other', name: 'Other', Icon: Landmark, icon: '💰', tone: 'plain' },
 };
+const LOAN_CATEGORIES = Object.values(TYPE_INFO);
 
 const blankForm = () => ({
   name: '',
@@ -76,20 +79,22 @@ export default function LoansPage() {
   } : null;
 
   async function addLoan() {
-    const { name, type, principal, interest_rate, tenure_months, emi_date, lender } = form;
+    const { name, type, principal, interest_rate, tenure_months, emi_date, lender, emi_amount } = form;
     if (!name || !principal || !tenure_months) {
       toast.error('Name, principal, and tenure are required');
       return;
     }
 
     try {
-      const emi = calcEMI(Number(principal), Number(interest_rate || 0), Number(tenure_months));
+      const calculatedEmi = calcEMI(Number(principal), Number(interest_rate || 0), Number(tenure_months));
+      const finalEmi = emi_amount ? Number(emi_amount) : Math.round(calculatedEmi);
+      
       const { data } = await loanAPI.create({
         name,
         type,
         principal: Number(principal),
         remaining: Number(principal),
-        emi_amount: Math.round(emi),
+        emi_amount: finalEmi,
         interest_rate: Number(interest_rate || 0),
         tenure_months: Number(tenure_months),
         emi_date: Number(emi_date || 1),
@@ -237,27 +242,139 @@ export default function LoansPage() {
 
       {modal && (
         <BottomSheet title="Add Loan" onClose={() => setModal(false)}>
-          <TextInput label="Loan name" value={form.name} onChange={event => setForm(prev => ({ ...prev, name: event.target.value }))} placeholder="Home loan, car loan" />
-          <SelectInput label="Loan type" value={form.type} onChange={event => setForm(prev => ({ ...prev, type: event.target.value }))}>
-            {TYPES.map(type => <option key={type} value={type}>{type[0].toUpperCase() + type.slice(1)}</option>)}
-          </SelectInput>
-          <div className="field-row">
-            <TextInput label="Principal" type="number" value={form.principal} onChange={event => setForm(prev => ({ ...prev, principal: event.target.value }))} placeholder="0" />
-            <TextInput label="Rate" type="number" value={form.interest_rate} onChange={event => setForm(prev => ({ ...prev, interest_rate: event.target.value }))} placeholder="%/yr" />
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Loan Type</label>
+            <SegmentedControl
+              value={form.type}
+              onChange={val => setForm(prev => ({ ...prev, type: val }))}
+              options={[
+                { value: 'personal', label: 'Personal' },
+                { value: 'home', label: 'Home' },
+                { value: 'car', label: 'Car' },
+              ]}
+            />
           </div>
-          <div className="field-row">
-            <TextInput label="Tenure months" type="number" value={form.tenure_months} onChange={event => setForm(prev => ({ ...prev, tenure_months: event.target.value }))} placeholder="60" />
-            <TextInput label="EMI date" type="number" value={form.emi_date} onChange={event => setForm(prev => ({ ...prev, emi_date: event.target.value }))} placeholder="1" />
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Loan Name</label>
+            <input 
+              type="text"
+              className="input"
+              placeholder="E.g., HDFC Home Loan"
+              value={form.name}
+              onChange={event => setForm(prev => ({ ...prev, name: event.target.value }))}
+            />
           </div>
-          <TextInput label="Lender" value={form.lender} onChange={event => setForm(prev => ({ ...prev, lender: event.target.value }))} placeholder="Bank or lender" />
-          {emiPreview > 0 && (
-            <Card tone="mint" style={{ marginBottom: 14 }}>
-              <span className="hero-balance-label">Estimated EMI</span>
-              <strong>{money(Math.round(emiPreview))}<span style={{ fontSize: 14, color: '#66706a' }}>/mo</span></strong>
-              <p>Total payment {money(Math.round(emiPreview * Number(form.tenure_months)))}</p>
-            </Card>
-          )}
-          <Button className="ui-button-full" onClick={addLoan}>Add loan</Button>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Principal Amount</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: 12, color: '#64748b', fontWeight: 600, fontSize: '1.1rem' }}>₹</span>
+              <input 
+                type="number"
+                className="input"
+                style={{ paddingLeft: 32, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}
+                placeholder="0.00"
+                value={form.principal}
+                onChange={event => setForm(prev => ({ ...prev, principal: event.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Interest Rate</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: 12, color: '#64748b', fontWeight: 600, fontSize: '1.1rem' }}>%</span>
+              <input 
+                type="number"
+                className="input"
+                style={{ paddingLeft: 32, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}
+                placeholder="0.00"
+                value={form.interest_rate}
+                onChange={event => setForm(prev => ({ ...prev, interest_rate: event.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>EMI Amount</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: 12, color: '#64748b', fontWeight: 600, fontSize: '1.1rem' }}>₹</span>
+              <input 
+                type="number"
+                className="input"
+                style={{ paddingLeft: 32, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}
+                placeholder={emiPreview > 0 ? String(Math.round(emiPreview)) : "0.00"}
+                value={form.emi_amount || ''}
+                onChange={event => setForm(prev => ({ ...prev, emi_amount: event.target.value }))}
+              />
+            </div>
+            {emiPreview > 0 && !form.emi_amount && <small style={{ color: '#64748b', marginTop: 4, display: 'block' }}>Estimated: {money(Math.round(emiPreview))}</small>}
+          </div>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Tenure (Months)</label>
+            <input 
+              type="number"
+              className="input"
+              style={{ fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}
+              placeholder="0"
+              value={form.tenure_months}
+              onChange={event => setForm(prev => ({ ...prev, tenure_months: event.target.value }))}
+            />
+          </div>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Start Date</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: 13, color: '#64748b' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+              </span>
+              <input 
+                type="date"
+                className="input"
+                style={{ paddingLeft: 40, color: '#0f172a', fontWeight: 500 }}
+                value={form.start_date || new Date().toISOString().split('T')[0]}
+                onChange={event => setForm(prev => ({ ...prev, start_date: event.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Next EMI Date</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: 13, color: '#64748b' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+              </span>
+              <input 
+                type="date"
+                className="input"
+                style={{ paddingLeft: 40, color: '#0f172a', fontWeight: 500 }}
+                placeholder="Select date"
+                value={form.emi_date_full || ''}
+                onChange={event => {
+                  const dateVal = event.target.value;
+                  const day = dateVal ? parseInt(dateVal.split('-')[2], 10) : '';
+                  setForm(prev => ({ ...prev, emi_date_full: dateVal, emi_date: String(day) }));
+                }}
+              />
+            </div>
+          </div>
+          
+          <div className="field" style={{ marginBottom: 24 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Note (Optional)</label>
+            <input 
+              type="text"
+              className="input"
+              placeholder="Add a note..."
+              value={form.lender}
+              onChange={event => setForm(prev => ({ ...prev, lender: event.target.value }))}
+            />
+          </div>
+
+          <Button className="ui-button-full" onClick={addLoan} style={{ background: '#10b981', color: 'white', padding: '14px', borderRadius: '8px', fontSize: '1rem', fontWeight: 600 }}>
+            Add Loan
+          </Button>
         </BottomSheet>
       )}
 

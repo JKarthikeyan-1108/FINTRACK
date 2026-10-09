@@ -4,6 +4,7 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Edit3,
+  Camera,
   Plus,
   ReceiptText,
   Search,
@@ -23,6 +24,8 @@ import {
   PageHeader,
   SegmentedControl,
   SelectInput,
+  VisualCategorySelect,
+  VisualAccountSelect,
   TextInput,
 } from '../components/ui/CashewUI';
 import { dateShort, money } from '../lib/format';
@@ -52,6 +55,7 @@ export default function TransactionsPage() {
   const [accounts, setAccounts] = useState([]);
   const [summary, setSummary] = useState({ income: 0, expenses: 0 });
   const [form, setForm] = useState(blankForm());
+  const [isScanning, setIsScanning] = useState(false);
   const searchTimer = useRef(null);
 
   useEffect(() => {
@@ -125,9 +129,34 @@ export default function TransactionsPage() {
     setForm({ ...blankForm(), account_id: accounts[0] ? String(accounts[0].id) : '' });
   }
 
+  function handleScanReceipt() {
+    setIsScanning(true);
+    toast('Scanning receipt...', { icon: '📸', duration: 2000 });
+    
+    // Simulate OCR processing time
+    setTimeout(() => {
+      setIsScanning(false);
+      
+      // Auto-fill form with simulated scanned data
+      setForm({
+        ...blankForm(),
+        type: 'expense',
+        title: 'Starbucks Coffee',
+        amount: '450',
+        note: 'Scanned from receipt (Store #492)',
+        account_id: accounts[0] ? String(accounts[0].id) : '',
+        category_id: categories.find(c => c.name.toLowerCase().includes('food'))?.id || categories[0]?.id || ''
+      });
+      
+      setEditTxn(null);
+      setModal(true);
+      toast.success('Receipt scanned successfully!');
+    }, 2000);
+  }
+
   async function handleSave() {
-    if (!form.title || !form.amount) {
-      toast.error('Title and amount are required');
+    if (!form.amount) {
+      toast.error('Amount is required');
       return;
     }
     if (!form.account_id) {
@@ -135,8 +164,14 @@ export default function TransactionsPage() {
       return;
     }
 
+    let finalTitle = form.title;
+    if (!finalTitle) {
+      const selectedCat = categories.find(c => String(c.id) === String(form.category_id));
+      finalTitle = selectedCat ? selectedCat.name : 'General';
+    }
+
     try {
-      const payload = { ...form, amount: Number(form.amount) };
+      const payload = { ...form, title: finalTitle, amount: Number(form.amount) };
       if (editTxn) {
         const { data } = await txnAPI.update(editTxn.id, payload);
         setTxns(prev => prev.map(txn => txn.id === editTxn.id ? data.data : txn));
@@ -181,7 +216,16 @@ export default function TransactionsPage() {
         eyebrow="Activity"
         title="Transactions"
         subtitle={`${total} records in your ledger`}
-        action={<Button variant="primary" onClick={openCreate}><Plus size={18} /> Add</Button>}
+        action={
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button variant="soft" onClick={handleScanReceipt} disabled={isScanning}>
+              <Camera size={18} /> {isScanning ? 'Scanning...' : 'Scan'}
+            </Button>
+            <Button variant="primary" onClick={openCreate}>
+              <Plus size={18} /> Add
+            </Button>
+          </div>
+        }
       />
 
       <div className="metric-grid">
@@ -291,27 +335,91 @@ export default function TransactionsPage() {
             value={form.type}
             onChange={value => setForm(prev => ({ ...prev, type: value, category_id: '' }))}
             options={[
-              { value: 'expense', label: 'Expense', icon: <ArrowDownRight /> },
-              { value: 'income', label: 'Income', icon: <ArrowUpRight /> },
+              { value: 'expense', label: 'Expense' },
+              { value: 'income', label: 'Income' },
             ]}
           />
 
-          <div style={{ height: 14 }} />
-          <TextInput label="Title" value={form.title} onChange={event => setForm(prev => ({ ...prev, title: event.target.value }))} placeholder="Groceries, salary, rent" />
-          <div className="field-row">
-            <TextInput label="Amount" type="number" value={form.amount} onChange={event => setForm(prev => ({ ...prev, amount: event.target.value }))} placeholder="0" />
-            <TextInput label="Date" type="date" value={form.date} onChange={event => setForm(prev => ({ ...prev, date: event.target.value }))} />
+          <div style={{ height: 20 }} />
+          
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Amount</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: 12, color: '#64748b', fontWeight: 600, fontSize: '1.1rem' }}>₹</span>
+              <input 
+                type="number"
+                className="input"
+                style={{ paddingLeft: 32, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}
+                placeholder="0.00"
+                value={form.amount}
+                onChange={event => setForm(prev => ({ ...prev, amount: event.target.value }))}
+              />
+            </div>
           </div>
-          <SelectInput label="Category" value={form.category_id} onChange={event => setForm(prev => ({ ...prev, category_id: event.target.value }))}>
-            <option value="">General</option>
-            {filteredCats.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}
-          </SelectInput>
-          <SelectInput label="Account" value={form.account_id} onChange={event => setForm(prev => ({ ...prev, account_id: event.target.value }))}>
-            <option value="">Select account</option>
-            {accounts.map(account => <option key={account.id} value={account.id}>{account.name} ({money(account.balance)})</option>)}
-          </SelectInput>
-          <TextInput label="Note" value={form.note} onChange={event => setForm(prev => ({ ...prev, note: event.target.value }))} placeholder="Optional" />
-          <Button className="ui-button-full" onClick={handleSave}>{editTxn ? 'Save changes' : 'Add transaction'}</Button>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>Category</label>
+              <button style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>See All</button>
+            </div>
+            <VisualCategorySelect 
+              categories={filteredCats.length ? filteredCats.slice(0, 8) : [{ id: '', name: 'General', icon: '📦' }]} 
+              value={form.category_id} 
+              onChange={val => setForm(prev => ({ ...prev, category_id: val }))} 
+              label=""
+            />
+          </div>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Account</label>
+            <div style={{ position: 'relative' }}>
+              <select 
+                className="input" 
+                style={{ appearance: 'none', background: '#f8fafc', color: '#0f172a', fontWeight: 500 }}
+                value={form.account_id}
+                onChange={event => setForm(prev => ({ ...prev, account_id: event.target.value }))}
+              >
+                <option value="" disabled>Select Account</option>
+                {accounts.map(acc => (
+                  <option key={acc.id} value={acc.id}>{acc.name}</option>
+                ))}
+              </select>
+              <div style={{ position: 'absolute', right: 14, top: 15, pointerEvents: 'none', color: '#64748b' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Date</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: 13, color: '#64748b' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+              </span>
+              <input 
+                type="date"
+                className="input"
+                style={{ paddingLeft: 40, color: '#0f172a', fontWeight: 500 }}
+                value={form.date}
+                onChange={event => setForm(prev => ({ ...prev, date: event.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="field" style={{ marginBottom: 24 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Note (Optional)</label>
+            <input 
+              type="text"
+              className="input"
+              placeholder="Add a note..."
+              value={form.note}
+              onChange={event => setForm(prev => ({ ...prev, note: event.target.value }))}
+            />
+          </div>
+
+          <Button className="ui-button-full" onClick={handleSave} style={{ background: '#10b981', color: 'white', padding: '14px', borderRadius: '8px', fontSize: '1rem', fontWeight: 600 }}>
+            {editTxn ? 'Save Changes' : 'Add Transaction'}
+          </Button>
         </BottomSheet>
       )}
     </Page>

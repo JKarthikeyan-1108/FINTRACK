@@ -1,5 +1,7 @@
 // src/services/api.js — FinTrack API client v2
 import axios from 'axios';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebase/config';
 
 const api = axios.create({
   baseURL:         import.meta.env.VITE_API_URL || '/api',
@@ -7,56 +9,40 @@ const api = axios.create({
   headers:         { 'Content-Type': 'application/json' },
 });
 
-// ── Auth token injection ────────────────────────────────
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('fintrack_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+// ── Auth token injection (Firebase ID token) ────────────
+api.interceptors.request.use(async config => {
+  if (auth) {
+    await auth.authStateReady();
+    // getIdToken() returns the cached token and transparently refreshes it when it's near expiry
+    const token = await auth.currentUser?.getIdToken();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
-// ── Auto-refresh on 401 ─────────────────────────────────
-let isRefreshing = false, waitQueue = [];
+// ── On 401: force-refresh the ID token once and retry ───
 api.interceptors.response.use(
   r => r,
   async err => {
     const orig = err.config;
-    if (err.response?.status === 401 && !orig._retry &&
-        !orig.url?.includes('/auth/refresh') && !orig.url?.includes('/auth/logout')) {
-      if (isRefreshing) {
-        return new Promise((res, rej) => waitQueue.push({ res, rej }))
-          .then(token => { orig.headers.Authorization = `Bearer ${token}`; return api(orig); });
-      }
-      orig._retry = true; isRefreshing = true;
+    if (err.response?.status === 401 && orig && !orig._retry && auth?.currentUser) {
+      orig._retry = true;
       try {
-        const { data } = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
-        const token = data.access_token;
-        localStorage.setItem('fintrack_token', token);
-        api.defaults.headers.common.Authorization = `Bearer ${token}`;
-        waitQueue.forEach(p => p.res(token));
-        waitQueue = []; isRefreshing = false;
+        const token = await auth.currentUser.getIdToken(true);
         orig.headers.Authorization = `Bearer ${token}`;
         return api(orig);
-      } catch(e) {
-        waitQueue.forEach(p => p.rej(e));
-        waitQueue = []; isRefreshing = false;
-        localStorage.removeItem('fintrack_token');
+      } catch {
+        // Couldn't refresh (session revoked / account disabled) → sign out
+        await signOut(auth).catch(() => {});
         window.location.href = '/login';
-        return Promise.reject(e);
       }
     }
     return Promise.reject(err);
   }
 );
 
-// ── Auth ───────────────────────────────────────────────
+// ── Auth (sign-in is handled by Firebase Auth; the API only serves the profile) ──
 export const authAPI = {
-  sendOTP:         phone     => api.post('/auth/send-otp',       { phone }),
-  verifyOTP:       (phone,otp)=>api.post('/auth/verify-otp',    { phone, otp }),
-  google:          payload   => api.post('/auth/google',         payload),
-  emailLogin:      (email,p) => api.post('/auth/email/login',   { email, password: p }),
-  emailRegister:   (n,e,p)  => api.post('/auth/email/register',{ name:n, email:e, password:p }),
-  refresh:         ()        => api.post('/auth/refresh'),
-  logout:          ()        => api.post('/auth/logout'),
   me:              ()        => api.get('/auth/me'),
   updateProfile:   data      => api.put('/auth/me',             data),
 };

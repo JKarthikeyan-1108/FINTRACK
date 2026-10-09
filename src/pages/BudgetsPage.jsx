@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { ChartPie, Edit3, Plus, Trash2, WalletCards } from 'lucide-react';
-import { budgetAPI } from '../services/api';
+import { categoryAPI, budgetAPI } from '../services/api';
 import {
   BottomSheet,
   Button,
@@ -12,8 +12,10 @@ import {
   PageHeader,
   ProgressBar,
   RingMeter,
+  SegmentedControl,
   SelectInput,
   TextInput,
+  VisualCategorySelect,
 } from '../components/ui/CashewUI';
 import { money } from '../lib/format';
 
@@ -29,6 +31,7 @@ function todayProgress() {
 
 const blankForm = () => ({
   name: '',
+  category_id: '',
   amount: '',
   period: 'monthly',
   color: '#6fb36e',
@@ -40,6 +43,7 @@ export default function BudgetsPage() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [form, setForm] = useState(blankForm());
 
   function loadBudgets() {
@@ -49,7 +53,10 @@ export default function BudgetsPage() {
       .finally(() => setLoading(false));
   }
 
-  useEffect(loadBudgets, []);
+  useEffect(() => {
+    categoryAPI.getAll().then(({ data }) => setCategories(data.data || [])).catch(() => {});
+    loadBudgets();
+  }, []);
 
   const totalBudget = budgets.reduce((sum, budget) => sum + Number(budget.amount), 0);
   const totalSpent = budgets.reduce((sum, budget) => sum + Number(budget.spent || budget.spent_amount || 0), 0);
@@ -67,6 +74,7 @@ export default function BudgetsPage() {
     setEditId(budget.id);
     setForm({
       name: budget.name,
+      category_id: String(budget.category_id || ''),
       amount: String(budget.amount),
       period: budget.period || 'monthly',
       color: budget.color || '#6fb36e',
@@ -176,7 +184,7 @@ export default function BudgetsPage() {
                   <RingMeter value={pct} tone={over ? 'pink' : 'mint'} />
                   <div className="budget-row-main">
                     <div className="budget-row-title">
-                      <strong>{budget.name}</strong>
+                      <strong>{budget.category_name || budget.name}</strong>
                       <b className={over ? 'amount-expense' : 'amount-income'}>{money(spent)}</b>
                     </div>
                     <div className="budget-row-meta">
@@ -202,31 +210,91 @@ export default function BudgetsPage() {
       <FAB icon={<Plus size={24} />} label="Create budget" onClick={openCreate} />
 
       {modal && (
-        <BottomSheet title={editId ? 'Edit Budget' : 'New Budget'} onClose={closeModal}>
-          <TextInput label="Budget name" value={form.name} onChange={event => setForm(prev => ({ ...prev, name: event.target.value }))} placeholder="Food, rent, travel" />
-          <TextInput label="Limit amount" type="number" value={form.amount} onChange={event => setForm(prev => ({ ...prev, amount: event.target.value }))} placeholder="0" />
-          <SelectInput label="Period" value={form.period} onChange={event => setForm(prev => ({ ...prev, period: event.target.value }))}>
-            {PERIODS.map(period => <option key={period} value={period}>{period[0].toUpperCase() + period.slice(1)}</option>)}
-          </SelectInput>
-          <TextInput label="Start date" type="date" value={form.start_date} onChange={event => setForm(prev => ({ ...prev, start_date: event.target.value }))} />
+        <BottomSheet title={editId ? 'Edit Budget' : 'Create Budget'} onClose={closeModal}>
+          <div className="field" style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>Category</label>
+              <button style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>See All</button>
+            </div>
+            <VisualCategorySelect 
+              categories={[{ id: '', name: 'General', icon: '📦' }, ...categories.filter(c => c.type === 'expense').slice(0, 7)]} 
+              value={form.category_id} 
+              onChange={val => {
+                const cat = categories.find(c => String(c.id) === val);
+                setForm(prev => ({ ...prev, category_id: val, name: cat ? cat.name : 'General Budget' }));
+              }} 
+              label=""
+            />
+          </div>
 
-          <div className="field">
-            <span>Color</span>
-            <div className="swatch-grid">
-              {COLORS.map(color => (
-                <button
-                  key={color}
-                  className={`swatch ${form.color === color ? 'active' : ''}`}
-                  style={{ background: color }}
-                  aria-label={`Select ${color}`}
-                  onClick={() => setForm(prev => ({ ...prev, color }))}
-                />
-              ))}
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Budget Amount</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: 12, color: '#64748b', fontWeight: 600, fontSize: '1.1rem' }}>₹</span>
+              <input 
+                type="number"
+                className="input"
+                style={{ paddingLeft: 32, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}
+                placeholder="0.00"
+                value={form.amount}
+                onChange={event => setForm(prev => ({ ...prev, amount: event.target.value }))}
+              />
             </div>
           </div>
 
-          <Button className="ui-button-full" onClick={saveBudget}>
-            <WalletCards size={18} /> {editId ? 'Save budget' : 'Create budget'}
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Period</label>
+            <SegmentedControl
+              value={form.period}
+              onChange={value => setForm(prev => ({ ...prev, period: value }))}
+              options={[
+                { value: 'weekly', label: 'Weekly' },
+                { value: 'monthly', label: 'Monthly' },
+                { value: 'yearly', label: 'Yearly' },
+              ]}
+            />
+          </div>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Start Date</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: 13, color: '#64748b' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+              </span>
+              <input 
+                type="date"
+                className="input"
+                style={{ paddingLeft: 40, color: '#0f172a', fontWeight: 500 }}
+                value={form.start_date}
+                onChange={event => setForm(prev => ({ ...prev, start_date: event.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="field" style={{ marginBottom: 24 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>End Date (Optional)</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: 13, color: '#64748b' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+              </span>
+              <input 
+                type="date"
+                className="input"
+                style={{ paddingLeft: 40, color: '#0f172a', fontWeight: 500 }}
+                placeholder="Select date"
+                value={form.end_date || ''}
+                onChange={event => setForm(prev => ({ ...prev, end_date: event.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', background: '#f0f9ff', padding: '12px 16px', borderRadius: '8px', marginBottom: '24px', color: '#0284c7', fontSize: '0.85rem', lineHeight: 1.5 }}>
+            <span style={{ fontSize: '1rem' }}>💡</span>
+            <span>A monthly budget helps you stay on track with your long-term goals.</span>
+          </div>
+
+          <Button className="ui-button-full" onClick={saveBudget} style={{ background: '#10b981', color: 'white', padding: '14px', borderRadius: '8px', fontSize: '1rem', fontWeight: 600 }}>
+            {editId ? 'Save Changes' : 'Create Budget'}
           </Button>
         </BottomSheet>
       )}

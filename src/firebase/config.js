@@ -1,28 +1,33 @@
 // src/firebase/config.js
 // ─────────────────────────────────────────────────────────────────────────────
-// SETUP: Replace the placeholder values below with your actual Firebase project
-// credentials from https://console.firebase.google.com → Project Settings → SDK
+// SETUP: Add your Firebase web-app credentials to your .env file
+// from https://console.firebase.google.com → Project Settings → General → Your apps
+// (see .env.example). Firestore is accessed only by the Express backend (Admin SDK),
+// so the browser only needs Firebase Auth.
 // ─────────────────────────────────────────────────────────────────────────────
-// import { initializeApp } from 'firebase/app';
-// import { getAuth }       from 'firebase/auth';
-// import { getFirestore }  from 'firebase/firestore';
-//
-// const firebaseConfig = {
-//   apiKey:            "YOUR_API_KEY",
-//   authDomain:        "YOUR_PROJECT.firebaseapp.com",
-//   projectId:         "YOUR_PROJECT_ID",
-//   storageBucket:     "YOUR_PROJECT.appspot.com",
-//   messagingSenderId: "YOUR_SENDER_ID",
-//   appId:             "YOUR_APP_ID",
-// };
-//
-// export const app       = initializeApp(firebaseConfig);
-// export const auth      = getAuth(app);
-// export const firestore = getFirestore(app);
+import { initializeApp } from 'firebase/app';
+import { getAuth }       from 'firebase/auth';
 
-// ── DEMO MODE (no Firebase required) ─────────────────────────────────────────
-// The app runs in demo mode using the existing JWT backend.
-// When you add your Firebase config above and uncomment it, the AuthService
-// below will automatically use real Firebase auth.
-export const auth      = null;
-export const firestore = null;
+const firebaseConfig = {
+  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId:             import.meta.env.VITE_FIREBASE_APP_ID,
+};
+
+let app, auth;
+
+try {
+  if (firebaseConfig.apiKey) {
+    app  = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+  } else {
+    console.warn('Firebase config is missing in .env — sign-in is disabled until VITE_FIREBASE_* values are set.');
+  }
+} catch (error) {
+  console.error('Firebase initialization error:', error);
+}
+
+export { app, auth };

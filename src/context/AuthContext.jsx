@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { authAPI } from '../services/api';
+import { firebaseGoogleSignIn } from '../firebase/authService';
 
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
@@ -92,7 +93,18 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  const googleLogin = async payload => {
+  const googleLogin = async () => {
+    // 1. Authenticate with Firebase Google Auth
+    const fbUser = await firebaseGoogleSignIn();
+    
+    // 2. Pass the user data to our backend
+    const payload = {
+      name: fbUser.name,
+      email: fbUser.email,
+      google_id: fbUser.uid,
+      avatar_url: fbUser.photoURL
+    };
+    
     const { data } = await authAPI.google(payload);
     saveToken(data.access_token, data.user);
     return data;
@@ -144,6 +156,16 @@ export function AuthProvider({ children }) {
     return `${seconds}s`;
   };
 
+  const forgotPassword = async (email) => {
+    const { data } = await authAPI.forgotPassword(email);
+    return data;
+  };
+
+  const resetPassword = async (email, token, newPassword) => {
+    const { data } = await authAPI.resetPassword(email, token, newPassword);
+    return data;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -160,6 +182,8 @@ export function AuthProvider({ children }) {
         googleLogin,
         emailLogin,
         emailRegister,
+        forgotPassword,
+        resetPassword,
         refreshToken,
         updateProfile,
         logout,

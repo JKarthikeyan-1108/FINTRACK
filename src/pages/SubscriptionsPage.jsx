@@ -11,13 +11,25 @@ import {
   MetricCard,
   Page,
   PageHeader,
+  SegmentedControl,
   SelectInput,
   TextInput,
+  VisualCategorySelect,
 } from '../components/ui/CashewUI';
 import { dateShort, daysUntil, money } from '../lib/format';
 
 const PERIODS = ['monthly', 'yearly', 'weekly'];
-const CATS = ['Entertainment', 'Music', 'Cloud', 'Fitness', 'News', 'Gaming', 'Productivity', 'Security', 'Health', 'Other'];
+const SUB_CATEGORIES = [
+  { id: 'Entertainment', name: 'Entertainment', icon: '🎬' },
+  { id: 'Cloud Storage', name: 'Cloud Storage', icon: '☁️' },
+  { id: 'Software', name: 'Software', icon: '💻' },
+  { id: 'Music', name: 'Music', icon: '🎵' },
+  { id: 'Mobile', name: 'Mobile', icon: '📱' },
+  { id: 'Shopping', name: 'Shopping', icon: '📦' },
+  { id: 'Fitness', name: 'Fitness', icon: '🏋️' },
+  { id: 'Education', name: 'Education', icon: '📚' },
+  { id: 'Other', name: 'Other', icon: '💰' },
+];
 
 const blankForm = () => ({
   name: '',
@@ -162,18 +174,86 @@ export default function SubscriptionsPage() {
 
       {modal && (
         <BottomSheet title="Add Subscription" onClose={() => setModal(false)}>
-          <TextInput label="Service name" value={form.name} onChange={event => setForm(prev => ({ ...prev, name: event.target.value }))} placeholder="Netflix, Spotify, iCloud" />
-          <div className="field-row">
-            <TextInput label="Amount" type="number" value={form.amount} onChange={event => setForm(prev => ({ ...prev, amount: event.target.value }))} placeholder="0" />
-            <SelectInput label="Period" value={form.period} onChange={event => setForm(prev => ({ ...prev, period: event.target.value }))}>
-              {PERIODS.map(period => <option key={period} value={period}>{period[0].toUpperCase() + period.slice(1)}</option>)}
-            </SelectInput>
+          <div className="field" style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>Subscription Category</label>
+              <button style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>See All</button>
+            </div>
+            <VisualCategorySelect 
+              categories={SUB_CATEGORIES.slice(0, 8)} 
+              value={form.category} 
+              onChange={val => setForm(prev => ({ ...prev, category: val }))} 
+              label=""
+            />
           </div>
-          <TextInput label="Next due date" type="date" value={form.next_due} onChange={event => setForm(prev => ({ ...prev, next_due: event.target.value }))} />
-          <SelectInput label="Category" value={form.category} onChange={event => setForm(prev => ({ ...prev, category: event.target.value }))}>
-            {CATS.map(category => <option key={category} value={category}>{category}</option>)}
-          </SelectInput>
-          <Button className="ui-button-full" onClick={addSub}><Repeat2 size={18} /> Add subscription</Button>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Service Name</label>
+            <input 
+              type="text"
+              className="input"
+              placeholder="E.g., Netflix, Spotify"
+              value={form.name}
+              onChange={event => setForm(prev => ({ ...prev, name: event.target.value }))}
+            />
+          </div>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Amount</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: 12, color: '#64748b', fontWeight: 600, fontSize: '1.1rem' }}>₹</span>
+              <input 
+                type="number"
+                className="input"
+                style={{ paddingLeft: 32, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}
+                placeholder="0.00"
+                value={form.amount}
+                onChange={event => setForm(prev => ({ ...prev, amount: event.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Billing Cycle</label>
+            <SegmentedControl
+              value={form.period}
+              onChange={value => setForm(prev => ({ ...prev, period: value }))}
+              options={[
+                { value: 'weekly', label: 'Weekly' },
+                { value: 'monthly', label: 'Monthly' },
+                { value: 'yearly', label: 'Yearly' },
+              ]}
+            />
+          </div>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Next Billing Date</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: 13, color: '#64748b' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+              </span>
+              <input 
+                type="date"
+                className="input"
+                style={{ paddingLeft: 40, color: '#0f172a', fontWeight: 500 }}
+                value={form.next_due}
+                onChange={event => setForm(prev => ({ ...prev, next_due: event.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="field" style={{ marginBottom: 24 }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Note (Optional)</label>
+            <input 
+              type="text"
+              className="input"
+              placeholder="Add a note..."
+            />
+          </div>
+
+          <Button className="ui-button-full" onClick={addSub} style={{ background: '#10b981', color: 'white', padding: '14px', borderRadius: '8px', fontSize: '1rem', fontWeight: 600 }}>
+            Add Subscription
+          </Button>
         </BottomSheet>
       )}
     </Page>
