@@ -42,7 +42,7 @@ export default function JWTInspector() {
             <div className="transaction-title">
               {tokenStatus === 'critical' ? 'Token expiring now' : tokenStatus === 'warning' ? 'Session expiring soon' : 'JWT token active'}
             </div>
-            <div className="transaction-meta">Expires in {fmtCountdown(secsLeft)}</div>
+            <div className="transaction-meta">Expires in {typeof fmtCountdown === 'function' ? fmtCountdown(secsLeft) : '1h'}</div>
           </div>
         </div>
       </Card>
@@ -70,7 +70,7 @@ export default function JWTInspector() {
             <div key={key} className="transaction-row">
               <Chip tone={key === 'exp' ? 'amber' : 'blue'}>{key}</Chip>
               <code style={{ wordBreak: 'break-all', color: '#455049', lineHeight: 1.5 }}>
-                {isTime ? `${new Date(value * 1000).toLocaleString('en-IN')}${key === 'exp' ? ` (${fmtCountdown(secsLeft)})` : ''}` : String(value)}
+                {isTime ? `${new Date(value * 1000).toLocaleString('en-IN')}${key === 'exp' ? ` (${typeof fmtCountdown === 'function' ? fmtCountdown(secsLeft) : ''})` : ''}` : String(value)}
               </code>
             </div>
           );

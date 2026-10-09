@@ -34,7 +34,16 @@ function Protected({ children }) {
 
 function PublicOnly({ children }) {
   const { isAuthenticated, loading } = useAuth();
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div style={{ display: 'grid', placeItems: 'center', minHeight: '100dvh', background: '#eef7ef' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="spinner" style={{ margin: '0 auto 16px' }} />
+          <div style={{ fontSize: 13, color: '#66706a', fontWeight: 800 }}>Loading FinTrack...</div>
+        </div>
+      </div>
+    );
+  }
   return isAuthenticated ? <Navigate to="/home" replace /> : children;
 }
 

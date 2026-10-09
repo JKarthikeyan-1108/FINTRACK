@@ -140,7 +140,7 @@ export default function AppShell() {
           </div>
 
           <div className="header-actions">
-            {tokenStatus !== 'valid' && (
+            {tokenStatus && tokenStatus !== 'valid' && typeof fmtCountdown === 'function' && (
               <span style={{ color: tokenStatus === 'critical' ? '#c84d4d' : '#c58a21', fontSize: 11, fontWeight: 850 }}>
                 {fmtCountdown(secsLeft)}
               </span>

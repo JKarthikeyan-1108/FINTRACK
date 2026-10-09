@@ -89,8 +89,9 @@ export default function HomePage() {
   const accounts = overview?.accounts || [];
 
   const labels = trends.map(row => {
+    if (!row?.month) return '';
     const [year, month] = row.month.split('-');
-    return new Date(year, month - 1).toLocaleString('en-IN', { month: 'short' });
+    return new Date(year, (month || 1) - 1).toLocaleString('en-IN', { month: 'short' });
   });
 
   const chartData = {
@@ -154,7 +155,7 @@ export default function HomePage() {
         action={<Button variant="primary" onClick={() => navigate('/transactions')}><Plus size={18} /> Add</Button>}
       />
 
-      {tokenStatus !== 'valid' && (
+      {tokenStatus && tokenStatus !== 'valid' && typeof fmtCountdown === 'function' && (
         <Card tone={tokenStatus === 'critical' ? 'pink' : 'amber'} style={{ marginBottom: 14 }} onClick={refreshToken}>
           <div className="budget-card-header">
             <div>

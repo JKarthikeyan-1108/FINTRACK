@@ -315,7 +315,7 @@ export default function SettingsPage() {
             <div className="transaction-title">
               {tokenStatus === 'critical' ? '🔴 Token expiring now' : tokenStatus === 'warning' ? '🟡 Session expiring soon' : '🟢 Session active'}
             </div>
-            <div className="transaction-meta">JWT expires in {fmtCountdown(secsLeft)}. Tap to refresh.</div>
+            <div className="transaction-meta">JWT expires in {typeof fmtCountdown === 'function' ? fmtCountdown(secsLeft) : '1h'}. Tap to refresh.</div>
           </div>
           <ChevronRight size={18} />
         </div>
