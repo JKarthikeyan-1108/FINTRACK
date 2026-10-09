@@ -1,3 +1,0 @@
-@vercel/storage:team
-# Global Config (formerly Edge Config) section; can approve but is not requested on every storage change.
-@vercel/flags:optional
