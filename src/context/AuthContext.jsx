@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { authAPI } from '../services/api';
-import { firebaseGoogleSignIn } from '../firebase/authService';
+
 
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
@@ -16,175 +16,98 @@ function parseJWT(token) {
 const WARN_SECS = 300;
 const CRITICAL_SECS = 60;
 
+// Firebase Auth fully replaces the backend auth endpoints for login/registration.
+import { onFirebaseIdToken, firebaseSignOut, firebaseEmailSignIn, firebaseEmailSignUp, firebaseGoogleSignIn, firebasePasswordReset, firebasePhoneSignIn, firebaseVerifyOtp } from '../firebase/authService';
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem('fintrack_token'));
-  const [tokenPayload, setTokenPayload] = useState(null);
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [secsLeft, setSecsLeft] = useState(9999);
-  const timerRef = useRef(null);
 
   useEffect(() => {
-    setTokenPayload(token ? parseJWT(token) : null);
-  }, [token]);
-
-  useEffect(() => {
-    clearInterval(timerRef.current);
-    if (!tokenPayload?.exp) {
-      setSecsLeft(9999);
-      return;
-    }
-
-    const tick = () => {
-      const seconds = Math.max(0, tokenPayload.exp - Math.floor(Date.now() / 1000));
-      setSecsLeft(seconds);
-      if (seconds === 0) {
-        clearInterval(timerRef.current);
+    // Firebase Auth listener
+    const unsubscribe = onFirebaseIdToken(async (firebaseUser) => {
+      if (firebaseUser) {
+        const idToken = await firebaseUser.getIdToken();
+        setToken(idToken);
+        setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName,
+          avatar_url: firebaseUser.photoURL,
+          phone: firebaseUser.phoneNumber
+        });
+        
+        // Try to fetch extended profile from backend if needed
+        try {
+          const { data } = await authAPI.me();
+          if (data && data.user) {
+            setUser(prev => ({ ...prev, ...data.user }));
+          }
+        } catch (e) { /* ignore */ }
+      } else {
         setToken(null);
         setUser(null);
-        localStorage.removeItem('fintrack_token');
       }
-    };
-
-    tick();
-    timerRef.current = setInterval(tick, 1000);
-    return () => clearInterval(timerRef.current);
-  }, [tokenPayload]);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('fintrack_token');
-    if (!stored) {
       setLoading(false);
-      return;
-    }
-
-    const payload = parseJWT(stored);
-    const valid = payload?.exp && payload.exp > Math.floor(Date.now() / 1000);
-    if (!valid) {
-      localStorage.removeItem('fintrack_token');
-      setLoading(false);
-      return;
-    }
-
-    setToken(stored);
-    authAPI.me()
-      .then(({ data }) => setUser(data.user))
-      .catch(() => {
-        setToken(null);
-        localStorage.removeItem('fintrack_token');
-      })
-      .finally(() => setLoading(false));
+    });
+    return unsubscribe;
   }, []);
-
-  const saveToken = useCallback((nextToken, nextUser) => {
-    localStorage.setItem('fintrack_token', nextToken);
-    setToken(nextToken);
-    if (nextUser) setUser(nextUser);
-  }, []);
-
-  const sendOTP = async phone => {
-    const { data } = await authAPI.sendOTP(phone);
-    return data;
-  };
-
-  const verifyOTP = async (phone, otp) => {
-    const { data } = await authAPI.verifyOTP(phone, otp);
-    saveToken(data.access_token, data.user);
-    return data;
-  };
 
   const googleLogin = async () => {
-    // 1. Authenticate with Firebase Google Auth
-    const fbUser = await firebaseGoogleSignIn();
-    
-    // 2. Pass the user data to our backend
-    const payload = {
-      name: fbUser.name,
-      email: fbUser.email,
-      google_id: fbUser.uid,
-      avatar_url: fbUser.photoURL
-    };
-    
-    const { data } = await authAPI.google(payload);
-    saveToken(data.access_token, data.user);
-    return data;
+    await firebaseGoogleSignIn();
   };
 
   const emailLogin = async (email, password) => {
-    const { data } = await authAPI.emailLogin(email, password);
-    saveToken(data.access_token, data.user);
-    return data;
+    await firebaseEmailSignIn(email, password);
   };
 
   const emailRegister = async (name, email, password) => {
-    const { data } = await authAPI.emailRegister(name, email, password);
-    saveToken(data.access_token, data.user);
-    return data;
+    await firebaseEmailSignUp(name, email, password);
   };
 
-  const refreshToken = useCallback(async () => {
-    try {
-      const { data } = await authAPI.refresh();
-      saveToken(data.access_token);
-      return data;
-    } catch {
-      return null;
-    }
-  }, [saveToken]);
+  const forgotPassword = async (email) => {
+    await firebasePasswordReset(email);
+  };
+
+  const resetPassword = async (email, token, newPassword) => {
+    // Not needed. Firebase sends an email link directly.
+    throw new Error('Please check your email for the password reset link.');
+  };
+
+  const phoneLogin = async (phoneNumber) => {
+    await firebasePhoneSignIn(phoneNumber);
+  };
+
+  const verifyOtp = async (code) => {
+    await firebaseVerifyOtp(code);
+  };
 
   const logout = async () => {
-    try {
-      await authAPI.logout();
-    } catch {}
-    localStorage.removeItem('fintrack_token');
-    setToken(null);
-    setUser(null);
-    setTokenPayload(null);
+    await firebaseSignOut();
   };
 
   const updateProfile = async (data) => {
     const { data: result } = await authAPI.updateProfile(data);
-    if (result.user) setUser(result.user);
+    if (result.user) setUser(prev => ({ ...prev, ...result.user }));
     return result;
   };
 
-  const tokenStatus = secsLeft <= CRITICAL_SECS ? 'critical' : secsLeft <= WARN_SECS ? 'warning' : 'valid';
-
-  const fmtCountdown = seconds => {
-    if (seconds >= 3600) return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
-    if (seconds >= 60) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
-    return `${seconds}s`;
-  };
-
-  const forgotPassword = async (email) => {
-    const { data } = await authAPI.forgotPassword(email);
-    return data;
-  };
-
-  const resetPassword = async (email, token, newPassword) => {
-    const { data } = await authAPI.resetPassword(email, token, newPassword);
-    return data;
-  };
 
   return (
     <AuthContext.Provider
       value={{
         user,
         token,
-        tokenPayload,
         loading,
         isAuthenticated: !!token && !!user,
-        secsLeft,
-        tokenStatus,
-        fmtCountdown,
-        sendOTP,
-        verifyOTP,
+        phoneLogin,
+        verifyOtp,
         googleLogin,
         emailLogin,
         emailRegister,
         forgotPassword,
         resetPassword,
-        refreshToken,
         updateProfile,
         logout,
       }}

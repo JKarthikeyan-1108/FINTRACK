@@ -7,6 +7,7 @@ import {
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
   updateProfile, sendPasswordResetEmail,
   signOut, onIdTokenChanged,
+  RecaptchaVerifier, signInWithPhoneNumber,
 } from 'firebase/auth';
 import { auth } from './config';
 
@@ -83,4 +84,34 @@ export async function firebaseSignOut() {
 export function onFirebaseIdToken(callback) {
   if (!auth) return () => {};
   return onIdTokenChanged(auth, callback);
+}
+
+// ── Phone Authentication ──────────────────────────────────────────────────────
+export function setupRecaptcha(containerId) {
+  if (!window.recaptchaVerifier) {
+    window.recaptchaVerifier = new RecaptchaVerifier(requireAuth(), containerId, {
+      'size': 'invisible',
+      'callback': (response) => {
+        // reCAPTCHA solved
+      }
+    });
+  }
+}
+
+export function firebasePhoneSignIn(phoneNumber) {
+  return wrap(async () => {
+    const appVerifier = window.recaptchaVerifier;
+    const confirmationResult = await signInWithPhoneNumber(requireAuth(), phoneNumber, appVerifier);
+    window.confirmationResult = confirmationResult;
+    return confirmationResult;
+  });
+}
+
+export function firebaseVerifyOtp(code) {
+  return wrap(async () => {
+    const confirmationResult = window.confirmationResult;
+    if (!confirmationResult) throw new Error('No OTP request found. Please request OTP first.');
+    const result = await confirmationResult.confirm(code);
+    return result.user;
+  });
 }

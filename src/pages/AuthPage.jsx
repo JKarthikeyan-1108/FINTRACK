@@ -30,8 +30,10 @@ const GoogleSVG = () => (
   </svg>
 );
 
+import { setupRecaptcha } from '../firebase/authService';
+
 export default function AuthPage() {
-  const { googleLogin, emailLogin, emailRegister, forgotPassword, resetPassword, isAuthenticated } = useAuth();
+  const { googleLogin, emailLogin, emailRegister, forgotPassword, resetPassword, isAuthenticated, phoneLogin, verifyOtp: verifyPhoneOtp } = useAuth();
   const navigate = useNavigate();
   
   const [authView, setAuthView] = useState('login'); // 'login' | 'register' | 'forgot' | 'verify' | 'reset' | 'success'
@@ -41,6 +43,9 @@ export default function AuthPage() {
   const [pass, setPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
   const [showPass, setShowPass] = useState(false);
+  
+  const [phone, setPhone] = useState('');
+  const [verifyMode, setVerifyMode] = useState('email'); // 'email' | 'phone'
   
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const otpRefs = React.useRef([]);
@@ -89,9 +94,12 @@ export default function AuthPage() {
       else if (authView === 'verify') {
         const code = otp.join('');
         if (code.length < 6) throw new Error('Enter the 6-digit code');
-        // Usually verifyOTP is a separate API, but here we just proceed to reset
-        // passing the code as the token for reset later
-        setAuthView('reset');
+        if (verifyMode === 'phone') {
+          await verifyPhoneOtp(code);
+          navigate('/home', { replace: true });
+        } else {
+          setAuthView('reset');
+        }
       }
       else if (authView === 'reset') {
         const code = otp.join('');
@@ -99,6 +107,14 @@ export default function AuthPage() {
         if (pass !== confirmPass) throw new Error('Passwords do not match');
         await resetPassword(email, code, pass);
         setAuthView('success');
+      }
+      else if (authView === 'phone') {
+        if (!phone) throw new Error('Enter your phone number (e.g. +1234567890)');
+        setupRecaptcha('recaptcha-container');
+        await phoneLogin(phone);
+        setVerifyMode('phone');
+        setAuthView('verify');
+        toast.success('Verification code sent to ' + phone);
       }
     } catch (error) {
       toast.error(error.message || error.response?.data?.error || 'Operation failed');
@@ -459,13 +475,35 @@ export default function AuthPage() {
               </div>
             )}
 
+            {/* PHONE */}
+            {authView === 'phone' && (
+              <div className="auth-form-group">
+                <label>Phone Number</label>
+                <div className="auth-input-wrapper">
+                  <div className="input-icon" style={{ display: 'flex', alignItems: 'center' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                  </div>
+                  <input 
+                    type="tel" 
+                    className="auth-input"
+                    placeholder="+1234567890"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    required
+                  />
+                </div>
+                <div id="recaptcha-container" style={{ marginTop: '1rem' }}></div>
+              </div>
+            )}
+
             {/* SUBMIT BUTTON */}
             {authView !== 'success' && (
               <button type="submit" className="auth-submit-btn" disabled={loading} style={{ background: '#10b981', color: 'white' }}>
                 {loading ? 'Please wait...' : 
                   authView === 'login' ? 'Sign In' : 
                   authView === 'register' ? 'Create Account' : 
-                  authView === 'forgot' ? 'Send Verification Code' :
+                  authView === 'forgot' ? 'Send Verification Code' : 
+                  authView === 'phone' ? 'Send SMS Code' :
                   authView === 'verify' ? 'Verify Code' : 'Reset Password'} 
                 {!loading && (authView === 'login' ? <ArrowRight size={18} /> : null)}
               </button>
@@ -473,9 +511,9 @@ export default function AuthPage() {
           </form>
 
           {/* BACK LINKS */}
-          {(authView === 'forgot' || authView === 'verify') && (
+          {(authView === 'forgot' || authView === 'verify' || authView === 'phone') && (
             <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-              <button type="button" onClick={() => setAuthView('login')} style={{ color: '#2563eb', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+              <button type="button" onClick={() => { setAuthView('login'); setVerifyMode('email'); }} style={{ color: '#2563eb', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
                 <ArrowLeft size={16} /> Back to Login
               </button>
             </div>
@@ -511,6 +549,10 @@ export default function AuthPage() {
               </div>
               <button type="button" className="auth-google-btn" onClick={handleGoogle} disabled={loading}>
                 <GoogleSVG /> Continue with Google
+              </button>
+              <button type="button" className="auth-google-btn" onClick={() => setAuthView('phone')} disabled={loading} style={{ marginTop: '0.75rem', background: '#f8fafc' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                Continue with Phone
               </button>
               
               {authView === 'register' && (

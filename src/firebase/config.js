@@ -6,28 +6,27 @@
 // so the browser only needs Firebase Auth.
 // ─────────────────────────────────────────────────────────────────────────────
 import { initializeApp } from 'firebase/app';
-import { getAuth }       from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
+import { getAnalytics } from 'firebase/analytics';
 
 const firebaseConfig = {
-  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId:             import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: "AIzaSyCKRvIso4T0Lznwd9BRmzu-bm4Eb-gYbHI",
+  authDomain: "fintrack-523a2.firebaseapp.com",
+  projectId: "fintrack-523a2",
+  storageBucket: "fintrack-523a2.firebasestorage.app",
+  messagingSenderId: "297421338726",
+  appId: "1:297421338726:web:3a87cdffdc6325130d95a7",
+  measurementId: "G-3KFSBNGKH6"
 };
 
-let app, auth;
+let app, auth, analytics;
 
 try {
-  if (firebaseConfig.apiKey) {
-    app  = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-  } else {
-    console.warn('Firebase config is missing in .env — sign-in is disabled until VITE_FIREBASE_* values are set.');
-  }
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  analytics = getAnalytics(app);
 } catch (error) {
   console.error('Firebase initialization error:', error);
 }
 
-export { app, auth };
+export { app, auth, analytics };
