@@ -24,6 +24,8 @@ const ERROR_MESSAGES = {
   'auth/cancelled-popup-request': 'Sign-in popup was closed before finishing',
   'auth/popup-blocked':           'Popup blocked by the browser. Allow popups and retry',
   'auth/operation-not-allowed':   'This sign-in method is not enabled in the Firebase console',
+  'auth/configuration-not-found': 'Firebase Authentication is not set up for this project. Enable it in the Firebase console',
+  'auth/unauthorized-domain':     'This domain is not authorized for sign-in in the Firebase console',
 };
 
 function requireAuth() {
