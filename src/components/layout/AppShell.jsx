@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import AIChatbot from '../AIChatbot';
 import {
+  Award,
   Bell,
   BarChart3,
   ChartPie,
@@ -15,6 +16,7 @@ import {
   MoreHorizontal,
   ReceiptText,
   Repeat2,
+  Search,
   Settings,
   ShieldCheck,
   Tag,
