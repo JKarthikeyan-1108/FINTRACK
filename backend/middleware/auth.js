@@ -13,7 +13,8 @@ async function authenticate(req, res, next) {
 
     let decoded;
     try {
-      decoded = await auth().verifyIdToken(token);
+      const checkRevoked = process.env.FIREBASE_CHECK_REVOKED === 'true';
+      decoded = await auth().verifyIdToken(token, checkRevoked);
     } catch (err) {
       if (err.code === 'auth/id-token-expired') {
         return res.status(401).json({ error: 'Token expired', code: 'TOKEN_EXPIRED' });

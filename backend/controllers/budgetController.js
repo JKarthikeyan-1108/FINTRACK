@@ -1,6 +1,8 @@
 // controllers/budgetController.js
 const db = require('../config/db');
 const { getVisibleCategoryDocs } = require('../utils/firestoreHelpers');
+const { toMoney } = require('../utils/money');
+const { transactionInBudgetPeriod } = require('../utils/finance');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -29,58 +31,29 @@ exports.getAll = async (req, res, next) => {
       .get();
     const transactions = txQuery.docs.map(doc => doc.data()).filter(t => t.type === 'expense');
 
-    // Helper to get week number (ISO 8601)
-    const getWeek = (dateStr) => {
-      const d = new Date(dateStr);
-      d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
-      const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-      return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
-    };
-
-    // 4. Map budgets and calculate spent amount
     const mappedBudgets = budgets.map(b => {
       let spent = 0;
-      
-      const bStart = b.start_date ? new Date(b.start_date) : null;
-      
+
       transactions.forEach(t => {
-        // Match category
         if (b.category_id && t.category_id !== b.category_id) return;
-        if (!t.date || !bStart) return;
-
-        const tDate = new Date(t.date);
-        let inPeriod = false;
-
-        if (b.period === 'monthly') {
-          if (tDate.getMonth() === bStart.getMonth() && tDate.getFullYear() === bStart.getFullYear()) {
-            inPeriod = true;
-          }
-        } else if (b.period === 'yearly') {
-          if (tDate.getFullYear() === bStart.getFullYear()) {
-            inPeriod = true;
-          }
-        } else if (b.period === 'weekly') {
-          if (getWeek(t.date) === getWeek(b.start_date) && tDate.getFullYear() === bStart.getFullYear()) {
-            inPeriod = true;
-          }
-        } else if (b.period === 'custom') {
-          if (t.date >= b.start_date && t.date <= (b.end_date || '9999-12-31')) {
-            inPeriod = true;
-          }
-        } else {
-          inPeriod = true; // Fallback for unknown period
-        }
-
-        if (inPeriod) {
+        if (transactionInBudgetPeriod(t.date, b)) {
           spent += Number(t.amount || 0);
         }
       });
 
+      const amount = toMoney(b.amount);
+      const spentMoney = toMoney(spent);
+      const remaining = toMoney(amount - spentMoney);
+      const utilization = amount > 0 ? Number(((spentMoney / amount) * 100).toFixed(1)) : 0;
       return {
         ...b,
+        amount,
         category_name: categoriesMap[b.category_id]?.name || null,
         icon: categoriesMap[b.category_id]?.icon || null,
-        spent
+        spent: spentMoney,
+        remaining,
+        utilization,
+        exceeded: spentMoney > amount,
       };
     });
 
@@ -92,12 +65,15 @@ exports.create = async (req, res, next) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database not initialized' });
     const { category_id, name, amount, period, start_date, end_date, color } = req.body;
-    
+    if (!name || !(Number(amount) > 0)) {
+      return res.status(400).json({ error: 'Name and a positive amount are required' });
+    }
+
     const newBudgetRef = await db.collection('budgets').add({
       user_id: req.user.id,
       category_id: category_id || null,
       name,
-      amount: Number(amount),
+      amount: toMoney(amount),
       period: period || 'monthly',
       start_date,
       end_date: end_date || null,
@@ -124,14 +100,15 @@ exports.update = async (req, res, next) => {
       return res.status(404).json({ error: 'Budget not found' });
     }
 
+    const prev = doc.data();
     await docRef.update({
-      category_id: category_id || null,
-      name,
-      amount: Number(amount),
-      period: period || 'monthly',
-      start_date,
-      end_date: end_date || null,
-      color,
+      category_id: category_id !== undefined ? (category_id || null) : prev.category_id,
+      name: name !== undefined ? name : prev.name,
+      amount: amount !== undefined ? toMoney(amount) : prev.amount,
+      period: period || prev.period || 'monthly',
+      start_date: start_date !== undefined ? start_date : prev.start_date,
+      end_date: end_date !== undefined ? (end_date || null) : prev.end_date,
+      color: color !== undefined ? color : prev.color,
       updated_at: new Date()
     });
 

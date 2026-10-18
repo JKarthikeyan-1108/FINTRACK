@@ -1,40 +1,60 @@
-const inr = new Intl.NumberFormat('en-IN', {
-  style: 'currency',
-  currency: 'INR',
-  maximumFractionDigits: 0,
-});
+let currencyCode = 'INR';
+let localeCode = 'en-IN';
 
-const inrCompact = new Intl.NumberFormat('en-IN', {
-  style: 'currency',
-  currency: 'INR',
-  notation: 'compact',
-  maximumFractionDigits: 1,
-});
+export function setMoneyFormat({ currency, locale } = {}) {
+  if (currency) currencyCode = currency;
+  if (locale) localeCode = locale;
+}
+
+function formatter(compact = false) {
+  return new Intl.NumberFormat(localeCode, {
+    style: 'currency',
+    currency: currencyCode,
+    notation: compact ? 'compact' : 'standard',
+    maximumFractionDigits: compact ? 1 : 0,
+  });
+}
 
 export function money(value, compact = false) {
   const amount = Number(value || 0);
-  return compact ? inrCompact.format(amount) : inr.format(amount);
+  try {
+    return formatter(compact).format(amount);
+  } catch {
+    return `₹${amount.toLocaleString('en-IN')}`;
+  }
 }
 
 export function number(value) {
-  return Number(value || 0).toLocaleString('en-IN');
+  return Number(value || 0).toLocaleString(localeCode);
 }
 
 export function pct(value, digits = 0) {
   return `${Number(value || 0).toFixed(digits)}%`;
 }
 
+export function parseDate(value) {
+  if (!value) return null;
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+    const [y, m, d] = value.slice(0, 10).split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export function dateShort(value) {
-  if (!value) return 'No date';
-  return new Date(value).toLocaleDateString('en-IN', {
+  const date = parseDate(value);
+  if (!date) return 'No date';
+  return date.toLocaleDateString(localeCode, {
     day: 'numeric',
     month: 'short',
   });
 }
 
 export function dateLong(value) {
-  if (!value) return 'No date';
-  return new Date(value).toLocaleDateString('en-IN', {
+  const date = parseDate(value);
+  if (!date) return 'No date';
+  return date.toLocaleDateString(localeCode, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -42,6 +62,9 @@ export function dateLong(value) {
 }
 
 export function daysUntil(value) {
-  if (!value) return null;
-  return Math.ceil((new Date(value) - new Date()) / 86400000);
+  const date = parseDate(value);
+  if (!date) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.ceil((date - today) / 86400000);
 }

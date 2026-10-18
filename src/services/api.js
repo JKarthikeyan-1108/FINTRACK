@@ -45,12 +45,13 @@ api.interceptors.response.use(
 export const authAPI = {
   me:              ()        => api.get('/auth/me'),
   updateProfile:   data      => api.put('/auth/me',             data),
+  deleteAccount:   ()        => api.delete('/auth/me', { data: { confirm: 'DELETE' } }),
 };
 
 // ── Dashboard ──────────────────────────────────────────
 export const dashAPI = {
-  overview: ()      => api.get('/dashboard/overview'),
-  trends:   ()      => api.get('/dashboard/trends'),
+  overview: (params) => api.get('/dashboard/overview', { params }),
+  trends:   ()       => api.get('/dashboard/trends'),
 };
 
 // ── Transactions ───────────────────────────────────────
@@ -60,6 +61,7 @@ export const txnAPI = {
   create:  data           => api.post('/transactions',     data),
   update:  (id, data)     => api.put(`/transactions/${id}`, data),
   remove:  id             => api.delete(`/transactions/${id}`),
+  exportCsv: params       => api.get('/transactions/export', { params, responseType: 'blob' }),
 };
 
 // ── Accounts ───────────────────────────────────────────
@@ -92,6 +94,7 @@ export const goalAPI = {
   create:  data           => api.post('/goals',            data),
   update:  (id, data)     => api.put(`/goals/${id}`,       data),
   remove:  id             => api.delete(`/goals/${id}`),
+  contribute: (id, data)  => api.post(`/goals/${id}/contribute`, data),
 };
 
 // ── Investments ────────────────────────────────────────
@@ -108,6 +111,7 @@ export const loanAPI = {
   create:  data           => api.post('/loans',            data),
   update:  (id, data)     => api.put(`/loans/${id}`,       data),
   remove:  id             => api.delete(`/loans/${id}`),
+  pay:     id             => api.post(`/loans/${id}/pay`),
 };
 
 // ── Subscriptions ──────────────────────────────────────

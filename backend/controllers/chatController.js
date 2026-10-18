@@ -1,46 +1,46 @@
-// controllers/chatController.js
 const db = require('../config/db');
+const { toMoney } = require('../utils/money');
 
 exports.chat = async (req, res, next) => {
   try {
-    if (!db) return res.status(500).json({ error: 'Database not initialized' });
     const { message } = req.body;
-    if (!message) return res.status(400).json({ error: 'Message is required' });
+    if (!message || !String(message).trim()) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
 
-    const userMessage = message.toLowerCase();
-    let reply = "I'm your FinTrack AI assistant! I'm still learning, but I can help you analyze your spending if you ask me about your 'expenses', 'budget', or 'savings'.";
+    const userMessage = String(message).toLowerCase();
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    const prefix = `${year}-${month}`;
+
+    const txQuery = await db.collection('transactions').where('user_id', '==', req.user.id).get();
+    const txs = txQuery.docs.map(doc => doc.data());
+    const monthTx = txs.filter(t => t.date && String(t.date).startsWith(prefix));
+    const income = toMoney(monthTx.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount || 0), 0));
+    const expense = toMoney(monthTx.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount || 0), 0));
+    const savings = toMoney(income - expense);
+
+    let reply = `This month: income ${income}, expenses ${expense}, net ${savings}. Ask about expenses, budgets, or savings for more detail.`;
 
     if (userMessage.includes('expense') || userMessage.includes('spend')) {
-      const now = new Date();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const year = now.getFullYear();
-      const startOfMonth = `${year}-${month}-01`;
-      const endOfMonth = `${year}-${month}-31`;
-
-      const txQuery = await db.collection('transactions')
-        .where('user_id', '==', req.user.id)
-        .get();
-        
-      const total = txQuery.docs
-        .map(doc => doc.data())
-        .filter(t => t.type === 'expense' && t.date >= startOfMonth && t.date <= endOfMonth)
-        .reduce((sum, t) => sum + Number(t.amount || 0), 0);
-      reply = `You've spent **₹${total}** so far this month. Make sure to keep an eye on your budgets!`;
-    } 
-    else if (userMessage.includes('budget') || userMessage.includes('limit')) {
-      reply = "Your budgets are looking good, but you are nearing your limit for 'Dining Out'. Consider cooking at home this weekend!";
-    }
-    else if (userMessage.includes('save') || userMessage.includes('savings')) {
-      reply = "Based on your recent income and expenses, you are on track to save 20% of your income this month. Great job! Keep it up.";
-    }
-    else if (userMessage.includes('hello') || userMessage.includes('hi')) {
-      reply = "Hello there! How can I help you manage your finances today?";
+      reply = `You have recorded ${expense} in expenses so far this month (${prefix}).`;
+    } else if (userMessage.includes('income')) {
+      reply = `You have recorded ${income} in income so far this month (${prefix}).`;
+    } else if (userMessage.includes('budget') || userMessage.includes('limit')) {
+      const budgetQuery = await db.collection('budgets').where('user_id', '==', req.user.id).get();
+      if (budgetQuery.empty) {
+        reply = 'You have no budgets yet. Create one under Budgets to track category limits.';
+      } else {
+        reply = `You currently have ${budgetQuery.size} budget(s). Open the Budgets page to see spent vs limit for each category.`;
+      }
+    } else if (userMessage.includes('save') || userMessage.includes('savings')) {
+      const rate = income > 0 ? ((savings / income) * 100).toFixed(1) : '0.0';
+      reply = `This month your net cash flow is ${savings} (${rate}% of income).`;
+    } else if (userMessage.includes('hello') || userMessage.includes('hi')) {
+      reply = 'Hello. I can summarize this month’s income, expenses, and savings from your FinTrack records.';
     }
 
-    // Simulate network delay for realism
-    setTimeout(() => {
-      res.json({ reply });
-    }, 800);
-    
+    res.json({ reply });
   } catch (err) { next(err); }
 };

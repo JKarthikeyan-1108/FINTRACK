@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { authAPI } from '../services/api';
 import { auth } from '../firebase/config';
-import { onFirebaseIdToken, firebaseSignOut, firebaseEmailSignIn, firebaseEmailSignUp, firebaseGoogleSignIn, firebasePasswordReset, firebasePhoneSignIn, firebaseVerifyOtp } from '../firebase/authService';
+import { onFirebaseIdToken, firebaseSignOut, firebaseEmailSignIn, firebaseEmailSignUp, firebaseGoogleSignIn, firebasePasswordReset, firebasePhoneSignIn, firebaseVerifyOtp, firebaseSendEmailVerification } from '../firebase/authService';
+import { setMoneyFormat } from '../lib/format';
 
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
@@ -53,21 +54,24 @@ export function AuthProvider({ children }) {
         try {
           const idToken = await firebaseUser.getIdToken();
           setToken(idToken);
-          setUser({
+          const nextUser = {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
             name: firebaseUser.displayName,
             avatar_url: firebaseUser.photoURL,
-            phone: firebaseUser.phoneNumber
-          });
-          
-          // Try to fetch extended profile from backend if available
+            phone: firebaseUser.phoneNumber,
+            emailVerified: firebaseUser.emailVerified,
+          };
+          setUser(nextUser);
+
           try {
             const { data } = await authAPI.me();
             if (data && data.user) {
-              setUser(prev => ({ ...prev, ...data.user }));
+              const merged = { ...nextUser, ...data.user, emailVerified: firebaseUser.emailVerified };
+              setUser(merged);
+              setMoneyFormat({ currency: merged.currency, locale: merged.date_format });
             }
-          } catch (e) { /* ignore backend profile fetch errors */ }
+          } catch { /* profile is created on first authenticated API call */ }
         } catch (e) {
           console.error('Error fetching token:', e);
         }
@@ -96,8 +100,13 @@ export function AuthProvider({ children }) {
     await firebasePasswordReset(email);
   };
 
-  const resetPassword = async (email, token, newPassword) => {
-    throw new Error('Please check your email for the password reset link.');
+  const sendVerificationEmail = async () => {
+    await firebaseSendEmailVerification();
+  };
+
+  const deleteAccount = async () => {
+    await authAPI.deleteAccount();
+    await firebaseSignOut();
   };
 
   const phoneLogin = async (phoneNumber) => {
@@ -156,7 +165,8 @@ export function AuthProvider({ children }) {
         emailLogin,
         emailRegister,
         forgotPassword,
-        resetPassword,
+        sendVerificationEmail,
+        deleteAccount,
         updateProfile,
         logout,
       }}

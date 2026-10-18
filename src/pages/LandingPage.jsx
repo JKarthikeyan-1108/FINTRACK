@@ -172,7 +172,7 @@ export default function LandingPage() {
             <div className="landing-security-icon"><Smartphone size={32} /></div>
           </div>
           <h2>Bank-grade security, by default.</h2>
-          <p>JWT HS256 authentication, bcrypt password hashing, input validation, and rate limiting protect every request. Your data never leaves your control.</p>
+          <p>Firebase Authentication, server-side ID-token verification, input validation, and rate limiting protect every request. Financial records stay scoped to the signed-in user.</p>
         </div>
       </section>
 

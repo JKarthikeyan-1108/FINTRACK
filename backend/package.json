@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "fintrack-backend",
   "version": "1.0.0",
   "description": "FinTrack REST API - Node.js + Express + Firebase (Auth + Firestore)",
@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "db:init": "node config/initDB.js"
+    "db:init": "node config/initDB.js",
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

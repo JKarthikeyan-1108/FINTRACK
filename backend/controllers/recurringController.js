@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { getVisibleCategoryDocs } = require('../utils/firestoreHelpers');
+const { toMoney } = require('../utils/money');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -56,7 +57,7 @@ exports.create = async (req, res, next) => {
       account_id,
       category_id: category_id || null,
       title,
-      amount: Number(amount),
+      amount: toMoney(amount),
       type,
       frequency,
       next_run: String(next_run).slice(0, 10),
@@ -95,7 +96,7 @@ exports.update = async (req, res, next) => {
       account_id: account_id || doc.data().account_id,
       category_id: category_id || null,
       title,
-      amount: Number(amount),
+      amount: toMoney(amount),
       type,
       frequency,
       next_run: String(next_run).slice(0, 10),

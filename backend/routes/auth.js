@@ -7,5 +7,6 @@ const { authenticate } = require('../middleware/auth');
 // These routes only expose the signed-in user's Firestore profile.
 router.get('/me', authenticate, authController.me);
 router.put('/me', authenticate, authController.updateProfile);
+router.delete('/me', authenticate, authController.deleteAccount);
 
 module.exports = router;

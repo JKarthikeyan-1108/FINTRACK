@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { toMoney } = require('../utils/money');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -22,13 +23,13 @@ exports.getAll = async (req, res, next) => {
         return sum;
       }, 0);
       
-      const current_balance = Number(a.balance || 0) + txSum;
+      const current_balance = toMoney(Number(a.balance || 0) + txSum);
       total += current_balance;
 
       return {
         ...a,
         balance: current_balance,
-        opening_balance: Number(a.balance || 0)
+        opening_balance: toMoney(a.balance || 0)
       };
     });
 
@@ -41,7 +42,7 @@ exports.getAll = async (req, res, next) => {
       return tA - tB;
     });
 
-    res.json({ data: mappedRows, total_balance: total });
+    res.json({ data: mappedRows, total_balance: toMoney(total) });
   } catch(err) { next(err); }
 };
 
@@ -52,9 +53,9 @@ exports.create = async (req, res, next) => {
     
     const newAcctRef = await db.collection('accounts').add({
       user_id: req.user.id,
-      name,
+      name: String(name).trim(),
       type: type || 'savings',
-      balance: balance || 0,
+      balance: toMoney(balance || 0),
       color: color || '#4a9eff',
       is_default: false,
       created_at: new Date(),
@@ -70,21 +71,22 @@ exports.update = async (req, res, next) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database not initialized' });
     const { id } = req.params;
-    const { name, color, balance } = req.body;
+    const { name, color, balance, type } = req.body;
     
     const docRef = db.collection('accounts').doc(id);
     const doc = await docRef.get();
     
     if (!doc.exists || doc.data().user_id !== req.user.id) {
-      return res.status(403).json({ error: 'Account not found or access denied' });
+      return res.status(404).json({ error: 'Account not found or access denied' });
     }
 
-    await docRef.update({
-      name,
-      color,
-      balance,
-      updated_at: new Date()
-    });
+    const updates = { updated_at: new Date() };
+    if (name) updates.name = String(name).trim();
+    if (color) updates.color = color;
+    if (type) updates.type = type;
+    if (balance !== undefined && balance !== '') updates.balance = toMoney(balance);
+
+    await docRef.update(updates);
 
     const updatedDoc = await docRef.get();
     res.json({ data: { id: updatedDoc.id, ...updatedDoc.data() } });
@@ -105,6 +107,14 @@ exports.remove = async (req, res, next) => {
     
     if (doc.data().is_default) {
       return res.status(403).json({ error: 'Cannot delete default account' });
+    }
+
+    const txQuery = await db.collection('transactions').where('user_id', '==', req.user.id).get();
+    const hasTx = txQuery.docs.some(d => d.data().account_id === id);
+    if (hasTx) {
+      return res.status(409).json({
+        error: 'Cannot delete an account that still has transactions. Reassign or delete those transactions first.',
+      });
     }
     
     await docRef.delete();

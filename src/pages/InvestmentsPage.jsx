@@ -82,19 +82,6 @@ const PLANS = {
   ],
 };
 
-const GROWTH_DATA = {
-  labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'],
-  datasets: [{
-    data: [310000, 340000, 325000, 380000, 420000, 450000, 487000],
-    borderColor: '#315f3b',
-    borderWidth: 3,
-    fill: true,
-    tension: 0.4,
-    pointRadius: 0,
-    backgroundColor: 'rgba(111,179,110,.18)',
-  }],
-};
-
 const blankForm = () => ({ name: '', category: 'mutual_fund', invested_amount: '', current_value: '', sip_amount: '', notes: '' });
 
 function useCountUp(target, duration = 900) {
@@ -133,9 +120,9 @@ export default function InvestmentsPage() {
   const totalInvested = myInvests.reduce((sum, inv) => sum + Number(inv.invested_amount), 0);
   const totalCurrent = myInvests.reduce((sum, inv) => sum + Number(inv.current_value), 0);
   const totalGain = totalCurrent - totalInvested;
-  const displayTotal = totalCurrent || 487000;
+  const displayTotal = totalCurrent;
   const countUpVal = useCountUp(displayTotal);
-  const returnPct = totalInvested > 0 ? (totalGain / totalInvested) * 100 : 28.2;
+  const returnPct = totalInvested > 0 ? (totalGain / totalInvested) * 100 : 0;
 
   const groups = CATS.map(cat => ({
     ...cat,
@@ -145,10 +132,7 @@ export default function InvestmentsPage() {
   const pieData = groups.length ? {
     labels: groups.map(group => group.name),
     datasets: [{ data: groups.map(group => group.total), backgroundColor: ['#6fb36e', '#4b82b8', '#d65f87', '#c58a21', '#8a68c3', '#58a79f'], borderWidth: 0 }],
-  } : {
-    labels: ['Mutual Funds', 'Stocks', 'Gold', 'Fixed Income'],
-    datasets: [{ data: [40, 25, 15, 20], backgroundColor: ['#8a68c3', '#d65f87', '#c58a21', '#4b82b8'], borderWidth: 0 }],
-  };
+  } : null;
 
   async function addInvestment() {
     if (!form.name) {
@@ -181,32 +165,29 @@ export default function InvestmentsPage() {
           <div>
             <span className="hero-balance-label">Total portfolio value</span>
             <strong>{money(countUpVal)}</strong>
-            <small>{returnPct >= 0 ? '+' : ''}{returnPct.toFixed(1)}% estimated return</small>
+            <small>{totalInvested > 0 ? `${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(1)}% user-entered valuation` : 'Add holdings to track user-entered value'}</small>
           </div>
           <div className="metric-icon" style={{ width: 50, height: 50 }}>
             <TrendingUp size={26} />
           </div>
         </div>
-        <div className="chart-box" style={{ height: 92, marginTop: 0 }}>
-          <Line data={GROWTH_DATA} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }} />
-        </div>
         <div className="hero-balance-grid">
           <div className="mini-stat">
             <span>Invested</span>
-            <strong>{money(totalInvested || 380000)}</strong>
+            <strong>{money(totalInvested)}</strong>
           </div>
           <div className="mini-stat">
-            <span>Gain</span>
-            <strong className={totalGain >= 0 ? 'amount-income' : 'amount-expense'}>{money(Math.abs(totalGain) || 107000)}</strong>
+            <span>Gain / loss</span>
+            <strong className={totalGain >= 0 ? 'amount-income' : 'amount-expense'}>{money(Math.abs(totalGain))}</strong>
           </div>
         </div>
       </Card>
 
       <div className="metric-grid" style={{ marginBottom: 14 }}>
-        <MetricCard label="Portfolio" value={money(displayTotal)} helper="Current value" tone="mint" icon={<WalletCards />} />
-        <MetricCard label="Invested" value={money(totalInvested || 380000)} helper="Principal" tone="blue" icon={<Banknote />} />
-        <MetricCard label="Gain" value={money(Math.abs(totalGain) || 107000)} helper="Unrealized" tone={totalGain >= 0 ? 'amber' : 'pink'} icon={<TrendingUp />} />
-        <MetricCard label="Assets" value={String(myInvests.length || 4)} helper="Tracked types" tone="purple" icon={<Coins />} />
+        <MetricCard label="Portfolio" value={money(displayTotal)} helper="User-entered value" tone="mint" icon={<WalletCards />} />
+        <MetricCard label="Invested" value={money(totalInvested)} helper="Principal" tone="blue" icon={<Banknote />} />
+        <MetricCard label="Gain" value={money(Math.abs(totalGain))} helper="Unrealized" tone={totalGain >= 0 ? 'amber' : 'pink'} icon={<TrendingUp />} />
+        <MetricCard label="Assets" value={String(myInvests.length)} helper="Tracked holdings" tone="purple" icon={<Coins />} />
       </div>
 
       <div className="dashboard-grid">
@@ -468,12 +449,19 @@ export default function InvestmentsPage() {
         <aside>
           <Card>
             <div className="section-title" style={{ marginTop: 0 }}><span>Allocation</span></div>
-            <div style={{ height: 210, position: 'relative' }}>
-              <Doughnut data={pieData} options={{ responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { display: false } } }} />
-            </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-              {pieData.labels.map((label, index) => <Chip key={label} tone={index % 2 ? 'blue' : 'mint'}>{label}</Chip>)}
-            </div>
+            {pieData ? (
+              <>
+                <div style={{ height: 210, position: 'relative' }}>
+                  <Doughnut data={pieData} options={{ responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { display: false } } }} />
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                  {pieData.labels.map((label, index) => <Chip key={label} tone={index % 2 ? 'blue' : 'mint'}>{label}</Chip>)}
+                </div>
+              </>
+            ) : (
+              <p style={{ fontSize: 13, color: '#64748b' }}>Allocation appears after you add holdings with a current value.</p>
+            )}
+            <p style={{ fontSize: 12, color: '#64748b', marginTop: 12 }}>Values are user-entered. FinTrack does not fetch live market prices.</p>
           </Card>
         </aside>
       </div>

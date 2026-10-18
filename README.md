@@ -1,176 +1,128 @@
-# 💚 FinTrack v2.0 — Premium Finance Platform
+# 💚 FinTrack — Premium Personal Finance Management Platform
 
-A production-ready, full-stack personal finance app with Cashew-inspired UI, JWT auth, and complete feature set.
-
----
-
-## 🚀 Quick Start
-
-### Option A — Docker (Recommended)
-```bash
-cp .env.deploy .env
-# Edit .env and change all CHANGE_ME values
-
-docker-compose up --build -d
-# App runs at http://localhost
-```
-
-### Option B — Local Development
-```bash
-# 1. Start MySQL (or use Docker for just the DB)
-docker-compose up mysql -d
-
-# 2. Backend
-cd backend
-cp .env.example .env          # fill in your values
-npm install
-node config/initDB.js         # create tables + seed categories
-npm run dev                   # http://localhost:5000
-
-# 3. Frontend (new terminal)
-cd ..
-npm install
-npm run dev                   # http://localhost:5173
-```
+FinTrack is a full-stack, enterprise-grade personal finance application with a Cashew-inspired modern UI, Firebase Authentication, secure serverless/standalone Node.js backend, and Cloud Firestore persistence.
 
 ---
 
-## 🔐 Authentication
+## 🏗️ Architecture & Technology Stack
 
-### Demo mode (out of the box)
-| Method | How to test |
-|---|---|
-| Phone OTP | Any 10-digit number → OTP shown on screen |
-| Google | Click button → demo payload used |
-| Email Login | Register first, then login |
-
-### Production mode
-1. Set `DEMO_OTP=false` in `.env`
-2. Integrate [Twilio](https://twilio.com) or [MSG91](https://msg91.com) in `authController.js` → `sendOTP()`
-3. For real Google OAuth: validate `id_token` with `google-auth-library` in `googleLogin()`
-4. For Firebase auth: uncomment `src/firebase/config.js` and `authService.js`
+- **Frontend**: React 18, Vite, React Router v6, Chart.js, Lucide Icons, Framer Motion.
+- **Backend**: Node.js & Express, configured for dual deployment:
+  - **Standalone Mode**: `backend/server.js` (local dev, Docker, VPS).
+  - **Serverless Mode**: `api/index.js` (Vercel Serverless Functions).
+- **Authentication**: Firebase Authentication (Email/Password, Google OAuth, Phone OTP via reCAPTCHA, Password Reset, Email Verification).
+- **Security & Authorization**: Firebase Admin SDK server-side token verification (`verifyIdToken`), user-scoped queries (`req.user.id`), Helmet HTTP security headers, CORS origin filtering, rate limiting, and spreadsheet formula injection protection.
+- **Persistence**: Google Cloud Firestore with ACID transactional operations for contributions, EMI payments, user provisioning, and category seeding.
+- **Deployment**: Vercel ready via `vercel.json` (SPA client routing + serverless API rewrites).
 
 ---
 
 ## 🗺️ Feature Map
 
-| Route | Feature | Status |
-|---|---|---|
-| `/login` | Google + Email + Phone OTP auth | ✅ |
-| `/home` | Net worth, trends chart, recent transactions | ✅ |
-| `/transactions` | Add/edit/delete, filters, search, monthly summary | ✅ |
-| `/investments` | 6 categories, 12 plans, portfolio tracker, charts | ✅ |
-| `/budgets` | Create/edit budgets with progress rings | ✅ |
-| `/goals` | Goals with deposit flow, progress tracking | ✅ |
-| `/loans` | EMI tracker + built-in calculator | ✅ |
-| `/subscriptions` | Recurring payment tracker with pause/resume | ✅ |
-| `/settings` | Profile, JWT status, dark mode prefs | ✅ |
-| `/jwt` | JWT decoder + token inspector | ✅ |
+| Module | Route | Capabilities | Status |
+|---|---|---|---|
+| **Auth** | `/login` | Email/Password, Google OAuth, Phone OTP with reCAPTCHA, Password Reset | ✅ Verified |
+| **Dashboard** | `/home` | Net worth, monthly income/expense totals, cash flow trends, category breakdown, account balances, recent transactions | ✅ Verified |
+| **Transactions** | `/transactions` | CRUD, income/expense types, category/account linking, pagination, date & category filters, search, CSV export with formula injection escaping | ✅ Verified |
+| **Calculators** | `/calculators` | 6 financial planning tools: Loan EMI, SIP / Mutual Fund, Compound Interest, Simple Interest, Savings Goal, 50/30/20 Budget | ✅ Verified |
+| **Budgets** | `/budgets` | Category limits, monthly/yearly/custom period spending tracking, utilization percentage, exceeded warnings | ✅ Verified |
+| **Savings Goals** | `/goals` | Target amounts & dates, deposit/withdraw transaction history, automated progress tracking | ✅ Verified |
+| **Investments** | `/investments` | Portfolio allocation, asset tracking (Stocks, Mutual Funds, Gold, PPF, NPS), invested capital vs current valuation, P&L | ✅ Verified |
+| **Loans & EMI** | `/loans` | Principal, interest rate, tenure, reducing-balance EMI schedule, monthly repayment tracking (`payEmi`) | ✅ Verified |
+| **Subscriptions** | `/subscriptions` | Recurring expenses, billing intervals (monthly/yearly/weekly), active/paused toggles, monthly burn projection | ✅ Verified |
+| **Categories** | `/categories` | Default system categories + custom user categories with color and emoji support | ✅ Verified |
+| **Settings** | `/settings` | Profile details, currency preferences, date formatting, dark mode toggle, secure account deletion | ✅ Verified |
+| **Security / JWT** | `/jwt` | Developer token inspector, decoded payload, countdown timer, force refresh | ✅ Verified |
+| **AI Assistant** | Floating widget | FinTrack financial chatbot analyzing monthly cash flow and budgets | ✅ Verified |
 
 ---
 
-## 🏗️ Architecture
+## 🚀 Quick Start (Local Development)
 
-```
-fintrack-upgraded/
-├── backend/                    # Node.js + Express + MySQL API
-│   ├── config/
-│   │   ├── db.js               # MySQL2 connection pool
-│   │   ├── jwt.js              # Sign/verify tokens
-│   │   └── initDB.js           # Schema + seed (run once)
-│   ├── controllers/            # Business logic (10 modules)
-│   ├── routes/                 # REST endpoints (10 modules)
-│   ├── middleware/auth.js      # JWT authentication guard
-│   └── server.js               # Express app entry point
-├── src/                        # React 18 frontend
-│   ├── pages/                  # 10 full-feature pages
-│   ├── components/layout/      # AppShell + bottom nav
-│   ├── context/AuthContext.jsx # Auth state + token refresh
-│   ├── services/api.js         # Axios client + auto-refresh
-│   ├── firebase/               # Firebase config (optional)
-│   └── index.css               # Design system (CSS vars)
-├── Dockerfile                  # Frontend multi-stage build
-├── nginx.conf                  # Production nginx config
-└── docker-compose.yml          # Full stack orchestration
+### Prerequisites
+- Node.js 18+ (tested on Node v22)
+- npm 9+
+
+### 1. Backend Setup
+```bash
+cd backend
+npm install
+npm test            # Run automated unit and integration tests (17 tests)
+npm run dev         # Starts backend on http://localhost:5000
 ```
 
----
-
-## 🔌 API Reference
-
-### Auth
-| Method | Endpoint | Body |
-|---|---|---|
-| POST | `/api/auth/send-otp` | `{ phone }` |
-| POST | `/api/auth/verify-otp` | `{ phone, otp }` |
-| POST | `/api/auth/google` | `{ name, email, google_id }` |
-| POST | `/api/auth/email/register` | `{ name, email, password }` |
-| POST | `/api/auth/email/login` | `{ email, password }` |
-| POST | `/api/auth/refresh` | — (uses cookie) |
-| POST | `/api/auth/logout` | — |
-| GET  | `/api/auth/me` | — |
-
-### Protected (Bearer token required)
-| Method | Endpoint | Notes |
-|---|---|---|
-| GET  | `/api/dashboard/overview` | Net worth, income, expenses, recent txns |
-| GET  | `/api/dashboard/trends` | 6-month income/expense chart data |
-| CRUD | `/api/transactions` | `?page&limit&search&type&from&to` |
-| GET  | `/api/transactions/summary` | `?month&year` → category breakdown |
-| CRUD | `/api/accounts` | Bank accounts, wallet |
-| CRUD | `/api/categories` | Default + custom categories |
-| CRUD | `/api/budgets` | Spending limits with auto-tracking |
-| CRUD | `/api/goals` | Savings goals with deposit tracking |
-| CRUD | `/api/investments` | Portfolio positions |
-| CRUD | `/api/loans` | EMI tracking |
-| CRUD | `/api/subscriptions` | Recurring bills |
+### 2. Frontend Setup
+```bash
+# In project root
+npm install
+npm test            # Runs backend test suite from root
+npm run build       # Validates production build (Vite)
+npm run dev         # Starts frontend on http://localhost:5173
+```
 
 ---
 
-## 🎨 Design System
+## 🔐 Environment Variables
 
-| Token | Value |
-|---|---|
-| Background | `#020204` |
-| Card | `#0d0d0f` |
-| Border | `#111116` |
-| Accent green | `#4ade80` |
-| Heading font | Clash Display |
-| Body font | Plus Jakarta Sans |
-| Border radius | 14–24px |
+### Frontend (`.env` in root)
+```env
+VITE_API_URL=/api
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+```
 
----
+### Backend (`backend/.env`)
+```env
+PORT=5000
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
 
-## 🔒 Security
+# Firebase Admin SDK Credentials (Choose one of the three options):
+# Option 1: File path (git-ignored)
+FIREBASE_SERVICE_ACCOUNT_PATH=./serviceAccountKey.json
 
-- JWT HS256 with 30-min access + 7-day rotating refresh tokens
-- Refresh tokens hashed (SHA-256) before DB storage
-- HTTP-only SameSite=Strict cookie for refresh token
-- Rate limiting: 30 auth req/15min, 500 API req/15min
-- Helmet.js security headers
-- Non-root Docker user (`fintrack`)
-- Input validation on all endpoints
-- User isolation: all queries scoped to `user_id`
+# Option 2: JSON string (Recommended for Vercel / Cloud environment variables)
+# FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
 
----
-
-## ☁️ Deployment Checklist
-
-- [ ] Change all `CHANGE_ME` values in `.env`
-- [ ] Generate JWT secrets: `openssl rand -hex 32`
-- [ ] Set `DEMO_OTP=false` in production
-- [ ] Integrate real SMS provider (Twilio/MSG91)
-- [ ] Point `FRONTEND_URL` to your domain
-- [ ] Set up HTTPS (Certbot/Cloudflare)
-- [ ] Configure MySQL backups
-- [ ] Set up monitoring (PM2/Uptime Robot)
+# Option 3: Individual environment variables
+# FIREBASE_PROJECT_ID=your_project_id
+# FIREBASE_CLIENT_EMAIL=your_service_account_email
+# FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."
+```
 
 ---
 
-## 📦 Tech Stack
+## ☁️ Vercel Deployment
 
-- **Frontend**: React 18, React Router v6, Chart.js, React Hot Toast
-- **Backend**: Node.js 20, Express 4, MySQL 8, JWT (jsonwebtoken)
-- **Auth**: Phone OTP, Google OAuth, Email/Password
-- **Container**: Docker, Nginx, MySQL 8
-- **Fonts**: Clash Display, Plus Jakarta Sans (Google Fonts)
+FinTrack is pre-configured for Vercel with single-repository deployment:
+
+- **Root Directory**: `.`
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+- **Install Command**: `npm install && npm install --prefix backend`
+
+### Vercel Environment Variables:
+1. `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`
+2. `FIREBASE_SERVICE_ACCOUNT_JSON`: Complete minified service account JSON.
+3. `NODE_ENV`: `production`
+
+---
+
+## 🧪 Testing
+
+FinTrack uses Node's native test runner (`node --test`), providing sub-second test execution without third-party test runners:
+
+```bash
+npm test
+```
+
+### Coverage includes:
+- **Finance Utilities**: Reducing-balance EMI, zero-interest loans, amortization schedules, compound interest with varied compounding frequencies, simple interest, monthly SIP projections, savings goal requirements, budget period matching (weekly, monthly, yearly, custom).
+- **Money & Decimal Safety**: Strict 2-decimal place rounding and floating-point arithmetic protection.
+- **Security & Data Sanitization**: Formula injection neutralization on CSV exports (escaping `=`, `+`, `-`, `@`), and BOM insertion.
+- **API Health & Route Integrity**: System status reporting, version checks, and 404 handlers.
+- **Authentication & Authorization**: Strict 401 rejection on unauthenticated requests across all 11 protected routes, and rejection of invalid / expired tokens.

@@ -1,14 +1,15 @@
 // controllers/dashboardController.js
 const db = require('../config/db');
 const { getVisibleCategoryDocs } = require('../utils/firestoreHelpers');
+const { toMoney } = require('../utils/money');
 
 exports.overview = async (req, res, next) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database not initialized' });
     const uid = req.user.id;
     const now  = new Date();
-    const month = now.getMonth() + 1;
-    const year  = now.getFullYear();
+    const month = Number(req.query.month) || now.getMonth() + 1;
+    const year  = Number(req.query.year) || now.getFullYear();
 
     // Fetch accounts
     const accQuery = await db.collection('accounts').where('user_id', '==', uid).get();
@@ -36,7 +37,20 @@ exports.overview = async (req, res, next) => {
 
     // Fetch investments
     const invQuery = await db.collection('investments').where('user_id', '==', uid).get();
-    const portfolio = invQuery.docs.reduce((sum, doc) => sum + Number(doc.data().current_value || 0), 0);
+    const investments = invQuery.docs.map(doc => {
+      const d = doc.data();
+      const invested = toMoney(d.invested_amount);
+      const current = toMoney(d.current_value);
+      return {
+        id: doc.id,
+        ...d,
+        invested_amount: invested,
+        current_value: current,
+        profit_loss: toMoney(current - invested),
+        valuation_source: d.valuation_source || 'user_entered',
+      };
+    });
+    const portfolio = toMoney(investments.reduce((sum, d) => sum + Number(d.current_value || 0), 0));
 
     // Calculate Accounts & Net Worth
     let accountsTotal = 0;
@@ -48,13 +62,13 @@ exports.overview = async (req, res, next) => {
         return sum;
       }, 0);
       
-      const current_balance = Number(a.balance || 0) + txSum;
+      const current_balance = toMoney(Number(a.balance || 0) + txSum);
       accountsTotal += current_balance;
 
       return {
         ...a,
         balance: current_balance,
-        opening_balance: Number(a.balance || 0)
+        opening_balance: toMoney(a.balance || 0)
       };
     });
 
@@ -87,18 +101,58 @@ exports.overview = async (req, res, next) => {
       category_icon: categoriesMap[t.category_id]?.icon || null
     }));
 
-    const savings = monthlyIncome - monthlyExpenses;
-    const savingsRate = monthlyIncome > 0 ? ((savings / monthlyIncome) * 100).toFixed(1) : 0;
+    const savings = toMoney(monthlyIncome - monthlyExpenses);
+    const savingsRate = monthlyIncome > 0 ? Number(((savings / monthlyIncome) * 100).toFixed(1)) : 0;
+
+    const catSpend = {};
+    transactionsData.forEach(t => {
+      if (t.type !== 'expense' || !t.date || !t.date.startsWith(`${year}-${paddedMonth}`)) return;
+      const key = t.category_id || 'uncategorized';
+      catSpend[key] = (catSpend[key] || 0) + Number(t.amount || 0);
+    });
+    const category_spending = Object.entries(catSpend)
+      .map(([id, total]) => ({
+        category_id: id,
+        name: categoriesMap[id]?.name || 'Uncategorized',
+        icon: categoriesMap[id]?.icon || '💰',
+        color: categoriesMap[id]?.color || '#64748b',
+        total: toMoney(total),
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    const [loanSnap, subSnap, budgetSnap, goalSnap] = await Promise.all([
+      db.collection('loans').where('user_id', '==', uid).get(),
+      db.collection('subscriptions').where('user_id', '==', uid).get(),
+      db.collection('budgets').where('user_id', '==', uid).get(),
+      db.collection('goals').where('user_id', '==', uid).get(),
+    ]);
+
+    const loans = loanSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const subscriptions = subSnap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(s => s.is_active !== false)
+      .sort((a, b) => String(a.next_due || '').localeCompare(String(b.next_due || '')))
+      .slice(0, 5);
+    const budgets = budgetSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const goals = goalSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
     res.json({
-      net_worth:    netWorth,
-      income:       monthlyIncome,
-      expenses:     monthlyExpenses,
-      savings:      savings,
-      savings_rate: Number(savingsRate),
-      portfolio:    portfolio,
+      net_worth:    toMoney(netWorth),
+      income:       toMoney(monthlyIncome),
+      expenses:     toMoney(monthlyExpenses),
+      savings,
+      savings_rate: savingsRate,
+      portfolio,
+      month,
+      year,
       recent_transactions: recentTxns,
       accounts:     mappedAccounts,
+      investments:  investments.slice(0, 5),
+      loans:        loans.slice(0, 5),
+      subscriptions,
+      budgets,
+      goals,
+      category_spending,
     });
   } catch (err) { next(err); }
 };

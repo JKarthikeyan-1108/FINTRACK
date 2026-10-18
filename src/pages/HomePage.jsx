@@ -254,40 +254,35 @@ export default function HomePage() {
               <Card tone="plain" style={{ flex: 1, minWidth: 280, padding: 20, boxShadow: '0 12px 32px rgba(0,0,0,0.06)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                   <span style={{ fontSize: '1rem', color: '#0f172a', fontWeight: 700 }}>Investments</span>
-                  <span style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: 600, cursor: 'pointer' }}>View All &rarr;</span>
+                  <span style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/investments')}>View All &rarr;</span>
                 </div>
-                
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                    <div style={{ fontSize: '1.5rem', background: '#f1f5f9', padding: 8, borderRadius: 12 }}>📈</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <strong style={{ fontSize: '0.9rem', color: '#334155' }}>Mutual Funds</strong>
-                        <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{money(112500)}</strong>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Invested: {money(100000)}</span>
-                        <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 600 }}>+12.5%</span>
+                {(overview?.investments || []).length === 0 && (
+                  <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>No investments yet</div>
+                )}
+                {(overview?.investments || []).slice(0, 3).map(inv => {
+                  const invested = Number(inv.invested_amount || 0);
+                  const current = Number(inv.current_value || 0);
+                  const gainPct = invested > 0 ? ((current - invested) / invested) * 100 : 0;
+                  return (
+                    <div key={inv.id} style={{ marginBottom: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                        <div style={{ fontSize: '1.5rem', background: '#f1f5f9', padding: 8, borderRadius: 12 }}>📈</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <strong style={{ fontSize: '0.9rem', color: '#334155' }}>{inv.name}</strong>
+                            <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{money(current)}</strong>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Invested: {money(invested)}</span>
+                            <span style={{ fontSize: '0.8rem', color: gainPct >= 0 ? '#10b981' : '#ef4444', fontWeight: 600 }}>
+                              {gainPct >= 0 ? '+' : ''}{gainPct.toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                    <div style={{ fontSize: '1.5rem', background: '#f1f5f9', padding: 8, borderRadius: 12 }}>🏢</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <strong style={{ fontSize: '0.9rem', color: '#334155' }}>Stocks</strong>
-                        <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{money(85000)}</strong>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Invested: {money(80000)}</span>
-                        <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 600 }}>+8.2%</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  );
+                })}
               </Card>
             </div>
 
@@ -322,54 +317,50 @@ export default function HomePage() {
               <Card className="list-card" style={{ flex: 1, minWidth: 280 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, padding: '8px 8px 0' }}>
                   <span style={{ fontSize: '1rem', color: '#0f172a', fontWeight: 700 }}>Upcoming Bills</span>
-                  <span style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: 600, cursor: 'pointer' }}>View All &rarr;</span>
+                  <span style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/subscriptions')}>View All &rarr;</span>
                 </div>
-                <div className="transaction-row" style={{ padding: '8px' }}>
-                  <div style={{ fontSize: '1.5rem', background: '#fee2e2', padding: 8, borderRadius: 12 }}>🎬</div>
-                  <div style={{ minWidth: 0 }}>
-                    <div className="transaction-title">Netflix</div>
-                    <div className="transaction-meta">Entertainment</div>
+                {(overview?.subscriptions || []).length === 0 && (
+                  <div style={{ color: '#94a3b8', fontSize: '0.9rem', padding: 8 }}>No upcoming subscriptions</div>
+                )}
+                {(overview?.subscriptions || []).slice(0, 4).map(sub => (
+                  <div key={sub.id} className="transaction-row" style={{ padding: '8px' }}>
+                    <div style={{ fontSize: '1.5rem', background: '#fee2e2', padding: 8, borderRadius: 12 }}>{sub.icon || '📅'}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div className="transaction-title">{sub.name}</div>
+                      <div className="transaction-meta">{sub.category || sub.period || 'Subscription'}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div className="transaction-amount amount-expense">-{money(sub.amount)}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>{sub.next_due || 'No date'}</div>
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div className="transaction-amount amount-expense">-{money(499)}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 600 }}>3 days left</div>
-                  </div>
-                </div>
-                <div className="transaction-row" style={{ padding: '8px' }}>
-                  <div style={{ fontSize: '1.5rem', background: '#dcfce7', padding: 8, borderRadius: 12 }}>🎵</div>
-                  <div style={{ minWidth: 0 }}>
-                    <div className="transaction-title">Spotify</div>
-                    <div className="transaction-meta">Music</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div className="transaction-amount amount-expense">-{money(119)}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 600 }}>5 days left</div>
-                  </div>
-                </div>
+                ))}
               </Card>
 
               {/* Loans Card */}
               <Card className="list-card" style={{ flex: 1, minWidth: 280 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, padding: '8px 8px 0' }}>
                   <span style={{ fontSize: '1rem', color: '#0f172a', fontWeight: 700 }}>Loans</span>
-                  <span style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: 600, cursor: 'pointer' }}>View All &rarr;</span>
+                  <span style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/loans')}>View All &rarr;</span>
                 </div>
-                <div style={{ padding: 8, marginBottom: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <strong style={{ fontSize: '0.9rem', color: '#334155' }}>Home Loan</strong>
-                    <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{money(4200000)} left</strong>
-                  </div>
-                  <ProgressBar value={72} tone="blue" />
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4, textAlign: 'right' }}>EMI: {money(12500)}</div>
-                </div>
-                <div style={{ padding: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <strong style={{ fontSize: '0.9rem', color: '#334155' }}>Car Loan</strong>
-                    <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{money(120000)} left</strong>
-                  </div>
-                  <ProgressBar value={40} tone="amber" />
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4, textAlign: 'right' }}>EMI: {money(7200)}</div>
-                </div>
+                {(overview?.loans || []).length === 0 && (
+                  <div style={{ color: '#94a3b8', fontSize: '0.9rem', padding: 8 }}>No loans tracked</div>
+                )}
+                {(overview?.loans || []).slice(0, 3).map(loan => {
+                  const principal = Number(loan.principal || 0);
+                  const remaining = Number(loan.remaining || 0);
+                  const paidPct = principal > 0 ? Math.min(100, ((principal - remaining) / principal) * 100) : 0;
+                  return (
+                    <div key={loan.id} style={{ padding: 8, marginBottom: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <strong style={{ fontSize: '0.9rem', color: '#334155' }}>{loan.name}</strong>
+                        <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{money(remaining)} left</strong>
+                      </div>
+                      <ProgressBar value={paidPct} tone="blue" />
+                      <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4, textAlign: 'right' }}>EMI: {money(loan.emi_amount)}</div>
+                    </div>
+                  );
+                })}
               </Card>
             </div>
           </Card>
@@ -377,30 +368,30 @@ export default function HomePage() {
 
         <aside>
           {/* Gamification Widget */}
-          <SectionTitle>Your Achievements</SectionTitle>
+          <SectionTitle>This month</SectionTitle>
           <Card style={{ marginBottom: 20, padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Flame size={20} color="#ef4444" fill="#ef4444" />
-                <strong style={{ fontSize: '1.05rem', color: 'var(--text)' }}>7 Day Streak!</strong>
+                <strong style={{ fontSize: '1.05rem', color: 'var(--text)' }}>
+                  {savingsRate >= 20 ? 'Strong savings rate' : savingsRate > 0 ? 'Saving this month' : 'Track a surplus'}
+                </strong>
               </div>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>You're on fire!</span>
             </div>
-            
             <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
-              <div style={{ textAlign: 'center', flexShrink: 0 }}>
+              <div style={{ textAlign: 'center', flexShrink: 0, opacity: Number(overview?.savings) > 0 ? 1 : 0.4 }}>
                 <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: 'rgba(236, 72, 153, 0.1)', display: 'grid', placeItems: 'center', margin: '0 auto 6px' }}>
                   <Award size={24} color="#ec4899" />
                 </div>
                 <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-soft)' }}>Saver</div>
               </div>
-              <div style={{ textAlign: 'center', flexShrink: 0 }}>
+              <div style={{ textAlign: 'center', flexShrink: 0, opacity: budgets.length ? 1 : 0.4 }}>
                 <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: 'rgba(16, 185, 129, 0.1)', display: 'grid', placeItems: 'center', margin: '0 auto 6px' }}>
                   <Target size={24} color="#10b981" />
                 </div>
                 <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-soft)' }}>Budgeter</div>
               </div>
-              <div style={{ textAlign: 'center', flexShrink: 0, opacity: 0.4 }}>
+              <div style={{ textAlign: 'center', flexShrink: 0, opacity: (overview?.investments || []).length ? 1 : 0.4 }}>
                 <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: 'rgba(100, 116, 139, 0.1)', display: 'grid', placeItems: 'center', margin: '0 auto 6px' }}>
                   <TrendingUp size={24} color="#64748b" />
                 </div>

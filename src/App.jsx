@@ -14,6 +14,7 @@ import SettingsPage from './pages/SettingsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import JWTInspector from './pages/JWTInspector';
+import CalculatorsPage from './pages/CalculatorsPage';
 
 function Protected({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -51,7 +52,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<PublicOnly><LandingPage /></PublicOnly>} />
-      <Route path="/login" element={<AuthPage />} />
+      <Route path="/login" element={<PublicOnly><AuthPage /></PublicOnly>} />
       <Route path="/app" element={<Protected><AppShell /></Protected>}>
         <Route index element={<Navigate to="/home" replace />} />
         <Route path="home" element={<HomePage />} />
@@ -65,6 +66,7 @@ export default function App() {
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="jwt" element={<JWTInspector />} />
+        <Route path="calculators" element={<CalculatorsPage />} />
       </Route>
       {/* Keep old routes working */}
       <Route path="/home" element={<Protected><AppShell /></Protected>}>
@@ -99,6 +101,9 @@ export default function App() {
       </Route>
       <Route path="/jwt" element={<Protected><AppShell /></Protected>}>
         <Route index element={<JWTInspector />} />
+      </Route>
+      <Route path="/calculators" element={<Protected><AppShell /></Protected>}>
+        <Route index element={<CalculatorsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

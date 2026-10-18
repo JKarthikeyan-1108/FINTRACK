@@ -84,6 +84,12 @@ exports.remove = async (req, res, next) => {
     if (doc.data().is_default) {
       return res.status(403).json({ error: 'Cannot delete default category' });
     }
+
+    const txQuery = await db.collection('transactions').where('user_id', '==', req.user.id).get();
+    const inUse = txQuery.docs.some(d => d.data().category_id === id);
+    if (inUse) {
+      return res.status(409).json({ error: 'Cannot delete a category that is used by transactions' });
+    }
     
     await docRef.delete();
     res.json({ success: true });

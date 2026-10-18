@@ -5,8 +5,8 @@
 import {
   signInWithPopup, GoogleAuthProvider,
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  updateProfile, sendPasswordResetEmail,
-  signOut, onIdTokenChanged,
+  updateProfile, sendPasswordResetEmail, sendEmailVerification,
+  signOut, onIdTokenChanged, deleteUser,
   RecaptchaVerifier, signInWithPhoneNumber,
 } from 'firebase/auth';
 import { auth } from './config';
@@ -64,7 +64,12 @@ export function firebaseEmailSignUp(name, email, password) {
     const cred = await createUserWithEmailAndPassword(requireAuth(), email, password);
     if (name) {
       await updateProfile(cred.user, { displayName: name });
-      await cred.user.getIdToken(true); // refresh so the new name is in the token claims
+      await cred.user.getIdToken(true);
+    }
+    try {
+      await sendEmailVerification(cred.user);
+    } catch {
+      // Verification email is best-effort; sign-up still succeeds.
     }
     return cred.user;
   });
@@ -73,6 +78,22 @@ export function firebaseEmailSignUp(name, email, password) {
 // ── Password reset (Firebase emails a secure reset link) ──────────────────────
 export function firebasePasswordReset(email) {
   return wrap(() => sendPasswordResetEmail(requireAuth(), email));
+}
+
+export function firebaseSendEmailVerification() {
+  return wrap(async () => {
+    const current = requireAuth().currentUser;
+    if (!current) throw new Error('Sign in first to verify your email');
+    await sendEmailVerification(current);
+  });
+}
+
+export function firebaseDeleteCurrentUser() {
+  return wrap(async () => {
+    const current = requireAuth().currentUser;
+    if (!current) throw new Error('Not signed in');
+    await deleteUser(current);
+  });
 }
 
 // ── Sign Out ──────────────────────────────────────────────────────────────────
@@ -88,14 +109,15 @@ export function onFirebaseIdToken(callback) {
 
 // ── Phone Authentication ──────────────────────────────────────────────────────
 export function setupRecaptcha(containerId) {
-  if (!window.recaptchaVerifier) {
-    window.recaptchaVerifier = new RecaptchaVerifier(requireAuth(), containerId, {
-      'size': 'invisible',
-      'callback': (response) => {
-        // reCAPTCHA solved
-      }
-    });
+  const firebaseAuth = requireAuth();
+  if (window.recaptchaVerifier) {
+    try { window.recaptchaVerifier.clear(); } catch { /* already cleared */ }
+    window.recaptchaVerifier = null;
   }
+  window.recaptchaVerifier = new RecaptchaVerifier(firebaseAuth, containerId, {
+    size: 'invisible',
+  });
+  return window.recaptchaVerifier;
 }
 
 export function firebasePhoneSignIn(phoneNumber) {

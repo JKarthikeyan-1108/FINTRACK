@@ -70,7 +70,7 @@ try {
   console.log(`✅  Firebase Admin initialised — project: ${app.options.projectId || '(from credentials)'}`);
 } catch (err) {
   console.error('❌  Firebase initialisation failed:', err.message);
-  process.exit(1);
+  if (process.env.NODE_ENV !== 'test') process.exit(1);
 }
 
-module.exports = { app, auth: () => getAuth(app) };
+module.exports = { app, auth: () => (app ? getAuth(app) : null) };

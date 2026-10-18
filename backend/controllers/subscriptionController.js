@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { toMoney } = require('../utils/money');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -12,13 +13,13 @@ exports.getAll = async (req, res, next) => {
       return dateA - dateB;
     });
 
-    const monthly_total = rows.filter(s=>s.is_active).reduce((sum,s)=>{
+    const monthly_total = rows.filter(s => s.is_active !== false).reduce((sum,s)=>{
       if(s.period==='monthly') return sum+Number(s.amount);
       if(s.period==='yearly')  return sum+Number(s.amount)/12;
-      if(s.period==='weekly')  return sum+Number(s.amount)*4.33;
+      if(s.period==='weekly')  return sum+Number(s.amount)*52/12;
       return sum;
     }, 0);
-    res.json({ data: rows, monthly_total: Math.round(monthly_total) });
+    res.json({ data: rows, monthly_total: toMoney(monthly_total) });
   } catch(err){ next(err); }
 };
 
@@ -31,7 +32,7 @@ exports.create = async (req, res, next) => {
       user_id: req.user.id,
       name,
       icon: icon || '📱',
-      amount: Number(amount),
+      amount: toMoney(amount),
       period: period || 'monthly',
       next_due,
       category: category || 'General',
@@ -57,13 +58,13 @@ exports.update = async (req, res, next) => {
       return res.status(404).json({ error: 'Subscription not found' });
     }
     
-    await docRef.update({
-      name,
-      amount: Number(amount),
-      next_due,
-      is_active,
-      updated_at: new Date()
-    });
+    const prev = doc.data();
+    const updates = { updated_at: new Date() };
+    if (name !== undefined) updates.name = name;
+    if (amount !== undefined) updates.amount = toMoney(amount);
+    if (next_due !== undefined) updates.next_due = next_due;
+    if (typeof is_active === 'boolean') updates.is_active = is_active;
+    await docRef.update(updates);
     
     const updatedDoc = await docRef.get();
     res.json({ data: { id: updatedDoc.id, ...updatedDoc.data() } });

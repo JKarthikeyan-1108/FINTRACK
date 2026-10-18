@@ -55,7 +55,8 @@ export default function TransactionsPage() {
   const [accounts, setAccounts] = useState([]);
   const [summary, setSummary] = useState({ income: 0, expenses: 0 });
   const [form, setForm] = useState(blankForm());
-  const [isScanning, setIsScanning] = useState(false);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const searchTimer = useRef(null);
 
   useEffect(() => {
@@ -84,7 +85,7 @@ export default function TransactionsPage() {
     else setLoadMore(true);
 
     try {
-      const { data } = await txnAPI.getAll({ page: nextPage, limit: 25, search, type: typeFilter });
+      const { data } = await txnAPI.getAll({ page: nextPage, limit: 25, search, type: typeFilter, from: fromDate || undefined, to: toDate || undefined });
       setTxns(prev => replace ? data.data || [] : [...prev, ...(data.data || [])]);
       setTotal(data.total || 0);
       setPage(nextPage);

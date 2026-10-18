@@ -6,6 +6,7 @@ import {
   Award,
   Bell,
   BarChart3,
+  Calculator,
   ChartPie,
   ChevronRight,
   Flag,
@@ -32,6 +33,7 @@ const PRIMARY_NAV = [
 
 const MORE_NAV = [
   { path: '/analytics', Icon: BarChart3, label: 'Analytics', sub: 'Deep insights & reports' },
+  { path: '/calculators', Icon: Calculator, label: 'Calculators', sub: 'EMI, SIP, ROI & budget tools' },
   { path: '/investments', Icon: TrendingUp, label: 'Investments', sub: 'Portfolio and plans' },
   { path: '/goals', Icon: Flag, label: 'Goals', sub: 'Savings targets' },
   { path: '/loans', Icon: Landmark, label: 'Loans & EMI', sub: 'Debt tracker' },

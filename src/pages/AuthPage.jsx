@@ -33,7 +33,7 @@ const GoogleSVG = () => (
 import { setupRecaptcha } from '../firebase/authService';
 
 export default function AuthPage() {
-  const { googleLogin, emailLogin, emailRegister, forgotPassword, resetPassword, isAuthenticated, phoneLogin, verifyOtp: verifyPhoneOtp } = useAuth();
+  const { googleLogin, emailLogin, emailRegister, forgotPassword, isAuthenticated, phoneLogin, verifyOtp: verifyPhoneOtp } = useAuth();
   const navigate = useNavigate();
   
   const [authView, setAuthView] = useState('login'); // 'login' | 'register' | 'forgot' | 'verify' | 'reset' | 'success'
@@ -88,25 +88,14 @@ export default function AuthPage() {
       else if (authView === 'forgot') {
         if (!email) throw new Error('Enter your email');
         await forgotPassword(email);
-        setAuthView('verify');
-        toast.success('Verification code sent to ' + email);
+        toast.success('Password reset email sent. Check your inbox.');
+        setAuthView('login');
       }
       else if (authView === 'verify') {
         const code = otp.join('');
         if (code.length < 6) throw new Error('Enter the 6-digit code');
-        if (verifyMode === 'phone') {
-          await verifyPhoneOtp(code);
-          navigate('/home', { replace: true });
-        } else {
-          setAuthView('reset');
-        }
-      }
-      else if (authView === 'reset') {
-        const code = otp.join('');
-        if (pass.length < 8) throw new Error('Password must be 8+ characters');
-        if (pass !== confirmPass) throw new Error('Passwords do not match');
-        await resetPassword(email, code, pass);
-        setAuthView('success');
+        await verifyPhoneOtp(code);
+        navigate('/home', { replace: true });
       }
       else if (authView === 'phone') {
         if (!phone) throw new Error('Enter your phone number (e.g. +1234567890)');
@@ -294,7 +283,7 @@ export default function AuthPage() {
               {authView === 'forgot' && (
                 <>
                   <h2>Forgot Password?</h2>
-                  <p style={{ color: '#64748b', maxWidth: '320px', margin: '0 auto' }}>Enter your email address and we'll send you a verification code to reset your password.</p>
+                  <p style={{ color: '#64748b', maxWidth: '320px', margin: '0 auto' }}>Enter your email and Firebase will send a secure password-reset link.</p>
                 </>
               )}
               {authView === 'verify' && (
@@ -502,7 +491,7 @@ export default function AuthPage() {
                 {loading ? 'Please wait...' : 
                   authView === 'login' ? 'Sign In' : 
                   authView === 'register' ? 'Create Account' : 
-                  authView === 'forgot' ? 'Send Verification Code' : 
+                  authView === 'forgot' ? 'Send Reset Email' :  
                   authView === 'phone' ? 'Send SMS Code' :
                   authView === 'verify' ? 'Verify Code' : 'Reset Password'} 
                 {!loading && (authView === 'login' ? <ArrowRight size={18} /> : null)}

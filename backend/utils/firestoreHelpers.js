@@ -78,7 +78,20 @@ function ensureUser(decoded) {
 
     return db.runTransaction(async (t) => {
       const snap = await t.get(userRef);
-      if (snap.exists) return snap.data();
+      if (snap.exists) {
+        const existing = snap.data();
+        const patch = {};
+        if (decoded.email && existing.email !== decoded.email) patch.email = decoded.email;
+        if (decoded.phone_number && existing.phone !== decoded.phone_number) patch.phone = decoded.phone_number;
+        if (decoded.name && !existing.name) patch.name = decoded.name;
+        if (decoded.picture && !existing.avatar_url) patch.avatar_url = decoded.picture;
+        if (Object.keys(patch).length) {
+          patch.updated_at = new Date();
+          t.update(userRef, patch);
+          return { ...existing, ...patch };
+        }
+        return existing;
+      }
 
       const profile = {
         uuid:        uid,
@@ -113,9 +126,52 @@ function ensureUser(decoded) {
   return promise;
 }
 
+const USER_COLLECTIONS = [
+  'accounts',
+  'categories',
+  'transactions',
+  'budgets',
+  'goals',
+  'loans',
+  'subscriptions',
+  'investments',
+  'recurring_transactions',
+];
+
+async function deleteQueryInBatches(query) {
+  const snap = await query.get();
+  if (snap.empty) return 0;
+  let deleted = 0;
+  let batch = db.batch();
+  let ops = 0;
+  for (const doc of snap.docs) {
+    batch.delete(doc.ref);
+    ops += 1;
+    deleted += 1;
+    if (ops === 400) {
+      await batch.commit();
+      batch = db.batch();
+      ops = 0;
+    }
+  }
+  if (ops) await batch.commit();
+  return deleted;
+}
+
+/** Deletes the signed-in user's financial records. Does not delete shared default categories. */
+async function deleteUserData(uid) {
+  let total = 0;
+  for (const name of USER_COLLECTIONS) {
+    total += await deleteQueryInBatches(db.collection(name).where('user_id', '==', uid));
+  }
+  await db.collection('users').doc(uid).delete();
+  return total + 1;
+}
+
 module.exports = {
   DEFAULT_CATEGORIES,
   seedDefaultCategories,
   getVisibleCategoryDocs,
   ensureUser,
+  deleteUserData,
 };

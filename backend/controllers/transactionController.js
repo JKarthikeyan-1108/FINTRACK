@@ -1,11 +1,13 @@
 const db = require('../config/db');
 const { getVisibleCategoryDocs } = require('../utils/firestoreHelpers');
+const { toMoney } = require('../utils/money');
+const { toCsv } = require('../utils/csv');
 
 exports.getAll = async (req, res, next) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database not initialized' });
     
-    const { page = 1, limit = 20, type, category_id, from, to, search } = req.query;
+    const { page = 1, limit = 20, type, category_id, from, to, search, sort = 'date_desc' } = req.query;
     
     // Fetch user's categories and accounts for the "JOIN"
     const [catDocs, accQuery] = await Promise.all([
@@ -49,10 +51,14 @@ exports.getAll = async (req, res, next) => {
       );
     });
 
-    // Sort by date DESC, created_at DESC
     transactions.sort((a, b) => {
       const dateA = new Date(a.date).getTime();
       const dateB = new Date(b.date).getTime();
+      const amtA = Number(a.amount || 0);
+      const amtB = Number(b.amount || 0);
+      if (sort === 'date_asc') return dateA - dateB || amtA - amtB;
+      if (sort === 'amount_desc') return amtB - amtA || dateB - dateA;
+      if (sort === 'amount_asc') return amtA - amtB || dateB - dateA;
       if (dateA !== dateB) return dateB - dateA;
       const tA = a.created_at?.toDate ? a.created_at.toDate().getTime() : 0;
       const tB = b.created_at?.toDate ? b.created_at.toDate().getTime() : 0;
@@ -93,7 +99,7 @@ exports.create = async (req, res, next) => {
       account_id,
       category_id: category_id || null,
       type,
-      amount: Number(amount),
+      amount: toMoney(amount),
       title,
       note: note || null,
       date: String(date).slice(0, 10), // stored as YYYY-MM-DD so string comparisons work
@@ -137,10 +143,10 @@ exports.update = async (req, res, next) => {
     }
 
     await txRef.update({
-      title,
-      note,
-      amount: amount !== undefined ? Number(amount) : oldTx.amount,
-      category_id,
+      title: title !== undefined ? title : oldTx.title,
+      note: note !== undefined ? note : oldTx.note,
+      amount: amount !== undefined ? toMoney(amount) : oldTx.amount,
+      category_id: category_id !== undefined ? category_id : oldTx.category_id,
       date: date ? String(date).slice(0, 10) : oldTx.date,
       type: type || oldTx.type,
       account_id: targetAccountId,
@@ -218,7 +224,7 @@ exports.summary = async (req, res, next) => {
             name: cat.name,
             icon: cat.icon,
             color: cat.color,
-            total: catExpenses[catId]
+            total: toMoney(catExpenses[catId])
           });
         }
       }
@@ -227,11 +233,37 @@ exports.summary = async (req, res, next) => {
 
     res.json({
       summary: {
-        total_income,
-        total_expense,
-        net_savings: total_income - total_expense
+        total_income: toMoney(total_income),
+        total_expense: toMoney(total_expense),
+        net_savings: toMoney(total_income - total_expense)
       },
       by_category: byCategory
     });
+  } catch (err) { next(err); }
+};
+
+exports.exportCsv = async (req, res, next) => {
+  try {
+    req.query.limit = '10000';
+    req.query.page = '1';
+    const originalJson = res.json.bind(res);
+    res.json = (payload) => {
+      const rows = (payload.data || []).map(t => ({
+        id: t.id,
+        type: t.type,
+        amount: t.amount,
+        title: t.title,
+        category: t.category_name,
+        account: t.account_name,
+        date: t.date,
+        note: t.note,
+      }));
+      const csv = toCsv(rows, ['id', 'type', 'amount', 'title', 'category', 'account', 'date', 'note']);
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="fintrack-transactions.csv"');
+      return res.send(csv);
+    };
+    await exports.getAll(req, res, next);
+    res.json = originalJson;
   } catch (err) { next(err); }
 };
