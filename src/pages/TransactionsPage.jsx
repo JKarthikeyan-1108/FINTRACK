@@ -31,6 +31,7 @@ import {
 } from '../components/ui/CashewUI';
 import { dateShort, money } from '../lib/format';
 import { generateFinancialStatement } from '../lib/pdfReport';
+import { scanReceiptFile } from '../lib/receiptOcr';
 
 const blankForm = () => ({
   type: 'expense',
@@ -40,6 +41,7 @@ const blankForm = () => ({
   account_id: '',
   date: new Date().toISOString().split('T')[0],
   note: '',
+  receiptUrl: null,
 });
 
 export default function TransactionsPage() {
@@ -61,6 +63,7 @@ export default function TransactionsPage() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const searchTimer = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     categoryAPI.getAll().then(({ data }) => setCategories(data.data || [])).catch(() => {});
@@ -133,29 +136,45 @@ export default function TransactionsPage() {
     setForm({ ...blankForm(), account_id: accounts[0] ? String(accounts[0].id) : '' });
   }
 
-  function handleScanReceipt() {
+  function triggerReceiptUpload() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleReceiptFileSelected(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     setIsScanning(true);
-    toast('Scanning receipt...', { icon: '📸', duration: 2000 });
-    
-    // Simulate OCR processing time
-    setTimeout(() => {
-      setIsScanning(false);
-      
-      // Auto-fill form with simulated scanned data
+    const toastId = toast.loading('Preprocessing & scanning receipt with AI OCR...', { icon: '📸' });
+
+    try {
+      const result = await scanReceiptFile(file);
+      const matchedCategory = categories.find(c =>
+        c.name.toLowerCase().includes(result.categoryKey) ||
+        result.merchant.toLowerCase().includes(c.name.toLowerCase())
+      ) || categories[0];
+
       setForm({
         ...blankForm(),
         type: 'expense',
-        title: 'Starbucks Coffee',
-        amount: '450',
-        note: 'Scanned from receipt (Store #492)',
+        title: result.merchant,
+        amount: String(result.amount),
+        date: result.date,
+        note: `Receipt: ${result.fileName}${result.tax ? ` (Tax: ₹${result.tax})` : ''} • Scanned with OCR`,
         account_id: accounts[0] ? String(accounts[0].id) : '',
-        category_id: categories.find(c => c.name.toLowerCase().includes('food'))?.id || categories[0]?.id || ''
+        category_id: matchedCategory ? String(matchedCategory.id) : '',
+        receiptUrl: result.thumbnailUrl,
       });
-      
+
       setEditTxn(null);
       setModal(true);
-      toast.success('Receipt scanned successfully!');
-    }, 2000);
+      toast.success(`Scanned: ${result.merchant} (${money(result.amount)})`, { id: toastId });
+    } catch {
+      toast.error('Failed to parse receipt image. Please enter details manually.', { id: toastId });
+    } finally {
+      setIsScanning(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   }
 
   async function handleSave() {
@@ -236,14 +255,23 @@ export default function TransactionsPage() {
             >
               <Download size={15} /> PDF Statement
             </Button>
-            <Button variant="soft" onClick={handleScanReceipt} disabled={isScanning}>
-              <Camera size={16} /> {isScanning ? 'Processing...' : 'Scan Receipt'}
+            <Button variant="soft" onClick={triggerReceiptUpload} disabled={isScanning}>
+              <Camera size={16} /> {isScanning ? 'Processing OCR...' : 'Scan Receipt'}
             </Button>
             <Button variant="primary" onClick={openCreate}>
               <Plus size={16} /> Add Transaction
             </Button>
           </div>
         }
+      />
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*"
+        capture="environment"
+        style={{ display: 'none' }}
+        onChange={handleReceiptFileSelected}
       />
 
       <div className="metric-grid">
@@ -465,6 +493,29 @@ export default function TransactionsPage() {
           />
 
           <div style={{ height: 18 }} />
+
+          {form.receiptUrl && (
+            <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, padding: 10, background: 'var(--surface-strong)', border: '1px solid var(--border)', borderRadius: 12 }}>
+              <img src={form.receiptUrl} alt="Receipt preview" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border-subtle)' }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span className="badge-pill badge-pill-mint" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>OCR Verified</span>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Camera Scan</span>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text)', fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', marginTop: 2 }}>
+                  {form.title} • {money(form.amount)}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setForm(prev => ({ ...prev, receiptUrl: null }))}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}
+                title="Remove attached receipt"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
           
           <div className="field" style={{ marginBottom: 18, background: 'var(--surface-strong)', padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)' }}>
             <label style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.06em' }}>

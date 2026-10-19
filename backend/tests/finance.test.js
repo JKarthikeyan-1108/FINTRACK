@@ -7,6 +7,7 @@ const {
   compoundAmount,
   sipFutureValue,
   monthlySavingsRequired,
+  runMonteCarloSimulation,
   transactionInBudgetPeriod,
 } = require('../utils/finance');
 const { toMoney } = require('../utils/money');
@@ -134,3 +135,32 @@ test('toCsv: formats rows with headers and BOM', () => {
   assert.ok(csv.includes('id,title,amount'));
   assert.ok(csv.includes('"Groceries, Fruit"'));
 });
+
+test('runMonteCarloSimulation: generates statistical distributions adhering to financial dynamics', () => {
+  const sim = runMonteCarloSimulation({
+    initialInvestment: 100000,
+    monthlyContribution: 10000,
+    years: 5,
+    expectedReturn: 12,
+    volatility: 15,
+    inflation: 5,
+    simulationsCount: 150,
+  });
+
+  // Principal invested: 100k + (10k * 60) = 700k
+  assert.equal(sim.totalInvested, 700000);
+
+  // Percentile hierarchy: bull (90th) >= median (50th) >= bear (10th)
+  assert.ok(sim.bullFinal >= sim.medianFinal, 'Bull run should equal or exceed median');
+  assert.ok(sim.medianFinal >= sim.bearFinal, 'Median should equal or exceed bear floor');
+
+  // Real purchasing power should be less than nominal median due to inflation
+  assert.ok(sim.realPurchasingPower < sim.medianFinal, 'Inflation must discount purchasing power');
+  assert.ok(sim.inflationErosionPct > 0, 'Inflation erosion percentage must be positive');
+
+  // Trajectory should span years 0 to 5
+  assert.equal(sim.yearlyPercentiles.length, 6);
+  assert.equal(sim.yearlyPercentiles[0].year, 0);
+  assert.equal(sim.yearlyPercentiles[5].year, 5);
+});
+

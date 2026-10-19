@@ -23,11 +23,13 @@ import {
   compoundAmount,
   sipFutureValue,
   monthlySavingsRequired,
+  runMonteCarloSimulation,
 } from '../lib/finance';
 
 const TABS = [
   { id: 'emi', label: 'Loan EMI', icon: Landmark, desc: 'Amortization & monthly debt obligations' },
   { id: 'sip', label: 'SIP / Wealth', icon: TrendingUp, desc: 'Systematic mutual fund wealth generation' },
+  { id: 'montecarlo', label: 'Monte Carlo Wealth Sim', icon: Sparkles, desc: 'Probabilistic multi-year wealth path under volatile markets' },
   { id: 'compound', label: 'Compound Interest', icon: Percent, desc: 'Exponential growth with periodic compounding' },
   { id: 'simple', label: 'Simple Interest', icon: Calculator, desc: 'Flat rate debt or fixed return calculations' },
   { id: 'savings', label: 'Savings Goal', icon: PiggyBank, desc: 'Monthly savings required to meet milestone' },
@@ -66,7 +68,25 @@ export default function CalculatorsPage() {
   // 6. Monthly Budget state (50/30/20)
   const [monthlyIncome, setMonthlyIncome] = useState('75000');
 
+  // 7. Monte Carlo Wealth Simulator state
+  const [mcInitial, setMcInitial] = useState('500000');
+  const [mcMonthly, setMcMonthly] = useState('15000');
+  const [mcYears, setMcYears] = useState('10');
+  const [mcReturn, setMcReturn] = useState('12');
+  const [mcVol, setMcVol] = useState('15');
+  const [mcInflation, setMcInflation] = useState('6');
+
   // Calculations
+  // Monte Carlo
+  const mc = runMonteCarloSimulation({
+    initialInvestment: Number(mcInitial || 0),
+    monthlyContribution: Number(mcMonthly || 0),
+    years: Number(mcYears || 10),
+    expectedReturn: Number(mcReturn || 12),
+    volatility: Number(mcVol || 15),
+    inflation: Number(mcInflation || 6),
+    simulationsCount: 150,
+  });
   // EMI
   const emiMonths = Math.max(1, Math.round(Number(emiTenureYears || 0) * 12));
   const emiVal = calcEMI(emiPrincipal, emiRate, emiMonths);
@@ -464,6 +484,244 @@ export default function CalculatorsPage() {
               <div style={{ marginTop: 16, fontSize: '0.76rem', color: 'var(--text-soft)', lineHeight: 1.5, display: 'flex', gap: 6 }}>
                 <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
                 <span>Mutual fund investments are subject to market risks. Calculations assume monthly compounding without capital gains taxation.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2b. Monte Carlo Wealth Simulator */}
+      {activeTab === 'montecarlo' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
+          {/* Inputs Column */}
+          <div className="data-card card-stagger">
+            <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+              <div className="data-card-title">
+                <Sparkles size={17} color="#8b5cf6" /> Simulation Assumptions & Drivers
+              </div>
+              <span className="badge-pill badge-pill-purple">150 Paths</span>
+            </div>
+            <div className="data-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <TextInput
+                  label="Initial Portfolio Capital (₹)"
+                  type="number"
+                  value={mcInitial}
+                  onChange={e => setMcInitial(e.target.value)}
+                  placeholder="e.g. 500000"
+                />
+                <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                  {[100000, 250000, 500000, 1000000, 2500000].map(val => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setMcInitial(String(val))}
+                      className="badge-pill badge-pill-neutral"
+                      style={{ cursor: 'pointer', border: '1px solid var(--border)' }}
+                    >
+                      ₹{val >= 100000 ? `${val / 100000}L` : `${val / 1000}k`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <TextInput
+                  label="Monthly Contribution / SIP (₹)"
+                  type="number"
+                  value={mcMonthly}
+                  onChange={e => setMcMonthly(e.target.value)}
+                  placeholder="e.g. 15000"
+                />
+                <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                  {[5000, 10000, 15000, 25000, 50000].map(val => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setMcMonthly(String(val))}
+                      className="badge-pill badge-pill-neutral"
+                      style={{ cursor: 'pointer', border: '1px solid var(--border)' }}
+                    >
+                      ₹{val >= 1000 ? `${val / 1000}k` : val}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <TextInput
+                    label="Horizon (Years)"
+                    type="number"
+                    value={mcYears}
+                    onChange={e => setMcYears(e.target.value)}
+                    placeholder="10"
+                  />
+                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                    {['5', '10', '15', '20'].map(y => (
+                      <button
+                        key={y}
+                        type="button"
+                        onClick={() => setMcYears(y)}
+                        className="badge-pill badge-pill-neutral"
+                        style={{ cursor: 'pointer', border: '1px solid var(--border)' }}
+                      >
+                        {y}Y
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <TextInput
+                    label="Expected Return (%)"
+                    type="number"
+                    step="0.5"
+                    value={mcReturn}
+                    onChange={e => setMcReturn(e.target.value)}
+                    placeholder="12"
+                  />
+                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                    {['10', '12', '14', '16'].map(r => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setMcReturn(r)}
+                        className="badge-pill badge-pill-neutral"
+                        style={{ cursor: 'pointer', border: '1px solid var(--border)' }}
+                      >
+                        {r}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <TextInput
+                  label="Market Volatility (σ %)"
+                  type="number"
+                  step="1"
+                  value={mcVol}
+                  onChange={e => setMcVol(e.target.value)}
+                  placeholder="15"
+                />
+                <TextInput
+                  label="Annual Inflation (%)"
+                  type="number"
+                  step="0.5"
+                  value={mcInflation}
+                  onChange={e => setMcInflation(e.target.value)}
+                  placeholder="6"
+                />
+              </div>
+
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                Runs geometric Brownian motion paths accounting for volatility drag, market drawdowns, and real purchasing power erosion.
+              </div>
+            </div>
+          </div>
+
+          {/* Results Column */}
+          <div className="data-card card-stagger">
+            <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+              <div className="data-card-title">
+                <TrendingUp size={17} color="#10b981" />
+                <span>Probabilistic Wealth Trajectory</span>
+              </div>
+              <span className="badge-pill badge-pill-mint">Year {mcYears} Projection</span>
+            </div>
+            <div className="data-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Hero: Median Outcome */}
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(14, 165, 233, 0.08) 100%)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  padding: '18px',
+                  borderRadius: 12,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Median Projected Wealth (50th Percentile)
+                  </span>
+                  <span className="badge-pill badge-pill-mint">Most Likely</span>
+                </div>
+                <div style={{ fontSize: '2.1rem', fontWeight: 900, color: '#10b981', marginTop: 6, fontVariantNumeric: 'tabular-nums' }}>
+                  {money(mc.medianFinal)}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                  Real purchasing power in today's money: <strong style={{ color: 'var(--text)' }}>{money(mc.realPurchasingPower)}</strong> (-{mc.inflationErosionPct}% inflation decay)
+                </div>
+              </div>
+
+              {/* Percentile Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ background: 'rgba(139, 92, 246, 0.08)', border: '1px solid rgba(139, 92, 246, 0.25)', padding: '12px 14px', borderRadius: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
+                      Bull Run (90th %)
+                    </span>
+                    <span className="badge-pill badge-pill-purple" style={{ fontSize: '0.65rem' }}>Top 10%</span>
+                  </div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#8b5cf6', marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
+                    {money(mc.bullFinal)}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                    Ideal market cycle
+                  </div>
+                </div>
+
+                <div style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', padding: '12px 14px', borderRadius: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
+                      Bear Floor (10th %)
+                    </span>
+                    <span className="badge-pill badge-pill-amber" style={{ fontSize: '0.65rem' }}>Worst 10%</span>
+                  </div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f59e0b', marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
+                    {money(mc.bearFinal)}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                    Recession & crash floor
+                  </div>
+                </div>
+              </div>
+
+              {/* Capital & Multiplier Breakdown */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ background: 'var(--surface-strong)', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                    Total Capital Invested
+                  </div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>
+                    {money(mc.totalInvested)}
+                  </div>
+                </div>
+                <div style={{ background: 'var(--surface-strong)', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                    Expected Wealth Multiple
+                  </div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, marginTop: 2, color: '#0ea5e9', fontVariantNumeric: 'tabular-nums' }}>
+                    {(mc.medianFinal / (mc.totalInvested || 1)).toFixed(1)}x Multiple
+                  </div>
+                </div>
+              </div>
+
+              {/* Progression Milestones */}
+              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 10 }}>
+                <div style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>
+                  Multi-Year Milestone Progression
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
+                  {mc.yearlyPercentiles.filter((p, i) => i > 0 && (i === 1 || i === 3 || i === 5 || i === Number(mcYears) || i === Math.round(Number(mcYears)/2))).map(p => (
+                    <div key={p.year} style={{ background: 'var(--surface-strong)', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text)' }}>{p.label}</div>
+                      <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#10b981', marginTop: 2 }}>{money(p.median, true)}</div>
+                      <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)' }}>{money(p.bear, true)} – {money(p.bull, true)}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

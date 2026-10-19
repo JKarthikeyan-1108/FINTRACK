@@ -109,6 +109,93 @@ function transactionInBudgetPeriod(dateStr, budget, now = new Date()) {
   return dateStr.slice(0, 7) === today.slice(0, 7);
 }
 
+/**
+ * Multi-scenario Monte Carlo Wealth Simulator with Geometric Brownian Motion,
+ * volatility drag adjustment, and inflation erosion discounting.
+ */
+function runMonteCarloSimulation({
+  initialInvestment = 500000,
+  monthlyContribution = 15000,
+  years = 10,
+  expectedReturn = 12,
+  volatility = 15,
+  inflation = 6,
+  simulationsCount = 200,
+} = {}) {
+  const init = toMoney(initialInvestment);
+  const monthly = toMoney(monthlyContribution);
+  const numYears = Math.min(30, Math.max(1, Number(years || 10)));
+  const muAnnual = Number(expectedReturn || 12) / 100;
+  const sigmaAnnual = Number(volatility || 15) / 100;
+  const infAnnual = Number(inflation || 6) / 100;
+
+  const dt = 1 / 12;
+  const totalMonths = numYears * 12;
+  const muMonth = (muAnnual - 0.5 * sigmaAnnual * sigmaAnnual) * dt;
+  const sigmaMonth = sigmaAnnual * Math.sqrt(dt);
+
+  function randomNormal() {
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  }
+
+  const yearlyTrajectories = [];
+  const finalValues = [];
+
+  for (let sim = 0; sim < simulationsCount; sim++) {
+    let balance = init;
+    const trajectory = [balance];
+
+    for (let m = 1; m <= totalMonths; m++) {
+      const z = randomNormal();
+      const returnFactor = Math.exp(muMonth + sigmaMonth * z);
+      balance = (balance + monthly) * returnFactor;
+      if (m % 12 === 0) {
+        trajectory.push(Math.round(balance));
+      }
+    }
+    yearlyTrajectories.push(trajectory);
+    finalValues.push(balance);
+  }
+
+  finalValues.sort((a, b) => a - b);
+  const idx10 = Math.floor(simulationsCount * 0.1);
+  const idx50 = Math.floor(simulationsCount * 0.5);
+  const idx90 = Math.floor(simulationsCount * 0.9);
+
+  const bearFinal = finalValues[idx10];
+  const medianFinal = finalValues[idx50];
+  const bullFinal = finalValues[idx90];
+
+  const totalInvested = init + (monthly * totalMonths);
+  const inflationFactor = Math.pow(1 + infAnnual, numYears);
+  const realPurchasingPower = Math.round(medianFinal / inflationFactor);
+
+  const yearlyPercentiles = [];
+  for (let y = 0; y <= numYears; y++) {
+    const yearVals = yearlyTrajectories.map(t => t[y]).sort((a, b) => a - b);
+    yearlyPercentiles.push({
+      year: y,
+      label: y === 0 ? 'Today' : `Yr ${y}`,
+      bear: yearVals[idx10] || 0,
+      median: yearVals[idx50] || 0,
+      bull: yearVals[idx90] || 0,
+    });
+  }
+
+  return {
+    totalInvested: Math.round(totalInvested),
+    medianFinal: Math.round(medianFinal),
+    bearFinal: Math.round(bearFinal),
+    bullFinal: Math.round(bullFinal),
+    realPurchasingPower,
+    inflationErosionPct: Math.round(((medianFinal - realPurchasingPower) / medianFinal) * 100),
+    yearlyPercentiles,
+  };
+}
+
 module.exports = {
   calcEMI,
   amortizationPaid,
@@ -116,6 +203,7 @@ module.exports = {
   compoundAmount,
   sipFutureValue,
   monthlySavingsRequired,
+  runMonteCarloSimulation,
   isoWeekKey,
   transactionInBudgetPeriod,
 };
