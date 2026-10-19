@@ -32,6 +32,7 @@ import {
 import { dateShort, money } from '../lib/format';
 import { generateFinancialStatement } from '../lib/pdfReport';
 import { scanReceiptFile } from '../lib/receiptOcr';
+import { queueOfflineTransaction, flushOfflineQueue, getPendingOfflineTransactions } from '../lib/offlineSync';
 
 const blankForm = () => ({
   type: 'expense',
@@ -177,6 +178,26 @@ export default function TransactionsPage() {
     }
   }
 
+  useEffect(() => {
+    const handleOnline = async () => {
+      try {
+        const res = await flushOfflineQueue(payload => txnAPI.create(payload));
+        if (res.synced > 0) {
+          toast.success(`Synced ${res.synced} offline transaction(s) with cloud!`);
+          fetchTxns();
+        }
+      } catch {
+        // Retry on next online cycle
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    // Initial check for any pending items
+    handleOnline();
+
+    return () => window.removeEventListener('online', handleOnline);
+  }, [fetchTxns]);
+
   async function handleSave() {
     if (!form.amount) {
       toast.error('Amount is required');
@@ -193,8 +214,19 @@ export default function TransactionsPage() {
       finalTitle = selectedCat ? selectedCat.name : 'General';
     }
 
+    const payload = { ...form, title: finalTitle, amount: Number(form.amount) };
+
+    const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+    if (isOffline && !editTxn) {
+      await queueOfflineTransaction(payload);
+      setTxns(prev => [{ ...payload, id: `offline_${Date.now()}`, is_offline: true }, ...prev]);
+      setTotal(prev => prev + 1);
+      toast('Saved offline! Will sync automatically when connection restores.', { icon: '💾' });
+      closeModal();
+      return;
+    }
+
     try {
-      const payload = { ...form, title: finalTitle, amount: Number(form.amount) };
       if (editTxn) {
         const { data } = await txnAPI.update(editTxn.id, payload);
         setTxns(prev => prev.map(txn => txn.id === editTxn.id ? data.data : txn));
@@ -207,6 +239,14 @@ export default function TransactionsPage() {
       }
       closeModal();
     } catch (error) {
+      if (!editTxn && (!error.response || error.code === 'ERR_NETWORK')) {
+        await queueOfflineTransaction(payload);
+        setTxns(prev => [{ ...payload, id: `offline_${Date.now()}`, is_offline: true }, ...prev]);
+        setTotal(prev => prev + 1);
+        toast('Connection unavailable. Saved offline to sync later.', { icon: '💾' });
+        closeModal();
+        return;
+      }
       toast.error(error.response?.data?.error || 'Failed to save transaction');
     }
   }

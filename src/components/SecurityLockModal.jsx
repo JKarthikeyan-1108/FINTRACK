@@ -4,7 +4,7 @@ import { useSecurity } from '../context/SecurityContext';
 import { triggerHaptic } from '../lib/haptics';
 
 export default function SecurityLockModal() {
-  const { isLocked, unlock, biometricAvailable } = useSecurity();
+  const { isLocked, unlock, biometricAvailable, unlockWithBiometric } = useSecurity();
   const [pin, setPin] = useState('');
   const [errorShake, setErrorShake] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -177,9 +177,13 @@ export default function SecurityLockModal() {
             {biometricAvailable && (
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   triggerHaptic('medium');
-                  // Trigger biometric unlock if configured
+                  try {
+                    await unlockWithBiometric();
+                  } catch (err) {
+                    setErrorMsg(err.message || 'Biometric verification failed. Use PIN.');
+                  }
                 }}
                 style={{
                   width: 52,

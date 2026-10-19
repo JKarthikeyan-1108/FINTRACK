@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import {
   ArcElement,
@@ -27,8 +27,14 @@ import {
   Lightbulb,
   ExternalLink,
   AlertTriangle,
+  Scale,
+  Sliders,
+  CheckCircle2,
+  ArrowRight,
+  ShieldAlert,
 } from 'lucide-react';
 import { investAPI, dashAPI } from '../services/api';
+import { calculatePortfolioRebalance, MODEL_PORTFOLIOS, ASSET_CLASS_META } from '../lib/portfolioRebalance';
 import {
   BottomSheet,
   Button,
@@ -111,11 +117,22 @@ export default function InvestmentsPage() {
   const [dash, setDash] = useState(null);
   const [riskPref, setRiskPref] = useState('medium');
   const [horizonPref, setHorizonPref] = useState('medium');
+  const [selectedModel, setSelectedModel] = useState('balanced');
+  const [freshInflow, setFreshInflow] = useState('0');
 
   useEffect(() => {
     investAPI.getAll().then(({ data }) => setMyInvests(data.data || [])).catch(() => {});
     dashAPI.overview().then(({ data }) => setDash(data)).catch(() => {});
   }, []);
+
+  const rebalanceData = useMemo(() => {
+    return calculatePortfolioRebalance({
+      investments: myInvests,
+      cashReserve: dash ? Math.max(0, dash.net_worth - dash.portfolio) : 0,
+      targetWeights: MODEL_PORTFOLIOS[selectedModel]?.weights,
+      freshCapital: Number(freshInflow || 0),
+    });
+  }, [myInvests, dash, selectedModel, freshInflow]);
 
   const totalInvested = myInvests.reduce((sum, inv) => sum + Number(inv.invested_amount), 0);
   const totalCurrent = myInvests.reduce((sum, inv) => sum + Number(inv.current_value), 0);
@@ -261,12 +278,225 @@ export default function InvestmentsPage() {
             onChange={setTab}
             options={[
               { value: 'suggestions', label: 'Suggestions', icon: <Lightbulb /> },
+              { value: 'rebalance', label: 'Rebalance Matrix', icon: <Scale /> },
               { value: 'plans', label: 'Plans', icon: <Landmark /> },
               { value: 'portfolio', label: 'Portfolio', icon: <WalletCards /> },
             ]}
           />
 
           <div key={tab} className="tab-transition-container">
+          {tab === 'rebalance' && (
+            <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Model Portfolio Selector */}
+              <div className="data-card card-stagger">
+                <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+                  <div className="data-card-title">
+                    <Scale size={18} color="#8b5cf6" />
+                    <span>Target Model Allocation Architecture</span>
+                  </div>
+                  <span className="badge-pill badge-pill-purple">Institutional Matrix</span>
+                </div>
+                <div className="data-card-body" style={{ padding: '16px 20px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+                    {Object.values(MODEL_PORTFOLIOS).map(model => (
+                      <button
+                        key={model.id}
+                        type="button"
+                        onClick={() => setSelectedModel(model.id)}
+                        style={{
+                          padding: '12px 14px',
+                          borderRadius: 10,
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          border: selectedModel === model.id ? '2px solid #8b5cf6' : '1px solid var(--border)',
+                          background: selectedModel === model.id ? 'rgba(139, 92, 246, 0.12)' : 'var(--surface)',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <strong style={{ fontSize: '0.86rem', color: selectedModel === model.id ? '#8b5cf6' : 'var(--text)' }}>
+                            {model.name}
+                          </strong>
+                          {selectedModel === model.id && <span className="badge-pill badge-pill-purple" style={{ fontSize: '0.62rem' }}>Selected</span>}
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.4 }}>
+                          {model.desc}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Fresh Capital Inflow Simulator */}
+                  <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                    <div>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text)' }}>Fresh Capital Inflow (Rebalance without Selling)</span>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Inject new liquidity to bring underweight asset classes to par without triggering capital gains taxes.</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-muted)' }}>₹</span>
+                      <input
+                        type="number"
+                        className="input"
+                        style={{ width: 140, padding: '6px 12px', fontSize: '0.9rem', fontWeight: 700 }}
+                        placeholder="0"
+                        value={freshInflow}
+                        onChange={e => setFreshInflow(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Health Score & Drift Alert */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+                <div className="data-card card-stagger">
+                  <div className="data-card-body" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        Allocation Alignment Index
+                      </div>
+                      <div style={{ fontSize: '1.8rem', fontWeight: 900, color: rebalanceData.rebalanceIndex >= 80 ? '#10b981' : '#f59e0b', marginTop: 4 }}>
+                        {rebalanceData.rebalanceIndex} / 100
+                      </div>
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                        {rebalanceData.rebalanceIndex >= 85 ? 'Optimally balanced' : 'Drift detected across asset classes'}
+                      </div>
+                    </div>
+                    <span className={`badge-pill ${rebalanceData.rebalanceIndex >= 80 ? 'badge-pill-mint' : 'badge-pill-amber'}`}>
+                      {rebalanceData.rebalanceIndex >= 80 ? 'Healthy' : 'Rebalance Recommended'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="data-card card-stagger">
+                  <div className="data-card-body" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        Target Portfolio Value
+                      </div>
+                      <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text)', marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
+                        {money(rebalanceData.targetTotal)}
+                      </div>
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                        Current Holdings: {money(rebalanceData.currentTotal)}{freshInflow > 0 ? ` (+${money(freshInflow)} fresh)` : ''}
+                      </div>
+                    </div>
+                    <span className="badge-pill badge-pill-blue">AUM</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Asset Allocation Breakdown Matrix */}
+              <div className="data-card card-stagger">
+                <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+                  <div className="data-card-title">
+                    <Sliders size={18} color="#0ea5e9" />
+                    <span>Asset Class Drift & Target Weights</span>
+                  </div>
+                  <span className="badge-pill badge-pill-blue">5 Classes</span>
+                </div>
+                <div className="data-card-body" style={{ padding: 0 }}>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.84rem' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--surface-strong)', color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          <th style={{ padding: '12px 18px' }}>Asset Class</th>
+                          <th style={{ padding: '12px 14px', textAlign: 'right' }}>Current Value</th>
+                          <th style={{ padding: '12px 14px', textAlign: 'right' }}>Actual %</th>
+                          <th style={{ padding: '12px 14px', textAlign: 'right' }}>Target %</th>
+                          <th style={{ padding: '12px 14px', textAlign: 'right' }}>Drift</th>
+                          <th style={{ padding: '12px 18px', textAlign: 'right' }}>Target Value</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rebalanceData.breakdown.map(item => (
+                          <tr key={item.key} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                            <td style={{ padding: '12px 18px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: item.color }} />
+                                <strong style={{ color: 'var(--text)' }}>{item.label}</strong>
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--text)' }}>
+                              {money(item.currentVal)}
+                            </td>
+                            <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 600 }}>
+                              {item.currentPct}%
+                            </td>
+                            <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700, color: '#8b5cf6' }}>
+                              {item.targetPct}%
+                            </td>
+                            <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                              <span className={`badge-pill ${item.driftPct > 3 ? 'badge-pill-pink' : item.driftPct < -3 ? 'badge-pill-blue' : 'badge-pill-mint'}`} style={{ fontSize: '0.72rem' }}>
+                                {item.driftPct > 0 ? `+${item.driftPct}%` : `${item.driftPct}%`}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 18px', textAlign: 'right', fontWeight: 800, color: 'var(--text)' }}>
+                              {money(item.targetVal)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Execution Order Book / Rebalancing Trades */}
+              <div className="data-card card-stagger">
+                <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+                  <div className="data-card-title">
+                    <CheckCircle2 size={18} color="#10b981" />
+                    <span>Recommended Execution Trades</span>
+                  </div>
+                  <span className="badge-pill badge-pill-mint">{rebalanceData.rebalanceActions.length} Actions</span>
+                </div>
+                <div className="data-card-body" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {rebalanceData.rebalanceActions.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
+                      <CheckCircle2 size={36} color="#10b981" style={{ margin: '0 auto 8px', opacity: 0.8 }} />
+                      <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text)' }}>Portfolio is Perfectly Balanced</div>
+                      <div style={{ fontSize: '0.78rem', marginTop: 4 }}>All asset classes are within acceptable variance tolerances of the {MODEL_PORTFOLIOS[selectedModel].name} model.</div>
+                    </div>
+                  ) : (
+                    rebalanceData.rebalanceActions.map((action, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '12px 16px',
+                          borderRadius: 10,
+                          background: action.action === 'TRIM' ? 'rgba(239, 68, 68, 0.06)' : 'rgba(16, 185, 129, 0.06)',
+                          border: action.action === 'TRIM' ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(16, 185, 129, 0.25)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <span
+                            className={`badge-pill ${action.action === 'TRIM' ? 'badge-pill-pink' : 'badge-pill-mint'}`}
+                            style={{ fontWeight: 800, fontSize: '0.74rem', padding: '4px 10px' }}
+                          >
+                            {action.action}
+                          </span>
+                          <div>
+                            <strong style={{ fontSize: '0.92rem', color: 'var(--text)' }}>{action.label}</strong>
+                            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 2 }}>{action.reason}</div>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <strong style={{ fontSize: '1.2rem', fontWeight: 900, color: action.color, fontVariantNumeric: 'tabular-nums' }}>
+                            {action.action === 'BUY' ? '+' : '-'}{money(action.amount)}
+                          </strong>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {tab === 'suggestions' && (
             <div style={{ marginTop: 14 }}>
               <Card tone="amber" style={{ marginBottom: 14 }}>

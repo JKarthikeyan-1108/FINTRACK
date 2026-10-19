@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { triggerHaptic } from '../lib/haptics';
+import { isWebAuthnAvailable, registerBiometricCredential, verifyBiometricCredential } from '../lib/webauthn';
 
 const SecurityContext = createContext(null);
 
@@ -32,16 +33,21 @@ export function SecurityProvider({ children }) {
     return Number(localStorage.getItem('fintrack_autolock_mins') || 5);
   });
   const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(() => {
+    return localStorage.getItem('fintrack_biometric_enabled') === 'true';
+  });
 
   const lastActivityRef = useRef(Date.now());
 
   // Check WebAuthn Biometric Availability
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.PublicKeyCredential) {
+    if (isWebAuthnAvailable()) {
       if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
         PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
           .then(avail => setBiometricAvailable(avail))
           .catch(() => setBiometricAvailable(false));
+      } else {
+        setBiometricAvailable(true);
       }
     }
   }, []);
@@ -128,6 +134,41 @@ export function SecurityProvider({ children }) {
     };
   }, [pinEnabled, autoLockTimeout, lockNow]);
 
+  const registerBiometric = useCallback(async (userId = 'fintrack_user', userName = 'FinTrack User') => {
+    try {
+      const res = await registerBiometricCredential(userId, userName);
+      setBiometricEnabled(true);
+      triggerHaptic('success');
+      return res;
+    } catch (err) {
+      triggerHaptic('warning');
+      throw err;
+    }
+  }, []);
+
+  const disableBiometric = useCallback(() => {
+    localStorage.removeItem('fintrack_biometric_id');
+    localStorage.setItem('fintrack_biometric_enabled', 'false');
+    setBiometricEnabled(false);
+    triggerHaptic('light');
+  }, []);
+
+  const unlockWithBiometric = useCallback(async () => {
+    try {
+      const success = await verifyBiometricCredential();
+      if (success) {
+        setIsLocked(false);
+        lastActivityRef.current = Date.now();
+        triggerHaptic('success');
+        return true;
+      }
+    } catch (err) {
+      triggerHaptic('warning');
+      throw err;
+    }
+    return false;
+  }, []);
+
   return (
     <SecurityContext.Provider
       value={{
@@ -140,6 +181,10 @@ export function SecurityProvider({ children }) {
         autoLockTimeout,
         updateAutoLock,
         biometricAvailable,
+        biometricEnabled,
+        registerBiometric,
+        disableBiometric,
+        unlockWithBiometric,
       }}
     >
       {children}

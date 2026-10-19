@@ -1,20 +1,24 @@
-import { useState, useRef, useEffect } from 'react';
-import { Bot, Send, X, MessageSquare, Loader2, Sparkles, TrendingUp, HelpCircle } from 'lucide-react';
-import { chatAPI } from '../services/api';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Bot, Send, X, MessageSquare, Loader2, Sparkles, TrendingUp, HelpCircle, ShieldAlert, PieChart } from 'lucide-react';
+import { chatAPI, txnAPI, accountAPI, budgetAPI, loanAPI, subAPI, investAPI } from '../services/api';
+import { analyzeFinancialHealth, generateCopilotResponse } from '../lib/aiFinancialCopilot';
 
 const PROMPT_SUGGESTIONS = [
-  'What did I spend this month?',
-  'How much did I earn?',
+  'Where did I spend the most?',
+  'Analyze my 50/30/20 budget',
+  'Emergency fund safety net',
+  'How can I pay off debt faster?',
   'What is my savings rate?',
-  'Check my budget limits',
+  'Review recurring subscriptions',
 ];
 
 export default function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
+  const [financialContext, setFinancialContext] = useState(null);
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: 'Hello! I am **FinBot**, your FinTrack financial intelligence assistant. Ask me about your monthly cashflow, budgets, expenses, or savings goals.',
+      text: 'Hello! I am **FinBot**, your FinTrack intelligence copilot. Ask me about your top spending merchants, 50/30/20 budget balance, debt payoff velocity, or emergency fund status.',
       sender: 'ai',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
@@ -22,6 +26,44 @@ export default function AIChatbot() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
+
+  const loadFinancialContext = useCallback(async () => {
+    try {
+      const [txnsRes, acctsRes, budgetsRes, loansRes, subsRes, investRes] = await Promise.allSettled([
+        txnAPI.getAll({ limit: 100 }),
+        accountAPI.getAll(),
+        budgetAPI.getAll(),
+        loanAPI.getAll(),
+        subAPI.getAll(),
+        investAPI.getAll(),
+      ]);
+
+      const transactions = txnsRes.status === 'fulfilled' ? (txnsRes.value?.data?.data || []) : [];
+      const accounts = acctsRes.status === 'fulfilled' ? (acctsRes.value?.data?.data || []) : [];
+      const budgets = budgetsRes.status === 'fulfilled' ? (budgetsRes.value?.data?.data || []) : [];
+      const loans = loansRes.status === 'fulfilled' ? (loansRes.value?.data?.data || []) : [];
+      const subscriptions = subsRes.status === 'fulfilled' ? (subsRes.value?.data?.data || []) : [];
+      const investments = investRes.status === 'fulfilled' ? (investRes.value?.data?.data || []) : [];
+
+      const analysis = analyzeFinancialHealth({
+        transactions,
+        accounts,
+        budgets,
+        loans,
+        subscriptions,
+        investments,
+      });
+      setFinancialContext(analysis);
+    } catch {
+      // Keep running with empty context fallback
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && !financialContext) {
+      loadFinancialContext();
+    }
+  }, [isOpen, financialContext, loadFinancialContext]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -49,30 +91,43 @@ export default function AIChatbot() {
     ]);
     setIsLoading(true);
 
-    try {
-      const { data } = await chatAPI.sendMessage(userMsg);
+    // Generate intelligent instant response using client financial context
+    setTimeout(async () => {
+      let botReply = '';
+      if (financialContext) {
+        botReply = generateCopilotResponse(userMsg, financialContext);
+      }
+
+      // If client context didn't trigger a tailored answer and network is available, try backend API
+      if (!botReply || botReply.startsWith('Here is a real-time summary')) {
+        try {
+          const { data } = await chatAPI.sendMessage(userMsg);
+          if (data && data.reply) {
+            botReply = data.reply;
+          }
+        } catch {
+          // Fall back to financial copilot analysis
+          if (!botReply && financialContext) {
+            botReply = generateCopilotResponse(userMsg, financialContext);
+          }
+        }
+      }
+
+      if (!botReply) {
+        botReply = 'I am currently unable to fetch additional records. You can check your cash flow summary in the Analytics tab.';
+      }
+
       setMessages(prev => [
         ...prev,
         {
           id: Date.now() + 1,
-          text: data.reply || 'Analysis complete.',
+          text: botReply,
           sender: 'ai',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
-    } catch (err) {
-      setMessages(prev => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          text: err.response?.data?.error || 'Unable to retrieve data right now. Please ensure your session is active.',
-          sender: 'ai',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
-    } finally {
       setIsLoading(false);
-    }
+    }, 450);
   };
 
   if (!isOpen) {
@@ -170,7 +225,7 @@ export default function AIChatbot() {
               lineHeight: 1.5,
             }}
           >
-            <div>
+            <div style={{ whiteSpace: 'pre-wrap' }}>
               {msg.text.split('**').map((part, i) => (i % 2 === 1 ? <strong key={i}>{part}</strong> : part))}
             </div>
             {msg.time && (
