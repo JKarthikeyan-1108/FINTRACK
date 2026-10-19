@@ -15,6 +15,15 @@ const fs    = require('fs');
 const { initializeApp, getApps, getApp, cert } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 
+function normalizePrivateKey(key) {
+  if (!key || typeof key !== 'string') return key;
+  let clean = key.trim();
+  if ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'"))) {
+    clean = clean.slice(1, -1);
+  }
+  return clean.replace(/\\n/g, '\n');
+}
+
 function loadServiceAccount() {
   const {
     FIREBASE_SERVICE_ACCOUNT_PATH,
@@ -27,15 +36,21 @@ function loadServiceAccount() {
   if (FIREBASE_SERVICE_ACCOUNT_PATH) {
     const file = path.resolve(__dirname, '..', FIREBASE_SERVICE_ACCOUNT_PATH);
     if (fs.existsSync(file)) {
-      return JSON.parse(fs.readFileSync(file, 'utf8'));
+      const sa = JSON.parse(fs.readFileSync(file, 'utf8'));
+      if (sa && sa.private_key) sa.private_key = normalizePrivateKey(sa.private_key);
+      return sa;
     }
   }
 
   if (FIREBASE_SERVICE_ACCOUNT_JSON) {
     try {
-      return typeof FIREBASE_SERVICE_ACCOUNT_JSON === 'object'
+      const sa = typeof FIREBASE_SERVICE_ACCOUNT_JSON === 'object'
         ? FIREBASE_SERVICE_ACCOUNT_JSON
         : JSON.parse(FIREBASE_SERVICE_ACCOUNT_JSON);
+      if (sa && sa.private_key) {
+        sa.private_key = normalizePrivateKey(sa.private_key);
+      }
+      return sa;
     } catch (e) {
       console.warn('⚠️  Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON:', e.message);
     }
@@ -45,8 +60,7 @@ function loadServiceAccount() {
     return {
       projectId:   FIREBASE_PROJECT_ID,
       clientEmail: FIREBASE_CLIENT_EMAIL,
-      // .env files store newlines as the two characters "\n"
-      privateKey:  FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      privateKey:  normalizePrivateKey(FIREBASE_PRIVATE_KEY),
     };
   }
 
