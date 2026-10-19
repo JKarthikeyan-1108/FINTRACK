@@ -442,10 +442,53 @@ button { color: inherit; }
 
 .app-content { min-height: 0; overflow: auto; }
 
-h1 { font-size: 32px; line-height: 1.05; letter-spacing: 0; font-weight: 800; color: var(--text); }
-h2 { font-size: 20px; line-height: 1.15; letter-spacing: 0; font-weight: 800; color: var(--text); }
-h3 { font-size: 15px; line-height: 1.25; letter-spacing: 0; font-weight: 750; color: var(--text); }
+h1 { font-size: 32px; line-height: 1.05; letter-spacing: -0.025em; font-weight: 800; color: var(--text); text-wrap: balance; }
+h2 { font-size: 20px; line-height: 1.15; letter-spacing: -0.015em; font-weight: 800; color: var(--text); text-wrap: balance; }
+h3 { font-size: 15px; line-height: 1.25; letter-spacing: -0.01em; font-weight: 750; color: var(--text); text-wrap: balance; }
 p { font-size: 14px; line-height: 1.55; color: var(--text-muted); }
+
+/* ── Tabular Numerals (Stripe & Mercury FinTech Standard) ── */
+.metric-card strong,
+.stat-value,
+.currency-value,
+.ledger-amount,
+.table-amount,
+.modern-row-amount,
+.progress-percent,
+.balance-display,
+.mono-num,
+.tabular-numbers,
+td.numeric,
+th.numeric,
+[data-tabular="true"] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv05" 1;
+  letter-spacing: -0.01em;
+}
+
+/* ── Focus States (Vercel Web Interface Guidelines) ──────── */
+:focus-visible {
+  outline: 2px solid var(--mint, #10b981);
+  outline-offset: 2px;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--mint, #10b981);
+  outline-offset: 2px;
+}
+
+/* ── Accessibility & Motion (Vercel Guidelines) ──────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 .app-page {
   width: min(100%, 980px);
