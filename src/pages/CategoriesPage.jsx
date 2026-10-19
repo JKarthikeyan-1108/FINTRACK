@@ -142,45 +142,61 @@ export default function CategoriesPage() {
   return (
     <Page>
       <PageHeader
-        eyebrow="Organization"
+        eyebrow="Taxonomy & Metadata"
         title="Categories"
-        subtitle={`${counts.all} categories helping you organize your finances`}
-        action={<Button variant="primary" onClick={openCreate}><Plus size={18} /> New</Button>}
+        subtitle={`${counts.all} classified categories organizing your inflows, outflows, and capital allocations.`}
+        action={
+          <Button variant="primary" onClick={openCreate}>
+            <Plus size={16} /> New Category
+          </Button>
+        }
       />
 
-      <Card tone="mint" style={{ marginBottom: 14 }}>
-        <div className="category-summary-grid">
-          <div className="category-summary-item">
-            <strong>{counts.all}</strong>
-            <span>Total</span>
-          </div>
-          <div className="category-summary-item">
-            <strong style={{ color: 'var(--mint-dark)' }}>{counts.income}</strong>
-            <span>Income</span>
-          </div>
-          <div className="category-summary-item">
-            <strong style={{ color: 'var(--red)' }}>{counts.expense}</strong>
-            <span>Expense</span>
-          </div>
-          <div className="category-summary-item">
-            <strong style={{ color: 'var(--blue)' }}>{counts.investment}</strong>
-            <span>Invest</span>
+      <div className="data-card" style={{ marginBottom: 20 }}>
+        <div className="data-card-body" style={{ padding: '18px 24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16 }}>
+            <div>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Categories</span>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: 2, color: 'var(--text)' }}>
+                {counts.all}
+              </div>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Income Sources</span>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: 2, color: '#10b981' }}>
+                {counts.income}
+              </div>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Expense Envelopes</span>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: 2, color: '#f43f5e' }}>
+                {counts.expense}
+              </div>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Investment Assets</span>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: 2, color: '#0284c7' }}>
+                {counts.investment}
+              </div>
+            </div>
           </div>
         </div>
-      </Card>
+      </div>
 
-      <Card style={{ marginBottom: 14 }}>
-        <SegmentedControl
-          value={typeFilter}
-          onChange={setTypeFilter}
-          options={[
-            { value: '', label: 'All', icon: <Tag /> },
-            { value: 'income', label: 'Income', icon: <ArrowUpRight /> },
-            { value: 'expense', label: 'Expense', icon: <ArrowDownRight /> },
-            { value: 'investment', label: 'Invest', icon: <TrendingUp /> },
-          ]}
-        />
-      </Card>
+      <div className="data-card" style={{ marginBottom: 20 }}>
+        <div className="data-card-body" style={{ padding: '14px 18px' }}>
+          <SegmentedControl
+            value={typeFilter}
+            onChange={setTypeFilter}
+            options={[
+              { value: '', label: `All (${counts.all})` },
+              { value: 'income', label: `Income (${counts.income})` },
+              { value: 'expense', label: `Expense (${counts.expense})` },
+              { value: 'investment', label: `Invest (${counts.investment})` },
+            ]}
+          />
+        </div>
+      </div>
 
       {loading ? (
         <div style={{ display: 'grid', placeItems: 'center', minHeight: 260 }}>
@@ -189,50 +205,69 @@ export default function CategoriesPage() {
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={<Tag />}
-          title={typeFilter ? `No ${typeFilter} categories` : 'No categories yet'}
-          text={typeFilter ? 'Try selecting a different type or create a new category.' : 'Create your first category to start organizing transactions.'}
-          action={<Button onClick={openCreate}><Plus size={18} /> Create category</Button>}
+          title={typeFilter ? `No ${typeFilter} categories` : 'No categories configured'}
+          text={typeFilter ? 'Try selecting a different type filter or create a new custom category.' : 'Create categories to label your transactions and automate budgeting.'}
+          action={<Button onClick={openCreate}><Plus size={16} /> Create category</Button>}
         />
       ) : (
-        <div className="category-grid">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
           {filtered.map(cat => (
-            <Card key={cat.id} className="category-card">
-              <div className="category-card-head">
+            <div key={cat.id} className="data-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '14px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div
-                  className="category-emoji"
-                  style={{ background: `${cat.color || '#2db87d'}20` }}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    display: 'grid',
+                    placeItems: 'center',
+                    fontSize: '1.3rem',
+                    background: `${cat.color || '#2db87d'}20`,
+                    border: `1px solid ${cat.color || '#2db87d'}40`,
+                    flexShrink: 0
+                  }}
                 >
                   {cat.icon || '💰'}
                 </div>
-                <div className="category-card-info">
-                  <strong>{cat.name}</strong>
-                  <div className="category-card-badges">
-                    <Chip tone={TYPE_TONE[cat.type] || 'neutral'}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {cat.name}
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                    <span className={`badge-pill ${cat.type === 'income' ? 'badge-pill-mint' : cat.type === 'investment' ? 'badge-pill-blue' : 'badge-pill-pink'}`} style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
                       {cat.type}
-                    </Chip>
-                    {cat.is_default ? (
-                      <Chip tone="blue">Default</Chip>
-                    ) : null}
+                    </span>
+                    {cat.is_default && (
+                      <span className="badge-pill badge-pill-neutral" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
+                        System
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
               {!cat.is_default && (
-                <div className="category-card-actions">
-                  <button onClick={() => openEdit(cat)}>
-                    <Edit3 size={13} /> Edit
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-subtle)' }}>
+                  <button
+                    onClick={() => openEdit(cat)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid var(--border)', background: 'var(--surface-strong)', color: 'var(--text)', borderRadius: 6, padding: '3px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    <Edit3 size={11} /> Edit
                   </button>
-                  <button onClick={() => handleDelete(cat)}>
-                    <Trash2 size={13} /> Delete
+                  <button
+                    onClick={() => handleDelete(cat)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', borderRadius: 6, padding: '3px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    <Trash2 size={11} /> Delete
                   </button>
                 </div>
               )}
-            </Card>
+            </div>
           ))}
         </div>
       )}
 
-      <FAB icon={<Plus size={24} />} label="Create category" onClick={openCreate} />
+      <FAB icon={<Plus size={22} />} label="Create category" onClick={openCreate} />
 
       {modal && (
         <BottomSheet title={editCat ? 'Edit Category' : 'New Category'} onClose={closeModal}>

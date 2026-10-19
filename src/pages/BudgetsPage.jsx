@@ -124,38 +124,73 @@ export default function BudgetsPage() {
   return (
     <Page>
       <PageHeader
-        eyebrow="Planning"
+        eyebrow="Financial Discipline"
         title="Budgets"
-        subtitle="See how much of the month has passed and how much of your plan is still available."
-        action={<Button onClick={openCreate}><Plus size={18} /> New</Button>}
+        subtitle="Envelopes and thresholds to keep your monthly spending within plan."
+        action={
+          <Button variant="primary" onClick={openCreate}>
+            <Plus size={16} /> Create Budget
+          </Button>
+        }
       />
 
       {budgets.length > 0 && (
-        <Card tone={overCount ? 'amber' : 'mint'} className="hero-balance" style={{ marginBottom: 16 }}>
-          <div className="budget-card-header">
-            <div>
-              <span className="hero-balance-label">Monthly spending</span>
-              <strong>{money(totalSpent)}</strong>
-              <small>of {money(totalBudget)} planned</small>
+        <div className="data-card" style={{ marginBottom: 20 }}>
+          <div className="data-card-body" style={{ padding: '20px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+              <div>
+                <span style={{ fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+                  Total Monthly Envelope
+                </span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 4 }}>
+                  <strong style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+                    {money(totalSpent)}
+                  </strong>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                    spent of {money(totalBudget)}
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className={`badge-pill ${overCount > 0 ? 'badge-pill-pink' : 'badge-pill-mint'}`} style={{ fontSize: '0.82rem', padding: '4px 10px' }}>
+                  {overallPct.toFixed(0)}% Utilized
+                </span>
+                <span className={`badge-pill ${overCount > 0 ? 'badge-pill-amber' : 'badge-pill-neutral'}`} style={{ fontSize: '0.82rem', padding: '4px 10px' }}>
+                  {overCount > 0 ? `${overCount} Over Budget` : 'All On Track'}
+                </span>
+              </div>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <strong style={{ fontSize: 30 }}>{overallPct.toFixed(0)}%</strong>
-              <small>used</small>
+
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>
+                <span>Budget Spent ({overallPct.toFixed(0)}%)</span>
+                <span>Month Elapsed ({todayProgress().toFixed(0)}%)</span>
+              </div>
+              <ProgressBar value={overallPct} tone={overCount ? 'pink' : 'mint'} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16, paddingTop: 14, borderTop: '1px solid var(--border-subtle)' }}>
+              <div>
+                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Remaining Cap</span>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: 2, color: remaining >= 0 ? '#10b981' : '#f43f5e' }}>
+                  {money(remaining)}
+                </div>
+              </div>
+              <div>
+                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Active Envelopes</span>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: 2, color: 'var(--text)' }}>
+                  {budgets.length} Categories
+                </div>
+              </div>
+              <div>
+                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Discipline Status</span>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: 2, color: overallPct <= todayProgress() ? '#10b981' : '#f59e0b' }}>
+                  {overallPct <= todayProgress() ? 'Ahead of Pace' : 'Above Pace'}
+                </div>
+              </div>
             </div>
           </div>
-          <ProgressBar value={overallPct} tone={overCount ? 'amber' : 'mint'} markerLabel="Spend" />
-          <ProgressBar value={todayProgress()} tone="blue" markerLabel="Today" />
-          <div className="hero-balance-grid">
-            <div className="mini-stat">
-              <span>Remaining</span>
-              <strong className={remaining >= 0 ? 'amount-income' : 'amount-expense'}>{money(remaining)}</strong>
-            </div>
-            <div className="mini-stat">
-              <span>Watchlist</span>
-              <strong>{overCount ? `${overCount} over` : 'On plan'}</strong>
-            </div>
-          </div>
-        </Card>
+        </div>
       )}
 
       {loading ? (
@@ -165,12 +200,12 @@ export default function BudgetsPage() {
       ) : budgets.length === 0 ? (
         <EmptyState
           icon={<ChartPie />}
-          title="No budgets yet"
-          text="Create monthly, weekly, or yearly spending envelopes to track limits like Cashew."
-          action={<Button onClick={openCreate}><Plus size={18} /> Create budget</Button>}
+          title="No budgets configured"
+          text="Create monthly or weekly envelopes to keep essential and discretionary spending on plan."
+          action={<Button onClick={openCreate}><Plus size={16} /> Create budget</Button>}
         />
       ) : (
-        <div className="budget-list">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
           {budgets.map(budget => {
             const spent = Number(budget.spent || budget.spent_amount || 0);
             const limit = Number(budget.amount);
@@ -179,43 +214,79 @@ export default function BudgetsPage() {
             const left = limit - spent;
 
             return (
-              <Card key={budget.id}>
-                <div className="budget-row">
-                  <RingMeter value={pct} tone={over ? 'pink' : 'mint'} />
-                  <div className="budget-row-main">
-                    <div className="budget-row-title">
-                      <strong>{budget.category_name || budget.name}</strong>
-                      <b className={over ? 'amount-expense' : 'amount-income'}>{money(spent)}</b>
+              <div key={budget.id} className="data-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div className="data-card-header" style={{ padding: '14px 18px', background: 'var(--surface-strong)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', fontSize: '1rem' }}>
+                      🏷️
                     </div>
-                    <div className="budget-row-meta">
-                      <span>{PERIOD_LABEL[budget.period] || budget.period}</span>
-                      <span>of {money(limit)}</span>
+                    <div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text)' }}>
+                        {budget.category_name || budget.name}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
+                        {PERIOD_LABEL[budget.period] || budget.period}
+                      </div>
                     </div>
-                    <ProgressBar value={pct} tone={over ? 'pink' : 'mint'} />
-                    <div className="budget-row-meta">
-                      <span className={over ? 'amount-expense' : ''}>{over ? `Over by ${money(spent - limit)}` : `${money(left)} left`}</span>
-                      <span className="row-actions">
-                        <button onClick={() => openEdit(budget)}><Edit3 size={13} /> Edit</button>
-                        <button onClick={() => deleteBudget(budget.id)}><Trash2 size={13} /> Delete</button>
+                  </div>
+                  <span className={`badge-pill ${over ? 'badge-pill-pink' : 'badge-pill-mint'}`}>
+                    {over ? 'Over Limit' : `${(100 - pct).toFixed(0)}% Left`}
+                  </span>
+                </div>
+
+                <div className="data-card-body" style={{ padding: '16px 18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+                    <div>
+                      <div style={{ fontSize: '1.35rem', fontWeight: 800, color: over ? '#f43f5e' : 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+                        {money(spent)}
+                      </div>
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                        limit of {money(limit)}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: over ? '#f43f5e' : '#10b981' }}>
+                        {over ? `+${money(spent - limit)}` : `${money(left)} left`}
                       </span>
                     </div>
                   </div>
+
+                  <ProgressBar value={pct} tone={over ? 'pink' : 'mint'} />
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 10, borderTop: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      {pct.toFixed(0)}% consumed
+                    </span>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        onClick={() => openEdit(budget)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid var(--border)', background: 'var(--surface-strong)', color: 'var(--text)', borderRadius: 6, padding: '3px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        <Edit3 size={11} /> Edit
+                      </button>
+                      <button
+                        onClick={() => deleteBudget(budget.id)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', borderRadius: 6, padding: '3px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        <Trash2 size={11} /> Delete
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </Card>
+              </div>
             );
           })}
         </div>
       )}
 
-      <FAB icon={<Plus size={24} />} label="Create budget" onClick={openCreate} />
+      <FAB icon={<Plus size={22} />} label="Create budget" onClick={openCreate} />
 
       {modal && (
-        <BottomSheet title={editId ? 'Edit Budget' : 'Create Budget'} onClose={closeModal}>
+        <BottomSheet title={editId ? 'Edit Budget Envelope' : 'Create Budget Envelope'} onClose={closeModal}>
           <div className="field" style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>Category</label>
-              <button style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>See All</button>
-            </div>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Category
+            </label>
             <VisualCategorySelect 
               categories={[{ id: '', name: 'General', icon: '📦' }, ...categories.filter(c => c.type === 'expense').slice(0, 7)]} 
               value={form.category_id} 
@@ -228,22 +299,27 @@ export default function BudgetsPage() {
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Budget Amount</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Budget Limit
+            </label>
             <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 12, color: '#64748b', fontWeight: 600, fontSize: '1.1rem' }}>₹</span>
+              <span style={{ position: 'absolute', left: 14, top: 12, color: 'var(--text-muted)', fontWeight: 700, fontSize: '1.1rem' }}>₹</span>
               <input 
                 type="number"
                 className="input"
-                style={{ paddingLeft: 32, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}
+                style={{ paddingLeft: 34, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}
                 placeholder="0.00"
                 value={form.amount}
                 onChange={event => setForm(prev => ({ ...prev, amount: event.target.value }))}
+                autoFocus
               />
             </div>
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Period</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Recurrence Period
+            </label>
             <SegmentedControl
               value={form.period}
               onChange={value => setForm(prev => ({ ...prev, period: value }))}
@@ -256,45 +332,38 @@ export default function BudgetsPage() {
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Start Date</label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 13, color: '#64748b' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-              </span>
-              <input 
-                type="date"
-                className="input"
-                style={{ paddingLeft: 40, color: '#0f172a', fontWeight: 500 }}
-                value={form.start_date}
-                onChange={event => setForm(prev => ({ ...prev, start_date: event.target.value }))}
-              />
-            </div>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Start Date
+            </label>
+            <input 
+              type="date"
+              className="input"
+              style={{ color: 'var(--text)', fontWeight: 500 }}
+              value={form.start_date}
+              onChange={event => setForm(prev => ({ ...prev, start_date: event.target.value }))}
+            />
           </div>
 
-          <div className="field" style={{ marginBottom: 24 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>End Date (Optional)</label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 13, color: '#64748b' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-              </span>
-              <input 
-                type="date"
-                className="input"
-                style={{ paddingLeft: 40, color: '#0f172a', fontWeight: 500 }}
-                placeholder="Select date"
-                value={form.end_date || ''}
-                onChange={event => setForm(prev => ({ ...prev, end_date: event.target.value }))}
-              />
-            </div>
+          <div className="field" style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              End Date (Optional)
+            </label>
+            <input 
+              type="date"
+              className="input"
+              style={{ color: 'var(--text)', fontWeight: 500 }}
+              value={form.end_date || ''}
+              onChange={event => setForm(prev => ({ ...prev, end_date: event.target.value }))}
+            />
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', background: '#f0f9ff', padding: '12px 16px', borderRadius: '8px', marginBottom: '24px', color: '#0284c7', fontSize: '0.85rem', lineHeight: 1.5 }}>
+          <div style={{ display: 'flex', gap: '0.75rem', background: 'var(--surface-strong)', padding: '12px 16px', borderRadius: '8px', marginBottom: '22px', border: '1px solid var(--border)', fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--text-muted)' }}>
             <span style={{ fontSize: '1rem' }}>💡</span>
-            <span>A monthly budget helps you stay on track with your long-term goals.</span>
+            <span>FinTrack alerts you proactively when your category spend reaches 80% and 100% of limits.</span>
           </div>
 
-          <Button className="ui-button-full" onClick={saveBudget} style={{ background: '#10b981', color: 'white', padding: '14px', borderRadius: '8px', fontSize: '1rem', fontWeight: 600 }}>
-            {editId ? 'Save Changes' : 'Create Budget'}
+          <Button className="ui-button-full" onClick={saveBudget} style={{ background: '#10b981', color: 'white', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
+            {editId ? 'Save Envelope Changes' : 'Activate Budget Envelope'}
           </Button>
         </BottomSheet>
       )}

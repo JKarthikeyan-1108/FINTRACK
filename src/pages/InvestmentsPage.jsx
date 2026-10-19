@@ -154,40 +154,96 @@ export default function InvestmentsPage() {
   return (
     <Page>
       <PageHeader
-        eyebrow="Portfolio"
+        eyebrow="Wealth & Assets"
         title="Investments"
-        subtitle="A lighter view of portfolio value, allocation, and starter plans."
-        action={<Button onClick={() => setModal(true)}><Plus size={18} /> Add</Button>}
+        subtitle="Track asset allocation, user-entered valuations, and long-term capital compounding."
+        action={
+          <Button variant="primary" onClick={() => setModal(true)}>
+            <Plus size={16} /> Add Asset
+          </Button>
+        }
       />
 
-      <Card tone="mint" className="hero-balance" style={{ marginBottom: 14 }}>
-        <div className="budget-card-header">
-          <div>
-            <span className="hero-balance-label">Total portfolio value</span>
-            <strong>{money(countUpVal)}</strong>
-            <small>{totalInvested > 0 ? `${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(1)}% user-entered valuation` : 'Add holdings to track user-entered value'}</small>
+      <div className="data-card" style={{ marginBottom: 20 }}>
+        <div className="data-card-body" style={{ padding: '20px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+            <div>
+              <span style={{ fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+                Total Portfolio Valuation
+              </span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 4 }}>
+                <strong style={{ fontSize: '2.1rem', fontWeight: 800, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+                  {money(countUpVal)}
+                </strong>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                  across {myInvests.length} holdings
+                </span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className={`badge-pill ${returnPct >= 0 ? 'badge-pill-mint' : 'badge-pill-pink'}`} style={{ fontSize: '0.84rem', padding: '4px 10px' }}>
+                {returnPct >= 0 ? '+' : ''}{returnPct.toFixed(1)}% All-Time Return
+              </span>
+              <span className="badge-pill badge-pill-neutral" style={{ fontSize: '0.84rem', padding: '4px 10px' }}>
+                {groups.length} Asset Classes
+              </span>
+            </div>
           </div>
-          <div className="metric-icon" style={{ width: 50, height: 50 }}>
-            <TrendingUp size={26} />
-          </div>
-        </div>
-        <div className="hero-balance-grid">
-          <div className="mini-stat">
-            <span>Invested</span>
-            <strong>{money(totalInvested)}</strong>
-          </div>
-          <div className="mini-stat">
-            <span>Gain / loss</span>
-            <strong className={totalGain >= 0 ? 'amount-income' : 'amount-expense'}>{money(Math.abs(totalGain))}</strong>
-          </div>
-        </div>
-      </Card>
 
-      <div className="metric-grid" style={{ marginBottom: 14 }}>
-        <MetricCard label="Portfolio" value={money(displayTotal)} helper="User-entered value" tone="mint" icon={<WalletCards />} />
-        <MetricCard label="Invested" value={money(totalInvested)} helper="Principal" tone="blue" icon={<Banknote />} />
-        <MetricCard label="Gain" value={money(Math.abs(totalGain))} helper="Unrealized" tone={totalGain >= 0 ? 'amber' : 'pink'} icon={<TrendingUp />} />
-        <MetricCard label="Assets" value={String(myInvests.length)} helper="Tracked holdings" tone="purple" icon={<Coins />} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16, paddingTop: 14, borderTop: '1px solid var(--border-subtle)' }}>
+            <div>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Invested Principal</span>
+              <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: 2, color: 'var(--text)' }}>
+                {money(totalInvested)}
+              </div>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Unrealized Gain</span>
+              <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: 2, color: totalGain >= 0 ? '#10b981' : '#f43f5e' }}>
+                {totalGain >= 0 ? '+' : ''}{money(totalGain)}
+              </div>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Active Monthly SIP</span>
+              <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: 2, color: '#0284c7' }}>
+                {money(myInvests.reduce((sum, i) => sum + Number(i.sip_amount || 0), 0))}/mo
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="metric-grid" style={{ marginBottom: 20 }}>
+        <MetricCard
+          label="Portfolio Value"
+          value={money(displayTotal)}
+          helper="User-entered valuation"
+          tone="mint"
+          icon={<WalletCards />}
+          trend="up"
+          trendValue={returnPct >= 0 ? `+${returnPct.toFixed(1)}%` : `${returnPct.toFixed(1)}%`}
+        />
+        <MetricCard
+          label="Invested Principal"
+          value={money(totalInvested)}
+          helper="Capital deployed"
+          tone="blue"
+          icon={<Banknote />}
+        />
+        <MetricCard
+          label="Total Return"
+          value={money(Math.abs(totalGain))}
+          helper={totalGain >= 0 ? 'Net profit accrued' : 'Net loss'}
+          tone={totalGain >= 0 ? 'amber' : 'pink'}
+          icon={<TrendingUp />}
+        />
+        <MetricCard
+          label="Holdings Count"
+          value={String(myInvests.length)}
+          helper="Diversified positions"
+          tone="purple"
+          icon={<Coins />}
+        />
       </div>
 
       <div className="dashboard-grid">

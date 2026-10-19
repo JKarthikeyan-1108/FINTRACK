@@ -109,34 +109,69 @@ export default function GoalsPage() {
   return (
     <Page>
       <PageHeader
-        eyebrow="Savings"
-        title="Goals"
-        subtitle="Turn big purchases into visible progress instead of vague intentions."
-        action={<Button onClick={() => setModal(true)}><Plus size={18} /> New</Button>}
+        eyebrow="Targeted Wealth"
+        title="Savings Goals"
+        subtitle="Set funded milestones for capital purchases, emergencies, and life aspirations."
+        action={
+          <Button variant="primary" onClick={() => setModal(true)}>
+            <Plus size={16} /> New Goal
+          </Button>
+        }
       />
 
       {goals.length > 0 && (
-        <Card tone="blue" className="hero-balance" style={{ marginBottom: 16 }}>
-          <div className="budget-card-header">
-            <div>
-              <span className="hero-balance-label">Total saved</span>
-              <strong>{money(totalSaved)}</strong>
-              <small>of {money(totalTarget)} across {goals.length} goals</small>
+        <div className="data-card" style={{ marginBottom: 20 }}>
+          <div className="data-card-body" style={{ padding: '20px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+              <div>
+                <span style={{ fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+                  Total Capital Accumulated
+                </span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 4 }}>
+                  <strong style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+                    {money(totalSaved)}
+                  </strong>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                    saved of {money(totalTarget)} target
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="badge-pill badge-pill-blue" style={{ fontSize: '0.82rem', padding: '4px 10px' }}>
+                  {totalPct.toFixed(0)}% Overall Funded
+                </span>
+                <span className="badge-pill badge-pill-mint" style={{ fontSize: '0.82rem', padding: '4px 10px' }}>
+                  {achieved} of {goals.length} Achieved
+                </span>
+              </div>
             </div>
-            <RingMeter value={totalPct} tone="blue" size={72} />
+
+            <div style={{ marginBottom: 14 }}>
+              <ProgressBar value={totalPct} tone="blue" />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16, paddingTop: 14, borderTop: '1px solid var(--border-subtle)' }}>
+              <div>
+                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Funding Gap</span>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: 2, color: 'var(--text)' }}>
+                  {money(totalTarget - totalSaved)}
+                </div>
+              </div>
+              <div>
+                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Target Milestones</span>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: 2, color: 'var(--text)' }}>
+                  {goals.length} Goals
+                </div>
+              </div>
+              <div>
+                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Completion Ratio</span>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: 2, color: '#10b981' }}>
+                  {((achieved / (goals.length || 1)) * 100).toFixed(0)}% Completed
+                </div>
+              </div>
+            </div>
           </div>
-          <ProgressBar value={totalPct} tone="blue" />
-          <div className="hero-balance-grid">
-            <div className="mini-stat">
-              <span>Remaining</span>
-              <strong>{money(totalTarget - totalSaved)}</strong>
-            </div>
-            <div className="mini-stat">
-              <span>Achieved</span>
-              <strong>{achieved}</strong>
-            </div>
-          </div>
-        </Card>
+        </div>
       )}
 
       {loading ? (
@@ -146,58 +181,102 @@ export default function GoalsPage() {
       ) : goals.length === 0 ? (
         <EmptyState
           icon={<Target />}
-          title="No goals yet"
-          text="Create a savings goal and add deposits as you make progress."
-          action={<Button onClick={() => setModal(true)}><Plus size={18} /> Create goal</Button>}
+          title="No goals established"
+          text="Establish a goal for an emergency fund, vehicle, or dream project to start tracking your deposits."
+          action={<Button onClick={() => setModal(true)}><Plus size={16} /> Establish goal</Button>}
         />
       ) : (
-        <div className="budget-list">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
           {goals.map(goal => {
             const saved = Number(goal.saved_amount || goal.current_amount || 0);
             const target = Number(goal.target_amount);
             const pct = target > 0 ? Math.min((saved / target) * 100, 100) : 0;
             const done = goal.is_achieved || pct >= 100;
             const days = goal.deadline ? daysUntil(goal.deadline) : null;
+            const cat = GOAL_CATEGORIES.find(c => c.id === goal.category_id);
 
             return (
-              <Card key={goal.id} tone={done ? 'mint' : 'plain'}>
-                <div className="budget-row">
-                  <RingMeter value={pct} tone={done ? 'mint' : 'blue'} />
-                  <div className="budget-row-main">
-                    <div className="budget-row-title">
-                      <strong>{goal.name}</strong>
-                      <b>{pct.toFixed(0)}%</b>
+              <div key={goal.id} className="data-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div className="data-card-header" style={{ padding: '14px 18px', background: 'var(--surface-strong)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', fontSize: '1.1rem' }}>
+                      {goal.emoji || cat?.icon || '🎯'}
                     </div>
-                    <div className="budget-row-meta">
-                      <span>{money(saved)} saved</span>
-                      <span>{money(target)} target</span>
+                    <div>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>
+                        {goal.name}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                        {goal.deadline ? `${days < 0 ? 'Due past' : `${days}d remaining`} • ${dateShort(goal.deadline)}` : 'No set deadline'}
+                      </div>
                     </div>
-                    <ProgressBar value={pct} tone={done ? 'mint' : 'blue'} />
-                    <div className="budget-row-meta">
-                      <span>{goal.deadline ? `${days < 0 ? 'Past due' : `${days}d left`} - ${dateShort(goal.deadline)}` : 'No deadline'}</span>
+                  </div>
+                  <span className={`badge-pill ${done ? 'badge-pill-mint' : 'badge-pill-blue'}`}>
+                    {done ? 'Achieved 🎉' : `${pct.toFixed(0)}% Funded`}
+                  </span>
+                </div>
+
+                <div className="data-card-body" style={{ padding: '16px 18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+                    <div>
+                      <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+                        {money(saved)}
+                      </div>
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                        target of {money(target)}
+                      </div>
                     </div>
-                    {goal.note && <p style={{ marginTop: 10 }}>{goal.note}</p>}
-                    <div className="row-actions">
-                      {!done && <button onClick={() => { setDepositModal(goal); setDepositAmt(''); }}><WalletCards size={13} /> Add money</button>}
-                      <button onClick={() => deleteGoal(goal.id)}><Trash2 size={13} /> Delete</button>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: done ? '#10b981' : 'var(--text-muted)' }}>
+                        {done ? 'Target reached' : `${money(Math.max(0, target - saved))} needed`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <ProgressBar value={pct} tone={done ? 'mint' : 'blue'} />
+
+                  {goal.note && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: 10, background: 'var(--surface-strong)', padding: '6px 10px', borderRadius: 6 }}>
+                      {goal.note}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 10, borderTop: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      {done ? 'Goal Completed' : `${(100 - pct).toFixed(0)}% to milestone`}
+                    </span>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {!done && (
+                        <button
+                          onClick={() => { setDepositModal(goal); setDepositAmt(''); }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: '1px solid rgba(14, 165, 233, 0.3)', background: 'rgba(14, 165, 233, 0.08)', color: '#0284c7', borderRadius: 6, padding: '4px 10px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                        >
+                          <WalletCards size={12} /> Add Funds
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteGoal(goal.id)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', borderRadius: 6, padding: '4px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        <Trash2 size={12} />
+                      </button>
                     </div>
                   </div>
                 </div>
-              </Card>
+              </div>
             );
           })}
         </div>
       )}
 
-      <FAB icon={<Plus size={24} />} label="Create goal" onClick={() => setModal(true)} />
+      <FAB icon={<Plus size={22} />} label="Create goal" onClick={() => setModal(true)} />
 
       {modal && (
-        <BottomSheet title="Create Goal" onClose={() => setModal(false)}>
+        <BottomSheet title="Establish Savings Goal" onClose={() => setModal(false)}>
           <div className="field" style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>Goal Category</label>
-              <button style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>See All</button>
-            </div>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Goal Type
+            </label>
             <VisualCategorySelect 
               categories={GOAL_CATEGORIES.slice(0, 8)} 
               value={form.category_id} 
@@ -210,24 +289,29 @@ export default function GoalsPage() {
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Goal Name</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Goal Name
+            </label>
             <input 
               type="text"
               className="input"
-              placeholder="E.g., New Car, Emergency Fund"
+              placeholder="E.g., Emergency Reserve 6M, EV Downpayment"
               value={form.name}
               onChange={event => setForm(prev => ({ ...prev, name: event.target.value }))}
+              autoFocus
             />
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Target Amount</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Target Amount
+            </label>
             <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 12, color: '#64748b', fontWeight: 600, fontSize: '1.1rem' }}>₹</span>
+              <span style={{ position: 'absolute', left: 14, top: 12, color: 'var(--text-muted)', fontWeight: 700, fontSize: '1.1rem' }}>₹</span>
               <input 
                 type="number"
                 className="input"
-                style={{ paddingLeft: 32, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}
+                style={{ paddingLeft: 34, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}
                 placeholder="0.00"
                 value={form.target_amount}
                 onChange={event => setForm(prev => ({ ...prev, target_amount: event.target.value }))}
@@ -235,50 +319,79 @@ export default function GoalsPage() {
             </div>
           </div>
 
-          <div className="field" style={{ marginBottom: 24 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Target Date</label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 13, color: '#64748b' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-              </span>
-              <input 
-                type="date"
-                className="input"
-                style={{ paddingLeft: 40, color: '#0f172a', fontWeight: 500 }}
-                value={form.deadline}
-                onChange={event => setForm(prev => ({ ...prev, deadline: event.target.value }))}
-              />
-            </div>
+          <div className="field" style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Target Deadline
+            </label>
+            <input 
+              type="date"
+              className="input"
+              style={{ color: 'var(--text)', fontWeight: 500 }}
+              value={form.deadline}
+              onChange={event => setForm(prev => ({ ...prev, deadline: event.target.value }))}
+            />
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', background: '#f0f9ff', padding: '12px 16px', borderRadius: '8px', marginBottom: '24px', color: '#0284c7', fontSize: '0.85rem', lineHeight: 1.5 }}>
+          <div style={{ display: 'flex', gap: '0.75rem', background: 'var(--surface-strong)', padding: '12px 16px', borderRadius: '8px', marginBottom: '22px', border: '1px solid var(--border)', fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--text-muted)' }}>
             <span style={{ fontSize: '1rem' }}>💡</span>
-            <span>Break down large goals into smaller, manageable milestones.</span>
+            <span>Allocating automated monthly transfers helps you achieve goals 3x faster without budget strain.</span>
           </div>
 
-          <Button className="ui-button-full" onClick={addGoal} style={{ background: '#10b981', color: 'white', padding: '14px', borderRadius: '8px', fontSize: '1rem', fontWeight: 600 }}>
-            Create Goal
+          <Button className="ui-button-full" onClick={addGoal} style={{ background: '#10b981', color: 'white', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
+            Activate Savings Goal
           </Button>
         </BottomSheet>
       )}
 
       {depositModal && (
-        <BottomSheet title={`Add to ${depositModal.name}`} onClose={() => setDepositModal(null)}>
-          <Card tone="blue" style={{ marginBottom: 14 }}>
-            <span className="hero-balance-label">Progress</span>
-            <strong>{money(depositModal.saved_amount || depositModal.current_amount || 0)}</strong>
-            <p>saved of {money(depositModal.target_amount)}</p>
-          </Card>
-          <TextInput label="Amount" type="number" value={depositAmt} autoFocus onChange={event => setDepositAmt(event.target.value)} placeholder="0" />
-          <div className="quick-action-grid" style={{ marginBottom: 14 }}>
+        <BottomSheet title={`Add Funds to ${depositModal.name}`} onClose={() => setDepositModal(null)}>
+          <div className="data-card" style={{ marginBottom: 16 }}>
+            <div className="data-card-body" style={{ padding: '14px 18px' }}>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Current Progress</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
+                <strong style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+                  {money(depositModal.saved_amount || depositModal.current_amount || 0)}
+                </strong>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  of {money(depositModal.target_amount)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase' }}>Deposit Amount</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: 12, color: 'var(--text-muted)', fontWeight: 700, fontSize: '1.1rem' }}>₹</span>
+              <input 
+                type="number" 
+                className="input" 
+                style={{ paddingLeft: 34, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}
+                value={depositAmt} 
+                autoFocus 
+                onChange={event => setDepositAmt(event.target.value)} 
+                placeholder="0.00" 
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
             {[500, 1000, 5000, 10000].map(amount => (
-              <button key={amount} className="quick-action" onClick={() => setDepositAmt(String(amount))}>
-                <WalletCards />
-                <span>{money(amount, true)}</span>
+              <button
+                key={amount}
+                type="button"
+                className="quick-action-pill"
+                onClick={() => setDepositAmt(String(amount))}
+                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+              >
+                <span>+{money(amount, true)}</span>
               </button>
             ))}
           </div>
-          <Button className="ui-button-full" onClick={deposit}>Add money</Button>
+
+          <Button className="ui-button-full" onClick={deposit} style={{ background: '#10b981', color: 'white', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
+            Confirm Deposit
+          </Button>
         </BottomSheet>
       )}
     </Page>

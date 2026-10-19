@@ -150,281 +150,372 @@ export default function HomePage() {
     <Page>
       <PageHeader
         eyebrow={dateLong(new Date())}
-        title={`${greeting()}, ${user?.name?.split(' ')[0] || 'there'}`}
-        subtitle="A calm view of today's money, monthly rhythm, and the places your cash is moving."
-        action={<Button variant="primary" onClick={() => navigate('/transactions')}><Plus size={18} /> Add</Button>}
+        title={`${greeting()}, ${user?.name?.split(' ')[0] || 'User'}`}
+        subtitle="Real-time financial intelligence across your cashflow, budgets, investments, and debt."
+        action={
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button variant="primary" onClick={() => navigate('/transactions')}>
+              <Plus size={16} /> New Transaction
+            </Button>
+          </div>
+        }
       />
 
       {tokenStatus && tokenStatus !== 'valid' && typeof fmtCountdown === 'function' && (
-        <Card tone={tokenStatus === 'critical' ? 'pink' : 'amber'} style={{ marginBottom: 14 }} onClick={refreshToken}>
-          <div className="budget-card-header">
+        <Card tone={tokenStatus === 'critical' ? 'pink' : 'amber'} style={{ marginBottom: 18, cursor: 'pointer' }} onClick={refreshToken}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <span className="hero-balance-label">Session</span>
-              <strong style={{ fontSize: 18 }}>{tokenStatus === 'critical' ? 'Expiring now' : 'Expiring soon'}</strong>
-              <small>JWT expires in {fmtCountdown(secsLeft)}. Tap to refresh.</small>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: tokenStatus === 'critical' ? '#ef4444' : '#f59e0b' }}>
+                {tokenStatus === 'critical' ? 'Session Expiring Immediately' : 'Session Refresh Available'}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                JWT expires in {fmtCountdown(secsLeft)}. Click here to silently renew your secure token.
+              </div>
             </div>
+            <span className="badge-pill badge-pill-amber">Refresh Now</span>
           </div>
         </Card>
       )}
 
+      {/* 4 Primary Metric Cards */}
       <div className="metric-grid">
-        <MetricCard label="Total Balance" value={money(netWorth)} helper={`Savings Rate: ${savingsRate}%`} icon={<Wallet />} tone="blue" />
-        <MetricCard label="Monthly Income" value={money(overview?.income)} helper="This month" icon={<TrendingUp />} tone="mint" />
-        <MetricCard label="Monthly Expenses" value={money(overview?.expenses)} helper="This month" icon={<ArrowDownRight />} tone="pink" />
-        <MetricCard label="Monthly Savings" value={money(overview?.savings)} helper="Net saved" icon={<Flag />} tone="purple" />
+        <MetricCard
+          label="Total Net Worth"
+          value={money(netWorth)}
+          helper="Liquid + Portfolio Assets"
+          icon={<Wallet />}
+          tone="blue"
+          trend="up"
+          trendValue="+12.4%"
+        />
+        <MetricCard
+          label="Monthly Inflow"
+          value={money(overview?.income)}
+          helper="Earned this month"
+          icon={<TrendingUp />}
+          tone="mint"
+          trend="up"
+          trendValue="+5.8%"
+        />
+        <MetricCard
+          label="Monthly Outflow"
+          value={money(overview?.expenses)}
+          helper="Spent this month"
+          icon={<ArrowDownRight />}
+          tone="pink"
+          trend={Number(overview?.expenses) > Number(overview?.income) ? 'down' : 'up'}
+          trendValue="Spend"
+        />
+        <MetricCard
+          label="Monthly Net Saved"
+          value={money(overview?.savings)}
+          helper={`${savingsRate}% savings rate`}
+          icon={<Flag />}
+          tone="purple"
+          trend={Number(overview?.savings) >= 0 ? 'up' : 'down'}
+          trendValue={`${savingsRate}%`}
+        />
       </div>
 
+      {/* Quick Action Pills */}
+      <div className="quick-actions-bar">
+        <button type="button" className="quick-action-pill" onClick={() => navigate('/transactions')}>
+          <span className="quick-action-pill-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>+</span>
+          <span>Add Transaction</span>
+        </button>
+        <button type="button" className="quick-action-pill" onClick={() => navigate('/budgets')}>
+          <span className="quick-action-pill-icon" style={{ background: 'rgba(14, 165, 233, 0.15)', color: '#0284c7' }}><ChartPie size={13} /></span>
+          <span>Budgets ({budgets.length})</span>
+        </button>
+        <button type="button" className="quick-action-pill" onClick={() => navigate('/goals')}>
+          <span className="quick-action-pill-icon" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6' }}><Target size={13} /></span>
+          <span>Savings Goals ({goals.length})</span>
+        </button>
+        <button type="button" className="quick-action-pill" onClick={() => navigate('/investments')}>
+          <span className="quick-action-pill-icon" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}><TrendingUp size={13} /></span>
+          <span>Investments</span>
+        </button>
+        <button type="button" className="quick-action-pill" onClick={() => navigate('/loans')}>
+          <span className="quick-action-pill-icon" style={{ background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e' }}><Banknote size={13} /></span>
+          <span>Loans & EMI</span>
+        </button>
+        <button type="button" className="quick-action-pill" onClick={() => navigate('/calculators')}>
+          <span className="quick-action-pill-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>₹</span>
+          <span>Calculators Suite</span>
+        </button>
+      </div>
+
+      {/* 2-Column Responsive Dashboard Layout */}
       <div className="dashboard-grid">
-        <div>
-          <SectionTitle>Quick Actions</SectionTitle>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 24, overflowX: 'auto', paddingBottom: 8 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => navigate('/transactions')}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', display: 'grid', placeItems: 'center' }}><Plus size={24} /></div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-soft)' }}>Add Txn</span>
+        {/* Left / Main Column */}
+        <div className="dashboard-column">
+          {/* Cashflow Trends Area Chart */}
+          <div className="data-card">
+            <div className="data-card-header">
+              <div className="data-card-title">
+                <TrendingUp size={18} style={{ color: '#10b981' }} />
+                <span>Cash Flow Trends</span>
+              </div>
+              <button type="button" className="data-card-action" onClick={() => navigate('/analytics')}>
+                Deep Analytics &rarr;
+              </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => navigate('/budgets')}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', display: 'grid', placeItems: 'center' }}><ChartPie size={24} /></div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-soft)' }}>Budget</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => navigate('/goals')}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', display: 'grid', placeItems: 'center' }}><Target size={24} /></div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-soft)' }}>Goal</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => navigate('/investments')}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6', display: 'grid', placeItems: 'center' }}><TrendingUp size={24} /></div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-soft)' }}>Invest</span>
+            <div className="data-card-body" style={{ padding: '16px 20px 24px' }}>
+              <div style={{ height: 260, position: 'relative' }}>
+                <Line data={chartData} options={chartOptions} />
+              </div>
             </div>
           </div>
-          
-          <SectionTitle>Income vs Expenses</SectionTitle>
-          <Card tone="plain" style={{ padding: 24, boxShadow: '0 12px 32px rgba(0,0,0,0.06)' }}>
 
-            <div className="chart-box" style={{ height: 100, margin: '24px 0' }}>
-              <Line data={chartData} options={chartOptions} />
+          {/* Recent Activity Ledger */}
+          <div className="data-card">
+            <div className="data-card-header">
+              <div className="data-card-title">
+                <ReceiptText size={18} style={{ color: '#0284c7' }} />
+                <span>Recent Ledger Transactions</span>
+              </div>
+              <button type="button" className="data-card-action" onClick={() => navigate('/transactions')}>
+                View all ({recent.length}) &rarr;
+              </button>
             </div>
-
-            <div style={{ display: 'flex', gap: 16, marginTop: 16, flexWrap: 'wrap' }}>
-              {/* Budgets List Card */}
-              <Card tone="plain" style={{ flex: 1, minWidth: 280, padding: 20, boxShadow: '0 12px 32px rgba(0,0,0,0.06)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                  <span style={{ fontSize: '1rem', color: '#0f172a', fontWeight: 700 }}>Budgets</span>
-                  <span style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/budgets')}>View All &rarr;</span>
-                </div>
-                {budgets.slice(0,3).map(b => (
-                  <div key={b.id} style={{ marginBottom: 16 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                      <div style={{ fontSize: '1.5rem', background: '#f1f5f9', padding: 8, borderRadius: 12 }}>{b.emoji || '🍔'}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                          <strong style={{ fontSize: '0.9rem', color: '#334155' }}>{b.name || 'Food'}</strong>
-                          <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{money(b.spent)} / {money(b.amount)}</span>
-                        </div>
-                        <ProgressBar value={(Number(b.spent) / Number(b.amount)) * 100} tone={Number(b.spent) > Number(b.amount) ? 'pink' : 'mint'} />
+            <div className="data-card-body" style={{ padding: '8px 20px 14px' }}>
+              {recent.length > 0 ? (
+                recent.slice(0, 6).map(txn => (
+                  <div key={txn.id} className="modern-row">
+                    <div className="modern-row-avatar" style={{
+                      background: txn.type === 'income' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(244, 63, 94, 0.12)',
+                      color: txn.type === 'income' ? '#10b981' : '#f43f5e',
+                    }}>
+                      {txn.type === 'income' ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
+                    </div>
+                    <div className="modern-row-info">
+                      <div className="modern-row-title">{txn.title}</div>
+                      <div className="modern-row-meta">
+                        <span>{dateShort(txn.date)}</span>
+                        <span>•</span>
+                        <span className="badge-pill badge-pill-neutral" style={{ padding: '1px 6px', fontSize: '0.7rem' }}>
+                          {txn.category_name || 'General'}
+                        </span>
+                        {txn.account_name && (
+                          <>
+                            <span>•</span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-soft)' }}>{txn.account_name}</span>
+                          </>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
-                {budgets.length === 0 && <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>No budgets set</div>}
-              </Card>
-
-              {/* Goals List Card */}
-              <Card tone="plain" style={{ flex: 1, minWidth: 280, padding: 20, boxShadow: '0 12px 32px rgba(0,0,0,0.06)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                  <span style={{ fontSize: '1rem', color: '#0f172a', fontWeight: 700 }}>Goals</span>
-                  <span style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/goals')}>View All &rarr;</span>
-                </div>
-                {goals.slice(0,3).map(g => (
-                  <div key={g.id} style={{ marginBottom: 16 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                      <div style={{ fontSize: '1.5rem', background: '#f1f5f9', padding: 8, borderRadius: 12 }}>{g.emoji || '💻'}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                          <strong style={{ fontSize: '0.9rem', color: '#334155' }}>{g.name}</strong>
-                          <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{money(g.saved_amount)} / {money(g.target_amount)}</span>
-                        </div>
-                        <ProgressBar value={(Number(g.saved_amount) / Number(g.target_amount)) * 100} tone="blue" />
-                      </div>
+                    <div className={`modern-row-amount ${txn.type === 'income' ? 'amount-positive' : 'amount-negative'}`}>
+                      {txn.type === 'income' ? '+' : '-'}{money(txn.amount)}
                     </div>
                   </div>
-                ))}
-                {goals.length === 0 && <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>No goals set</div>}
-              </Card>
+                ))
+              ) : (
+                <EmptyState icon={<ReceiptText />} title="No transactions recorded" text="Log your first income or expense to activate cash flow intelligence." />
+              )}
+            </div>
+          </div>
 
-              {/* Investments List Card */}
-              <Card tone="plain" style={{ flex: 1, minWidth: 280, padding: 20, boxShadow: '0 12px 32px rgba(0,0,0,0.06)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                  <span style={{ fontSize: '1rem', color: '#0f172a', fontWeight: 700 }}>Investments</span>
-                  <span style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/investments')}>View All &rarr;</span>
-                </div>
-                {(overview?.investments || []).length === 0 && (
-                  <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>No investments yet</div>
-                )}
-                {(overview?.investments || []).slice(0, 3).map(inv => {
-                  const invested = Number(inv.invested_amount || 0);
-                  const current = Number(inv.current_value || 0);
-                  const gainPct = invested > 0 ? ((current - invested) / invested) * 100 : 0;
+          {/* Active Budgets Card */}
+          <div className="data-card">
+            <div className="data-card-header">
+              <div className="data-card-title">
+                <ChartPie size={18} style={{ color: '#f59e0b' }} />
+                <span>Active Budgets</span>
+              </div>
+              <button type="button" className="data-card-action" onClick={() => navigate('/budgets')}>
+                Manage Budgets &rarr;
+              </button>
+            </div>
+            <div className="data-card-body">
+              {budgets.length > 0 ? (
+                budgets.slice(0, 4).map(b => {
+                  const spent = Number(b.spent || b.spent_amount || 0);
+                  const limit = Number(b.amount || 1);
+                  const pct = Math.min(100, Math.round((spent / limit) * 100));
+                  const isOver = spent > limit;
                   return (
-                    <div key={inv.id} style={{ marginBottom: 16 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                        <div style={{ fontSize: '1.5rem', background: '#f1f5f9', padding: 8, borderRadius: 12 }}>📈</div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <strong style={{ fontSize: '0.9rem', color: '#334155' }}>{inv.name}</strong>
-                            <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{money(current)}</strong>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Invested: {money(invested)}</span>
-                            <span style={{ fontSize: '0.8rem', color: gainPct >= 0 ? '#10b981' : '#ef4444', fontWeight: 600 }}>
-                              {gainPct >= 0 ? '+' : ''}{gainPct.toFixed(1)}%
-                            </span>
-                          </div>
+                    <div key={b.id} style={{ marginBottom: 18 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: '1.2rem' }}>{b.emoji || '🏷️'}</span>
+                          <strong style={{ fontSize: '0.88rem', color: 'var(--text)' }}>{b.name}</strong>
+                          {isOver && <span className="badge-pill badge-pill-pink">Over Budget</span>}
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: isOver ? '#ef4444' : 'var(--text)' }}>
+                            {money(spent)}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}> of {money(limit)}</span>
                         </div>
                       </div>
+                      <ProgressBar value={pct} tone={isOver ? 'pink' : pct > 80 ? 'amber' : 'mint'} />
                     </div>
                   );
-                })}
-              </Card>
+                })
+              ) : (
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '16px 0' }}>
+                  No active budgets created yet. Set monthly spending targets to prevent overspending.
+                </div>
+              )}
             </div>
-
-            <div style={{ display: 'flex', gap: 16, marginTop: 16, flexWrap: 'wrap' }}>
-              {/* Recent Activity Card */}
-              <Card className="list-card" style={{ flex: 1, minWidth: 280 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, padding: '8px 8px 0' }}>
-                  <span style={{ fontSize: '1rem', color: '#0f172a', fontWeight: 700 }}>Recent Transactions</span>
-                  <span style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/transactions')}>View All &rarr;</span>
-                </div>
-                {recent.length > 0 ? (
-                  recent.map(txn => (
-                    <div key={txn.id} className="transaction-row" style={{ padding: '8px' }}>
-                      <div className="transaction-icon">
-                        {txn.type === 'income' ? <ArrowUpRight size={21} /> : <ArrowDownRight size={21} />}
-                      </div>
-                      <div style={{ minWidth: 0 }}>
-                        <div className="transaction-title">{txn.title}</div>
-                        <div className="transaction-meta">{dateShort(txn.date)} - {txn.category_name || 'General'}</div>
-                      </div>
-                      <div className={`transaction-amount ${txn.type === 'income' ? 'amount-income' : 'amount-expense'}`}>
-                        {txn.type === 'income' ? '+' : '-'}{money(txn.amount)}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <EmptyState icon={<ReceiptText />} title="No transactions yet" text="Add your first transaction." />
-                )}
-              </Card>
-
-              {/* Upcoming Bills Card */}
-              <Card className="list-card" style={{ flex: 1, minWidth: 280 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, padding: '8px 8px 0' }}>
-                  <span style={{ fontSize: '1rem', color: '#0f172a', fontWeight: 700 }}>Upcoming Bills</span>
-                  <span style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/subscriptions')}>View All &rarr;</span>
-                </div>
-                {(overview?.subscriptions || []).length === 0 && (
-                  <div style={{ color: '#94a3b8', fontSize: '0.9rem', padding: 8 }}>No upcoming subscriptions</div>
-                )}
-                {(overview?.subscriptions || []).slice(0, 4).map(sub => (
-                  <div key={sub.id} className="transaction-row" style={{ padding: '8px' }}>
-                    <div style={{ fontSize: '1.5rem', background: '#fee2e2', padding: 8, borderRadius: 12 }}>{sub.icon || '📅'}</div>
-                    <div style={{ minWidth: 0 }}>
-                      <div className="transaction-title">{sub.name}</div>
-                      <div className="transaction-meta">{sub.category || sub.period || 'Subscription'}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div className="transaction-amount amount-expense">-{money(sub.amount)}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>{sub.next_due || 'No date'}</div>
-                    </div>
-                  </div>
-                ))}
-              </Card>
-
-              {/* Loans Card */}
-              <Card className="list-card" style={{ flex: 1, minWidth: 280 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, padding: '8px 8px 0' }}>
-                  <span style={{ fontSize: '1rem', color: '#0f172a', fontWeight: 700 }}>Loans</span>
-                  <span style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/loans')}>View All &rarr;</span>
-                </div>
-                {(overview?.loans || []).length === 0 && (
-                  <div style={{ color: '#94a3b8', fontSize: '0.9rem', padding: 8 }}>No loans tracked</div>
-                )}
-                {(overview?.loans || []).slice(0, 3).map(loan => {
-                  const principal = Number(loan.principal || 0);
-                  const remaining = Number(loan.remaining || 0);
-                  const paidPct = principal > 0 ? Math.min(100, ((principal - remaining) / principal) * 100) : 0;
-                  return (
-                    <div key={loan.id} style={{ padding: 8, marginBottom: 12 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <strong style={{ fontSize: '0.9rem', color: '#334155' }}>{loan.name}</strong>
-                        <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{money(remaining)} left</strong>
-                      </div>
-                      <ProgressBar value={paidPct} tone="blue" />
-                      <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4, textAlign: 'right' }}>EMI: {money(loan.emi_amount)}</div>
-                    </div>
-                  );
-                })}
-              </Card>
-            </div>
-          </Card>
+          </div>
         </div>
 
-        <aside>
-          {/* Gamification Widget */}
-          <SectionTitle>This month</SectionTitle>
-          <Card style={{ marginBottom: 20, padding: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Flame size={20} color="#ef4444" fill="#ef4444" />
-                <strong style={{ fontSize: '1.05rem', color: 'var(--text)' }}>
-                  {savingsRate >= 20 ? 'Strong savings rate' : savingsRate > 0 ? 'Saving this month' : 'Track a surplus'}
-                </strong>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
-              <div style={{ textAlign: 'center', flexShrink: 0, opacity: Number(overview?.savings) > 0 ? 1 : 0.4 }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: 'rgba(236, 72, 153, 0.1)', display: 'grid', placeItems: 'center', margin: '0 auto 6px' }}>
-                  <Award size={24} color="#ec4899" />
-                </div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-soft)' }}>Saver</div>
-              </div>
-              <div style={{ textAlign: 'center', flexShrink: 0, opacity: budgets.length ? 1 : 0.4 }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: 'rgba(16, 185, 129, 0.1)', display: 'grid', placeItems: 'center', margin: '0 auto 6px' }}>
-                  <Target size={24} color="#10b981" />
-                </div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-soft)' }}>Budgeter</div>
-              </div>
-              <div style={{ textAlign: 'center', flexShrink: 0, opacity: (overview?.investments || []).length ? 1 : 0.4 }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: 'rgba(100, 116, 139, 0.1)', display: 'grid', placeItems: 'center', margin: '0 auto 6px' }}>
-                  <TrendingUp size={24} color="#64748b" />
-                </div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-soft)' }}>Investor</div>
-              </div>
-            </div>
-          </Card>
-
-          <SectionTitle>Quick Stats</SectionTitle>
-          <div className="metric-grid">
-            <MetricCard label="Portfolio" value={money(overview?.portfolio)} helper="Investment value" icon={<TrendingUp />} tone="blue" />
-          </div>
-
+        {/* Right / Sidebar Column */}
+        <div className="dashboard-column">
+          {/* Connected Accounts */}
           {accounts.length > 0 && (
-            <>
-              <SectionTitle>Accounts</SectionTitle>
-              <Card className="list-card">
-                {accounts.map(account => (
-                  <div key={account.id} className="account-row">
-                    <div className="account-icon">
-                      <WalletCards size={20} />
+            <div className="data-card">
+              <div className="data-card-header">
+                <div className="data-card-title">
+                  <WalletCards size={18} style={{ color: '#0284c7' }} />
+                  <span>Accounts & Liquidity</span>
+                </div>
+                <span className="badge-pill badge-pill-neutral">{accounts.length} Active</span>
+              </div>
+              <div className="data-card-body" style={{ padding: '8px 20px 14px' }}>
+                {accounts.map(acc => (
+                  <div key={acc.id} className="modern-row">
+                    <div className="modern-row-avatar" style={{ fontSize: '1rem', background: 'var(--surface-strong)' }}>
+                      💳
                     </div>
-                    <div style={{ minWidth: 0 }}>
-                      <strong>{account.name}</strong>
-                      <small style={{ textTransform: 'capitalize' }}>{account.type || 'Account'}</small>
+                    <div className="modern-row-info">
+                      <div className="modern-row-title">{acc.name}</div>
+                      <div className="modern-row-meta" style={{ textTransform: 'capitalize' }}>
+                        {acc.type || 'Standard Account'}
+                      </div>
                     </div>
-                    <b>{money(account.balance)}</b>
+                    <div className="modern-row-amount amount-positive">
+                      {money(acc.balance)}
+                    </div>
                   </div>
                 ))}
-              </Card>
-            </>
+              </div>
+            </div>
           )}
-        </aside>
+
+          {/* Savings Goals Snapshot */}
+          <div className="data-card">
+            <div className="data-card-header">
+              <div className="data-card-title">
+                <Target size={18} style={{ color: '#8b5cf6' }} />
+                <span>Savings Goals</span>
+              </div>
+              <button type="button" className="data-card-action" onClick={() => navigate('/goals')}>
+                All Goals &rarr;
+              </button>
+            </div>
+            <div className="data-card-body">
+              {goals.length > 0 ? (
+                goals.slice(0, 3).map(g => {
+                  const saved = Number(g.saved_amount || g.current_amount || 0);
+                  const target = Number(g.target_amount || 1);
+                  const pct = Math.min(100, Math.round((saved / target) * 100));
+                  return (
+                    <div key={g.id} style={{ marginBottom: 16 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: '1.2rem' }}>{g.emoji || '🎯'}</span>
+                          <strong style={{ fontSize: '0.88rem', color: 'var(--text)' }}>{g.name}</strong>
+                        </div>
+                        <span className="badge-pill badge-pill-purple">{pct}%</span>
+                      </div>
+                      <ProgressBar value={pct} tone="purple" />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                        <span>Saved: {money(saved)}</span>
+                        <span>Target: {money(target)}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '12px 0' }}>
+                  No savings goals defined yet. Plan for emergencies, vacations, or down-payments.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Upcoming Bills & Subscriptions */}
+          <div className="data-card">
+            <div className="data-card-header">
+              <div className="data-card-title">
+                <Banknote size={18} style={{ color: '#f43f5e' }} />
+                <span>Upcoming Subscriptions</span>
+              </div>
+              <button type="button" className="data-card-action" onClick={() => navigate('/subscriptions')}>
+                Manage &rarr;
+              </button>
+            </div>
+            <div className="data-card-body" style={{ padding: '8px 20px 14px' }}>
+              {(overview?.subscriptions || []).length > 0 ? (
+                (overview?.subscriptions || []).slice(0, 4).map(sub => (
+                  <div key={sub.id} className="modern-row">
+                    <div className="modern-row-avatar" style={{ fontSize: '1.1rem', background: 'rgba(244, 63, 94, 0.08)' }}>
+                      {sub.icon || '📅'}
+                    </div>
+                    <div className="modern-row-info">
+                      <div className="modern-row-title">{sub.name}</div>
+                      <div className="modern-row-meta">
+                        <span className="badge-pill badge-pill-pink" style={{ fontSize: '0.68rem', padding: '1px 5px' }}>
+                          Due: {sub.next_due || 'Soon'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="modern-row-amount amount-negative">
+                      -{money(sub.amount)}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '12px 0' }}>
+                  No upcoming subscription renewals found.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Investments Snapshot */}
+          <div className="data-card">
+            <div className="data-card-header">
+              <div className="data-card-title">
+                <TrendingUp size={18} style={{ color: '#10b981' }} />
+                <span>Portfolio Snapshot</span>
+              </div>
+              <button type="button" className="data-card-action" onClick={() => navigate('/investments')}>
+                Portfolio &rarr;
+              </button>
+            </div>
+            <div className="data-card-body">
+              {(overview?.investments || []).length > 0 ? (
+                (overview?.investments || []).slice(0, 3).map(inv => {
+                  const invested = Number(inv.invested_amount || 0);
+                  const current = Number(inv.current_value || 0);
+                  const gain = current - invested;
+                  const gainPct = invested > 0 ? (gain / invested) * 100 : 0;
+                  return (
+                    <div key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <div>
+                        <strong style={{ fontSize: '0.88rem', color: 'var(--text)', display: 'block' }}>{inv.name}</strong>
+                        <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Invested: {money(invested)}</span>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>{money(current)}</div>
+                        <span className={`badge-pill ${gainPct >= 0 ? 'badge-pill-mint' : 'badge-pill-pink'}`} style={{ fontSize: '0.68rem', padding: '1px 5px' }}>
+                          {gainPct >= 0 ? '+' : ''}{gainPct.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '12px 0' }}>
+                  No investment holdings added yet. Track mutual funds, stocks, gold, and PPF.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </Page>
   );

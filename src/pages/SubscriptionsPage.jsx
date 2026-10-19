@@ -107,41 +107,74 @@ export default function SubscriptionsPage() {
   return (
     <Page>
       <PageHeader
-        eyebrow="Recurring"
+        eyebrow="Recurring Outflows"
         title="Subscriptions"
-        subtitle="Track recurring payments before they quietly eat the month."
-        action={<Button onClick={() => setModal(true)}><Plus size={18} /> Add</Button>}
+        subtitle="Manage recurring digital memberships, SaaS tools, and utilities to protect cashflow."
+        action={
+          <Button variant="primary" onClick={() => setModal(true)}>
+            <Plus size={16} /> Add Subscription
+          </Button>
+        }
       />
 
       {subs.length > 0 && (
         <>
-          <Card tone="purple" className="hero-balance" style={{ marginBottom: 14 }}>
-            <div className="budget-card-header">
-              <div>
-                <span className="hero-balance-label">Monthly recurring</span>
-                <strong>{money(Math.round(monthly))}</strong>
-                <small>{money(Math.round(monthly * 12))} per year</small>
+          <div className="data-card" style={{ marginBottom: 20 }}>
+            <div className="data-card-body" style={{ padding: '20px 24px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+                <div>
+                  <span style={{ fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+                    Total Monthly Recurring Burn
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 4 }}>
+                    <strong style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+                      {money(Math.round(monthly))}
+                    </strong>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                      / month ({money(Math.round(monthly * 12))} annually)
+                    </span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className="badge-pill badge-pill-purple" style={{ fontSize: '0.84rem', padding: '4px 10px' }}>
+                    {active.length} Active Services
+                  </span>
+                  {upcoming > 0 && (
+                    <span className="badge-pill badge-pill-amber" style={{ fontSize: '0.84rem', padding: '4px 10px' }}>
+                      {upcoming} Due This Week
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="metric-icon" style={{ width: 48, height: 48 }}>
-                <Repeat2 size={25} />
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16, paddingTop: 14, borderTop: '1px solid var(--border-subtle)' }}>
+                <div>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Annual Run Rate</span>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: 2, color: 'var(--text)' }}>
+                    {money(Math.round(monthly * 12))}
+                  </div>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Paused Cost Avoidance</span>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: 2, color: '#10b981' }}>
+                    {money(Math.round(paused.reduce((s, sub) => s + monthlyEquivalent(sub), 0)))}/mo
+                  </div>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Weekly Average</span>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: 2, color: 'var(--text)' }}>
+                    {money(Math.round(monthly / 4.33))}/wk
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="hero-balance-grid">
-              <div className="mini-stat">
-                <span>Active</span>
-                <strong>{active.length}</strong>
-              </div>
-              <div className="mini-stat">
-                <span>Due soon</span>
-                <strong>{upcoming}</strong>
-              </div>
-            </div>
-          </Card>
-          <div className="metric-grid">
-            <MetricCard label="Active" value={String(active.length)} helper="Current services" tone="mint" icon={<Repeat2 />} />
-            <MetricCard label="Paused" value={String(paused.length)} helper="Not billing" tone="amber" icon={<Pause />} />
-            <MetricCard label="Week" value={String(upcoming)} helper="Renewing soon" tone="pink" icon={<BellRing />} />
-            <MetricCard label="Monthly" value={money(monthly)} helper="Equivalent spend" tone="purple" icon={<CalendarClock />} />
+          </div>
+
+          <div className="metric-grid" style={{ marginBottom: 20 }}>
+            <MetricCard label="Active Services" value={String(active.length)} helper="Currently billing" tone="mint" icon={<Repeat2 />} />
+            <MetricCard label="Paused" value={String(paused.length)} helper="Billing frozen" tone="amber" icon={<Pause />} />
+            <MetricCard label="Due Soon" value={String(upcoming)} helper="Renewing soon" tone="pink" icon={<BellRing />} />
+            <MetricCard label="Monthly Equiv." value={money(Math.round(monthly))} helper="Blended run rate" tone="purple" icon={<CalendarClock />} />
           </div>
         </>
       )}
@@ -153,32 +186,44 @@ export default function SubscriptionsPage() {
       ) : subs.length === 0 ? (
         <EmptyState
           icon={<Repeat2 />}
-          title="No subscriptions"
-          text="Add Netflix, Spotify, cloud tools, insurance, and any recurring bills."
-          action={<Button onClick={() => setModal(true)}><Plus size={18} /> Add subscription</Button>}
+          title="No active subscriptions"
+          text="Track SaaS memberships, streaming services, and utility bills before they silently compound."
+          action={<Button onClick={() => setModal(true)}><Plus size={16} /> Add subscription</Button>}
         />
       ) : (
-        <>
-          {active.length > 0 && <div className="section-title"><span>Active</span></div>}
-          <div className="budget-list">
-            {active.map(sub => <SubscriptionCard key={sub.id} sub={sub} onToggle={toggleActive} onDelete={deleteSub} />)}
-          </div>
-          {paused.length > 0 && <div className="section-title"><span>Paused</span></div>}
-          <div className="budget-list">
-            {paused.map(sub => <SubscriptionCard key={sub.id} sub={sub} paused onToggle={toggleActive} onDelete={deleteSub} />)}
-          </div>
-        </>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {active.length > 0 && (
+            <div>
+              <div style={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12 }}>
+                Active Subscriptions ({active.length})
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+                {active.map(sub => <SubscriptionCard key={sub.id} sub={sub} onToggle={toggleActive} onDelete={deleteSub} />)}
+              </div>
+            </div>
+          )}
+
+          {paused.length > 0 && (
+            <div>
+              <div style={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12 }}>
+                Paused / Inactive ({paused.length})
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+                {paused.map(sub => <SubscriptionCard key={sub.id} sub={sub} paused onToggle={toggleActive} onDelete={deleteSub} />)}
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
-      <FAB icon={<Plus size={24} />} label="Add subscription" onClick={() => setModal(true)} />
+      <FAB icon={<Plus size={22} />} label="Add subscription" onClick={() => setModal(true)} />
 
       {modal && (
-        <BottomSheet title="Add Subscription" onClose={() => setModal(false)}>
+        <BottomSheet title="Add Recurring Subscription" onClose={() => setModal(false)}>
           <div className="field" style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>Subscription Category</label>
-              <button style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>See All</button>
-            </div>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Subscription Category
+            </label>
             <VisualCategorySelect 
               categories={SUB_CATEGORIES.slice(0, 8)} 
               value={form.category} 
@@ -188,24 +233,29 @@ export default function SubscriptionsPage() {
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Service Name</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Service Name
+            </label>
             <input 
               type="text"
               className="input"
-              placeholder="E.g., Netflix, Spotify"
+              placeholder="E.g., Netflix, Spotify, AWS, GitHub"
               value={form.name}
               onChange={event => setForm(prev => ({ ...prev, name: event.target.value }))}
+              autoFocus
             />
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Amount</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Billing Cost
+            </label>
             <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 12, color: '#64748b', fontWeight: 600, fontSize: '1.1rem' }}>₹</span>
+              <span style={{ position: 'absolute', left: 14, top: 12, color: 'var(--text-muted)', fontWeight: 700, fontSize: '1.1rem' }}>₹</span>
               <input 
                 type="number"
                 className="input"
-                style={{ paddingLeft: 32, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}
+                style={{ paddingLeft: 34, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}
                 placeholder="0.00"
                 value={form.amount}
                 onChange={event => setForm(prev => ({ ...prev, amount: event.target.value }))}
@@ -214,7 +264,9 @@ export default function SubscriptionsPage() {
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Billing Cycle</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Billing Frequency
+            </label>
             <SegmentedControl
               value={form.period}
               onChange={value => setForm(prev => ({ ...prev, period: value }))}
@@ -226,32 +278,20 @@ export default function SubscriptionsPage() {
             />
           </div>
 
-          <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Next Billing Date</label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 13, color: '#64748b' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-              </span>
-              <input 
-                type="date"
-                className="input"
-                style={{ paddingLeft: 40, color: '#0f172a', fontWeight: 500 }}
-                value={form.next_due}
-                onChange={event => setForm(prev => ({ ...prev, next_due: event.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="field" style={{ marginBottom: 24 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Note (Optional)</label>
+          <div className="field" style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Next Scheduled Billing Date
+            </label>
             <input 
-              type="text"
+              type="date"
               className="input"
-              placeholder="Add a note..."
+              style={{ color: 'var(--text)', fontWeight: 500 }}
+              value={form.next_due}
+              onChange={event => setForm(prev => ({ ...prev, next_due: event.target.value }))}
             />
           </div>
 
-          <Button className="ui-button-full" onClick={addSub} style={{ background: '#10b981', color: 'white', padding: '14px', borderRadius: '8px', fontSize: '1rem', fontWeight: 600 }}>
+          <Button className="ui-button-full" onClick={addSub} style={{ background: '#10b981', color: 'white', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
             Add Subscription
           </Button>
         </BottomSheet>
@@ -266,27 +306,54 @@ function SubscriptionCard({ sub, paused, onToggle, onDelete }) {
   const dueSoon = days !== null && days <= 7 && days >= 0;
 
   return (
-    <Card tone={paused ? 'plain' : dueSoon || overdue ? 'amber' : 'plain'} style={{ opacity: paused ? .68 : 1 }}>
-      <div className="transaction-row" style={{ borderBottom: 0, padding: 0 }}>
-        <div className="transaction-icon">
-          <Repeat2 size={21} />
-        </div>
-        <div style={{ minWidth: 0 }}>
-          <div className="transaction-title">{sub.name}</div>
-          <div className="transaction-meta">{sub.category || 'Subscription'} - {sub.period} - {dateShort(sub.next_due)}</div>
-          <div className="transaction-meta">
-            {overdue ? 'Overdue' : days === 0 ? 'Due today' : `Due in ${days}d`}
+    <div className="data-card" style={{ opacity: paused ? 0.65 : 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      <div className="data-card-header" style={{ padding: '12px 16px', background: 'var(--surface-strong)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 34, height: 34, borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', fontSize: '1rem' }}>
+            {SUB_CATEGORIES.find(c => c.id === sub.category)?.icon || '💳'}
+          </div>
+          <div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text)' }}>{sub.name}</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              {sub.category || 'General'} • <span style={{ textTransform: 'capitalize' }}>{sub.period}</span>
+            </div>
           </div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div className="transaction-amount">{money(sub.amount)}</div>
-          <div className="transaction-meta">{money(monthlyEquivalent(sub))}/mo</div>
+        <span className={`badge-pill ${paused ? 'badge-pill-neutral' : overdue ? 'badge-pill-pink' : dueSoon ? 'badge-pill-amber' : 'badge-pill-mint'}`}>
+          {paused ? 'Paused' : overdue ? 'Overdue' : days === 0 ? 'Due Today' : `${days}d left`}
+        </span>
+      </div>
+
+      <div className="data-card-body" style={{ padding: '14px 16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+              {money(sub.amount)}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              Equivalent to {money(Math.round(monthlyEquivalent(sub)))}/mo
+            </div>
+          </div>
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+            Renews: {dateShort(sub.next_due)}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid var(--border-subtle)' }}>
+          <button
+            onClick={() => onToggle(sub)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: '1px solid var(--border)', background: 'var(--surface-strong)', color: 'var(--text)', borderRadius: 6, padding: '4px 10px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+          >
+            {paused ? <Play size={11} /> : <Pause size={11} />} {paused ? 'Resume' : 'Pause'}
+          </button>
+          <button
+            onClick={() => onDelete(sub.id)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', borderRadius: 6, padding: '4px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+          >
+            <Trash2 size={11} /> Delete
+          </button>
         </div>
       </div>
-      <div className="row-actions">
-        <button onClick={() => onToggle(sub)}>{paused ? <Play size={13} /> : <Pause size={13} />} {paused ? 'Resume' : 'Pause'}</button>
-        <button onClick={() => onDelete(sub.id)}><Trash2 size={13} /> Delete</button>
-      </div>
-    </Card>
+    </div>
   );
 }

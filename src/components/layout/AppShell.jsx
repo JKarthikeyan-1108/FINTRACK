@@ -24,6 +24,41 @@ import {
   TrendingUp,
 } from 'lucide-react';
 
+const NAV_SECTIONS = [
+  {
+    title: 'Overview',
+    items: [
+      { path: '/home', label: 'Dashboard', Icon: Home },
+      { path: '/analytics', label: 'Analytics', Icon: BarChart3 },
+    ],
+  },
+  {
+    title: 'Ledger & Cash',
+    items: [
+      { path: '/transactions', label: 'Transactions', Icon: ReceiptText },
+      { path: '/budgets', label: 'Budgets', Icon: ChartPie },
+      { path: '/subscriptions', label: 'Subscriptions', Icon: Repeat2 },
+    ],
+  },
+  {
+    title: 'Wealth & Assets',
+    items: [
+      { path: '/investments', label: 'Investments', Icon: TrendingUp },
+      { path: '/goals', label: 'Savings Goals', Icon: Flag },
+      { path: '/loans', label: 'Loans & EMI', Icon: Landmark },
+      { path: '/calculators', label: 'Calculators', Icon: Calculator },
+    ],
+  },
+  {
+    title: 'System',
+    items: [
+      { path: '/categories', label: 'Categories', Icon: Tag },
+      { path: '/settings', label: 'Preferences', Icon: Settings },
+      { path: '/jwt', label: 'Security (JWT)', Icon: ShieldCheck },
+    ],
+  },
+];
+
 const PRIMARY_NAV = [
   { path: '/home', label: 'Home', Icon: Home },
   { path: '/transactions', label: 'Txns', Icon: ReceiptText },
@@ -43,7 +78,7 @@ const MORE_NAV = [
 ];
 
 export default function AppShell() {
-  const { tokenStatus, secsLeft, fmtCountdown, user } = useAuth();
+  const { tokenStatus, secsLeft, fmtCountdown, user, logout, refreshToken } = useAuth();
   const nav = useNavigate();
   const loc = useLocation();
   const [time, setTime] = useState('');
@@ -77,90 +112,143 @@ export default function AppShell() {
   const isActive = path => loc.pathname === path || loc.pathname.startsWith(`${path}/`);
   const moreActive = MORE_NAV.some(item => isActive(item.path));
 
+  // Determine active breadcrumb name
+  const currentNav = [...PRIMARY_NAV, ...MORE_NAV].find(i => isActive(i.path));
+  const currentPageTitle = currentNav ? currentNav.label : 'Dashboard';
+
   function navTo(path) {
     setMoreOpen(false);
     nav(path);
   }
 
-  const DesktopSidebar = () => (
-    <div className="sidebar">
-      <div className="sidebar-header">
-        <TrendingUp size={28} /> FINTRACK
-      </div>
-      <div className="sidebar-nav">
-        {[...PRIMARY_NAV, ...MORE_NAV].map(({ path, label, Icon }) => (
-          <button key={path} className={`sidebar-item ${isActive(path) ? 'active' : ''}`} onClick={() => navTo(path)}>
-            <Icon size={20} />
-            <span style={{ fontSize: '0.95rem' }}>{label}</span>
-          </button>
-        ))}
-      </div>
-      <div style={{ padding: '24px 16px' }}>
-        <div style={{ background: 'rgba(255,255,255,0.05)', padding: 16, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
-          <div style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, marginBottom: 8 }}>
-            <Award size={18} /> Upgrade to Pro
-          </div>
-          <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: 12 }}>Unlock advanced insights and reports.</div>
-          <button style={{ width: '100%', padding: '8px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Upgrade</button>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="app-shell-container">
-      {/* Desktop Sidebar (hidden on mobile via CSS) */}
-      <div className="desktop-sidebar">
+      {/* Desktop Sidebar */}
+      <aside className="desktop-sidebar" aria-label="Main Navigation">
         <div className="sidebar-header">
-          <TrendingUp size={28} /> FINTRACK
-        </div>
-        <div className="sidebar-nav">
-          {[...PRIMARY_NAV, ...MORE_NAV].map(({ path, label, Icon }) => (
-            <button key={path} className={`sidebar-item ${isActive(path) ? 'active' : ''}`} onClick={() => navTo(path)}>
-              <Icon size={20} />
-              <span style={{ fontSize: '0.95rem' }}>{label}</span>
-            </button>
-          ))}
-        </div>
-        <div style={{ padding: '24px 16px' }}>
-          <div style={{ background: 'rgba(255,255,255,0.05)', padding: 16, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
-            <div style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, marginBottom: 8 }}>
-              <Award size={18} /> Upgrade to Pro
+          <div className="sidebar-brand-link" onClick={() => navTo('/home')}>
+            <div className="sidebar-brand-icon">
+              <TrendingUp size={20} strokeWidth={2.5} />
             </div>
-            <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: 12 }}>Unlock advanced insights and reports.</div>
-            <button style={{ width: '100%', padding: '8px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Upgrade</button>
+            <div>
+              <span className="sidebar-brand-title">FinTrack</span>
+            </div>
           </div>
+          <span className="sidebar-brand-badge">v14 PRO</span>
         </div>
-      </div>
+
+        <nav className="sidebar-nav">
+          {NAV_SECTIONS.map(section => (
+            <div key={section.title}>
+              <div className="sidebar-section-title">{section.title}</div>
+              {section.items.map(({ path, label, Icon }) => (
+                <button
+                  key={path}
+                  type="button"
+                  className={`sidebar-item ${isActive(path) ? 'active' : ''}`}
+                  onClick={() => navTo(path)}
+                >
+                  <Icon size={18} strokeWidth={isActive(path) ? 2.4 : 2} />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          {user && (
+            <div className="sidebar-user-card">
+              <div className="sidebar-user-avatar">
+                {(user.name || user.email || 'U')[0].toUpperCase()}
+              </div>
+              <div className="sidebar-user-info">
+                <div className="sidebar-user-name">{user.name || user.email?.split('@')[0] || 'User'}</div>
+                <div className="sidebar-user-plan">Active Account</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </aside>
 
       {/* Main Container */}
       <div className="main-wrapper">
-        {/* Responsive Header (Desktop TopBar / Mobile StatusBar) */}
-        <div className="responsive-header">
+        {/* Responsive Header */}
+        <header className="responsive-header">
           <div className="mobile-only status-bar-time">{time}</div>
+
+          <div className="desktop-only header-left">
+            <div className="header-breadcrumb">
+              <span>FinTrack</span>
+              <span>/</span>
+              <span className="header-breadcrumb-active">{currentPageTitle}</span>
+            </div>
+          </div>
+
           <div className="desktop-only search-bar">
-            <input type="text" placeholder="Search transactions, categories..." />
-            <Search size={18} className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search ledger, budgets, investments..."
+              aria-label="Search"
+            />
+            <Search size={16} className="search-icon" />
+            <span className="search-shortcut-badge">⌘K</span>
           </div>
 
           <div className="header-actions">
             {tokenStatus && tokenStatus !== 'valid' && typeof fmtCountdown === 'function' && (
-              <span style={{ color: tokenStatus === 'critical' ? '#c84d4d' : '#c58a21', fontSize: 11, fontWeight: 850 }}>
-                {fmtCountdown(secsLeft)}
-              </span>
+              <button
+                type="button"
+                className="header-btn"
+                onClick={refreshToken}
+                title="Click to refresh session"
+                style={{ color: tokenStatus === 'critical' ? '#ef4444' : '#f59e0b', borderColor: tokenStatus === 'critical' ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)' }}
+              >
+                <ShieldCheck size={16} />
+                <span>Expires: {fmtCountdown(secsLeft)}</span>
+              </button>
             )}
-            <button onClick={toggleTheme} className="icon-btn">
-              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+
+            <button
+              type="button"
+              className="header-btn header-btn-primary desktop-only"
+              onClick={() => navTo('/transactions')}
+            >
+              <span>+ New Transaction</span>
             </button>
-            <Bell size={20} className="icon-btn-svg" />
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="icon-btn"
+              title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+            </button>
+
+            <button
+              type="button"
+              className="icon-btn desktop-only"
+              title="Notifications"
+              aria-label="Notifications"
+            >
+              <Bell size={18} className="icon-btn-svg" />
+            </button>
+
             {user && (
-              <div className="user-profile">
+              <div
+                className="user-profile desktop-only"
+                style={{ cursor: 'pointer' }}
+                onClick={() => navTo('/settings')}
+                title="Account Settings"
+              >
                 <div className="user-dot">{(user.name || user.email || 'U')[0].toUpperCase()}</div>
-                <span className="desktop-only user-name">{user.name?.split(' ')[0] || 'User'}</span>
+                <span className="user-name">{user.name?.split(' ')[0] || 'User'}</span>
               </div>
             )}
           </div>
-        </div>
+        </header>
 
         {/* The single Outlet */}
         <div className="app-content-scroll" onClick={() => setMoreOpen(false)}>

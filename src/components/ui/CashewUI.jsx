@@ -34,15 +34,26 @@ export function Card({ children, className = '', tone = 'plain', ...props }) {
   );
 }
 
-export function MetricCard({ label, value, helper, tone = 'mint', icon }) {
+export function MetricCard({ label, value, helper, tone = 'mint', icon, trend, trendValue }) {
   return (
     <Card className="metric-card" tone={tone}>
       <div className="metric-card-top">
-        {icon && <span className="metric-icon">{icon}</span>}
-        <span>{label}</span>
+        <span className="metric-card-label">{label}</span>
+        {icon && <span className={`metric-icon metric-icon-${tone}`}>{icon}</span>}
       </div>
-      <strong>{value}</strong>
-      {helper && <small>{helper}</small>}
+      <div className="metric-card-body">
+        <strong>{value}</strong>
+        {helper && (
+          <small>
+            {trend && (
+              <span className={`metric-trend metric-trend-${trend}`}>
+                {trend === 'up' ? '↑' : '↓'} {trendValue}
+              </span>
+            )}
+            <span>{helper}</span>
+          </small>
+        )}
+      </div>
     </Card>
   );
 }

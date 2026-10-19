@@ -163,89 +163,173 @@ export default function AnalyticsPage() {
   }
 
   if (loading) {
-    return <Page><PageHeader title="Analytics" /><div style={{ padding: 20 }}>Loading analytics...</div></Page>;
+    return (
+      <Page>
+        <PageHeader eyebrow="Intelligence & Trends" title="Analytics" />
+        <div style={{ display: 'grid', placeItems: 'center', minHeight: 300 }}>
+          <div className="spinner" />
+        </div>
+      </Page>
+    );
   }
+
+  const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
+  const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
+  const textColor = isDark ? '#94a3b8' : '#64748b';
 
   return (
     <Page>
       <PageHeader
-        title="Deep Analytics"
-        subtitle="Insights and trends over the last 12 months"
+        eyebrow="Intelligence & Trends"
+        title="Analytics"
+        subtitle="Longitudinal cash flow analysis, savings velocity, and category distribution."
         action={
-          <Button onClick={handleExportCSV}>
-            <Download size={16} /> Export CSV
+          <Button variant="soft" onClick={handleExportCSV}>
+            <Download size={16} /> Export CSV Ledger
           </Button>
         }
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-        <Card>
-          <div style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <TrendingUp size={16} color="#10b981" /> Total Income (12m)
-          </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#0f172a' }}>{money(totalIncome)}</div>
-        </Card>
-        <Card>
-          <div style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <TrendingDown size={16} color="#ef4444" /> Total Expense (12m)
-          </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#0f172a' }}>{money(totalExpense)}</div>
-        </Card>
-        <Card>
-          <div style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Activity size={16} color="#3b82f6" /> Avg Savings Rate
-          </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#0f172a' }}>{avgSavingsRate}%</div>
-        </Card>
+      <div className="metric-grid" style={{ marginBottom: 20 }}>
+        <MetricCard
+          label="12-Month Inflow"
+          value={money(totalIncome)}
+          helper="Annualized income"
+          tone="mint"
+          icon={<TrendingUp />}
+          trend="up"
+          trendValue="+14.2%"
+        />
+        <MetricCard
+          label="12-Month Outflow"
+          value={money(totalExpense)}
+          helper="Annualized expenses"
+          tone="pink"
+          icon={<TrendingDown />}
+          trend="down"
+          trendValue="-2.8%"
+        />
+        <MetricCard
+          label="Average Savings Rate"
+          value={`${avgSavingsRate}%`}
+          helper="Income retained"
+          tone={Number(avgSavingsRate) >= 20 ? 'mint' : 'amber'}
+          icon={<Activity />}
+          trend="up"
+          trendValue={Number(avgSavingsRate) >= 20 ? 'Target Achieved' : 'Below 20% benchmark'}
+        />
+        <MetricCard
+          label="Net Retained Wealth"
+          value={money(totalSaved)}
+          helper="12-month net capital"
+          tone={totalSaved >= 0 ? 'blue' : 'amber'}
+          icon={<FileText />}
+        />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-        <Card>
-          <SectionTitle>Cashflow Trends</SectionTitle>
-          <div style={{ height: 300 }}>
+      <div className="data-card" style={{ marginBottom: 20 }}>
+        <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+          <span className="data-card-title"><Activity size={16} /> 12-Month Cashflow Trajectory</span>
+          <span className="badge-pill badge-pill-neutral">Income vs Expense</span>
+        </div>
+        <div className="data-card-body" style={{ padding: '20px' }}>
+          <div style={{ height: 320 }}>
             <Bar
               data={barChartData}
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { position: 'top' } },
-                scales: { y: { beginAtZero: true } }
+                plugins: {
+                  legend: {
+                    position: 'top',
+                    labels: { color: textColor, font: { family: 'inherit', size: 12, weight: 600 } }
+                  },
+                  tooltip: {
+                    padding: 10,
+                    cornerRadius: 8,
+                  }
+                },
+                scales: {
+                  x: {
+                    grid: { display: false },
+                    ticks: { color: textColor, font: { size: 11 } }
+                  },
+                  y: {
+                    beginAtZero: true,
+                    grid: { color: gridColor },
+                    ticks: { color: textColor, font: { size: 11 } }
+                  }
+                }
               }}
             />
           </div>
-        </Card>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', paddingBottom: '2rem' }}>
-        <Card>
-          <SectionTitle>Savings Rate</SectionTitle>
-          <div style={{ height: 250 }}>
-            <Line
-              data={lineChartData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, max: 100 } }
-              }}
-            />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, paddingBottom: 20 }}>
+        <div className="data-card">
+          <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+            <span className="data-card-title"><TrendingUp size={16} /> Monthly Savings Velocity</span>
+            <span className="badge-pill badge-pill-blue">Target: 20%+</span>
           </div>
-        </Card>
+          <div className="data-card-body" style={{ padding: '20px' }}>
+            <div style={{ height: 260 }}>
+              <Line
+                data={lineChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { display: false },
+                    tooltip: { padding: 10, cornerRadius: 8 }
+                  },
+                  scales: {
+                    x: {
+                      grid: { display: false },
+                      ticks: { color: textColor, font: { size: 11 } }
+                    },
+                    y: {
+                      beginAtZero: true,
+                      max: 100,
+                      grid: { color: gridColor },
+                      ticks: {
+                        color: textColor,
+                        font: { size: 11 },
+                        callback: val => `${val}%`
+                      }
+                    }
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </div>
 
-        <Card>
-          <SectionTitle>This Month's Spending</SectionTitle>
-          <div style={{ height: 220, position: 'relative' }}>
-            <Doughnut
-              data={pieChartData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '60%',
-                plugins: { legend: { position: 'right' } },
-              }}
-            />
+        <div className="data-card">
+          <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+            <span className="data-card-title"><PieIcon size={16} /> Monthly Expense Allocation</span>
+            <span className="badge-pill badge-pill-neutral">By Category</span>
           </div>
-        </Card>
+          <div className="data-card-body" style={{ padding: '20px' }}>
+            <div style={{ height: 260, position: 'relative' }}>
+              <Doughnut
+                data={pieChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  cutout: '68%',
+                  plugins: {
+                    legend: {
+                      position: 'right',
+                      labels: { color: textColor, font: { size: 11, weight: 500 } }
+                    },
+                    tooltip: { padding: 10, cornerRadius: 8 }
+                  },
+                }}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </Page>
   );

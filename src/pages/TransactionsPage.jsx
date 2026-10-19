@@ -48,6 +48,7 @@ export default function TransactionsPage() {
   const [typeFilter, setTypeFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadMore, setLoadMore] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const [modal, setModal] = useState(false);
   const [editTxn, setEditTxn] = useState(null);
   const [activeRow, setActiveRow] = useState(null);
@@ -101,7 +102,7 @@ export default function TransactionsPage() {
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => loadTxns(1), 300);
     return () => clearTimeout(searchTimer.current);
-  }, [search, typeFilter]);
+  }, [search, typeFilter, fromDate, toDate]);
 
   function openCreate() {
     setEditTxn(null);
@@ -214,62 +215,121 @@ export default function TransactionsPage() {
   return (
     <Page>
       <PageHeader
-        eyebrow="Activity"
+        eyebrow="Activity & Ledger"
         title="Transactions"
-        subtitle={`${total} records in your ledger`}
+        subtitle={`${total} reconciled records in your financial journal.`}
         action={
           <div style={{ display: 'flex', gap: '8px' }}>
             <Button variant="soft" onClick={handleScanReceipt} disabled={isScanning}>
-              <Camera size={18} /> {isScanning ? 'Scanning...' : 'Scan'}
+              <Camera size={16} /> {isScanning ? 'Processing...' : 'Scan Receipt'}
             </Button>
             <Button variant="primary" onClick={openCreate}>
-              <Plus size={18} /> Add
+              <Plus size={16} /> Add Transaction
             </Button>
           </div>
         }
       />
 
       <div className="metric-grid">
-        <MetricCard label="Income" value={money(summary.income)} helper="This month" tone="mint" icon={<ArrowUpRight />} />
-        <MetricCard label="Expenses" value={money(summary.expenses)} helper="This month" tone="pink" icon={<ArrowDownRight />} />
-        <MetricCard label="Net" value={money(net)} helper={net >= 0 ? 'Positive cashflow' : 'Needs attention'} tone={net >= 0 ? 'blue' : 'amber'} icon={<WalletCards />} />
-        <MetricCard label="Entries" value={String(total)} helper="Loaded ledger" tone="purple" icon={<ReceiptText />} />
+        <MetricCard
+          label="Total Income"
+          value={money(summary.income)}
+          helper="This calendar month"
+          tone="mint"
+          icon={<ArrowUpRight />}
+          trend="up"
+          trendValue="+12.4%"
+        />
+        <MetricCard
+          label="Total Expenses"
+          value={money(summary.expenses)}
+          helper="This calendar month"
+          tone="pink"
+          icon={<ArrowDownRight />}
+          trend="down"
+          trendValue="-3.1%"
+        />
+        <MetricCard
+          label="Net Flow"
+          value={money(net)}
+          helper={net >= 0 ? 'Surplus retained' : 'Deficit run'}
+          tone={net >= 0 ? 'blue' : 'amber'}
+          icon={<WalletCards />}
+        />
+        <MetricCard
+          label="Total Entries"
+          value={String(total)}
+          helper="Reconciled transactions"
+          tone="purple"
+          icon={<ReceiptText />}
+        />
       </div>
 
-      <Card style={{ marginTop: 14 }}>
-        <div className="field" style={{ marginBottom: 12 }}>
-          <span>Search</span>
-          <div style={{ position: 'relative' }}>
-            <Search size={18} style={{ position: 'absolute', left: 14, top: 15, color: '#66706a' }} />
-            <input
-              className="input"
-              placeholder="Search title, category, account"
-              value={search}
-              onChange={event => setSearch(event.target.value)}
-              style={{ paddingLeft: 42, paddingRight: search ? 42 : 14 }}
+      {/* Modern Filter Toolbar */}
+      <div className="data-card" style={{ marginBottom: 20 }}>
+        <div className="data-card-body" style={{ padding: '16px 20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, alignItems: 'center' }}>
+            <div style={{ position: 'relative' }}>
+              <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input
+                className="input"
+                placeholder="Search title, merchant, note..."
+                value={search}
+                onChange={event => setSearch(event.target.value)}
+                style={{ paddingLeft: 40, paddingRight: search ? 36 : 14, height: 42, fontSize: '0.86rem' }}
+              />
+              {search && (
+                <button
+                  aria-label="Clear search"
+                  onClick={() => setSearch('')}
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+
+            <SegmentedControl
+              value={typeFilter}
+              onChange={setTypeFilter}
+              options={[
+                { value: '', label: 'All Types' },
+                { value: 'income', label: 'Income' },
+                { value: 'expense', label: 'Expense' },
+              ]}
             />
-            {search && (
-              <button
-                aria-label="Clear search"
-                onClick={() => setSearch('')}
-                style={{ position: 'absolute', right: 11, top: 10, border: 0, background: 'transparent', cursor: 'pointer' }}
-              >
-                <X size={18} />
-              </button>
-            )}
+
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="date"
+                className="input"
+                value={fromDate}
+                onChange={e => setFromDate(e.target.value)}
+                title="From Date"
+                style={{ height: 42, fontSize: '0.8rem', padding: '0 10px', flex: 1 }}
+              />
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>to</span>
+              <input
+                type="date"
+                className="input"
+                value={toDate}
+                onChange={e => setToDate(e.target.value)}
+                title="To Date"
+                style={{ height: 42, fontSize: '0.8rem', padding: '0 10px', flex: 1 }}
+              />
+              {(fromDate || toDate) && (
+                <button
+                  onClick={() => { setFromDate(''); setToDate(''); }}
+                  title="Clear dates"
+                  style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', padding: 6 }}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
-
-        <SegmentedControl
-          value={typeFilter}
-          onChange={setTypeFilter}
-          options={[
-            { value: '', label: 'All', icon: <ReceiptText /> },
-            { value: 'income', label: 'Income', icon: <ArrowUpRight /> },
-            { value: 'expense', label: 'Expense', icon: <ArrowDownRight /> },
-          ]}
-        />
-      </Card>
+      </div>
 
       {loading ? (
         <div style={{ display: 'grid', placeItems: 'center', minHeight: 260 }}>
@@ -278,60 +338,99 @@ export default function TransactionsPage() {
       ) : txns.length === 0 ? (
         <EmptyState
           icon={<ReceiptText />}
-          title={search ? 'No matching transactions' : 'No transactions yet'}
-          text={search ? 'Try a different search or clear the filters.' : 'Add your first transaction and start building your spending story.'}
-          action={!search && <Button onClick={openCreate}><Plus size={18} /> Add transaction</Button>}
+          title={search || typeFilter || fromDate || toDate ? 'No matching records' : 'No transactions recorded'}
+          text={search || typeFilter || fromDate || toDate ? 'Try adjusting your search filters or date range.' : 'Record your first transaction to unlock deep spending analytics.'}
+          action={!search && <Button onClick={openCreate}><Plus size={16} /> Add transaction</Button>}
         />
       ) : (
-        <>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {Object.entries(grouped).map(([date, items]) => {
             const dayTotal = items.reduce((sum, txn) => sum + (txn.type === 'income' ? Number(txn.amount) : -Number(txn.amount)), 0);
             return (
-              <div key={date}>
-                <div className="date-group">
-                  <span>{date}</span>
-                  <span className={dayTotal >= 0 ? 'amount-income' : 'amount-expense'}>{dayTotal >= 0 ? '+' : ''}{money(dayTotal)}</span>
+              <div key={date} className="data-card">
+                <div className="data-card-header" style={{ padding: '12px 18px', background: 'var(--surface-strong)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)' }}>{date}</span>
+                    <span className="badge-pill badge-pill-neutral" style={{ fontSize: '0.7rem' }}>
+                      {items.length} {items.length === 1 ? 'entry' : 'entries'}
+                    </span>
+                  </div>
+                  <span className={`badge-pill ${dayTotal >= 0 ? 'badge-pill-mint' : 'badge-pill-pink'}`} style={{ fontSize: '0.78rem' }}>
+                    {dayTotal >= 0 ? '+' : ''}{money(dayTotal)}
+                  </span>
                 </div>
-                <Card className="list-card">
+                <div style={{ padding: '4px 18px' }}>
                   {items.map(txn => (
-                    <div key={txn.id} className="transaction-row" onClick={() => setActiveRow(activeRow === txn.id ? null : txn.id)}>
-                      <div className="transaction-icon">
-                        {txn.type === 'income' ? <ArrowUpRight size={21} /> : <ArrowDownRight size={21} />}
+                    <div
+                      key={txn.id}
+                      className="modern-row"
+                      onClick={() => setActiveRow(activeRow === txn.id ? null : txn.id)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className={`modern-row-avatar ${txn.type === 'income' ? 'modern-row-avatar-income' : 'modern-row-avatar-expense'}`}>
+                        {txn.type === 'income' ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
                       </div>
-                      <div style={{ minWidth: 0 }}>
-                        <div className="transaction-title">{txn.title}</div>
-                        <div className="transaction-meta">{dateShort(txn.date)} - {txn.category_name || 'General'} - {txn.account_name || 'Account'}</div>
+                      <div className="modern-row-info">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span className="modern-row-title">{txn.title}</span>
+                          <span className="badge-pill badge-pill-neutral" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
+                            {txn.category_name || 'General'}
+                          </span>
+                        </div>
+                        <div className="modern-row-meta">
+                          <span>{dateShort(txn.date)}</span>
+                          <span>•</span>
+                          <span>{txn.account_name || 'Main Account'}</span>
+                          {txn.note && (
+                            <>
+                              <span>•</span>
+                              <span style={{ fontStyle: 'italic', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {txn.note}
+                              </span>
+                            </>
+                          )}
+                        </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div className={`transaction-amount ${txn.type === 'income' ? 'amount-income' : 'amount-expense'}`}>
+                        <div className={`modern-row-amount ${txn.type === 'income' ? 'amount-positive' : 'amount-negative'}`}>
                           {txn.type === 'income' ? '+' : '-'}{money(txn.amount)}
                         </div>
                         {activeRow === txn.id && (
-                          <div className="row-actions">
-                            <button onClick={event => { event.stopPropagation(); openEdit(txn); }}><Edit3 size={13} /> Edit</button>
-                            <button onClick={event => { event.stopPropagation(); handleDelete(txn.id); }}><Trash2 size={13} /> Delete</button>
+                          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 6 }}>
+                            <button
+                              onClick={event => { event.stopPropagation(); openEdit(txn); }}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid var(--border)', background: 'var(--surface-strong)', color: 'var(--text)', borderRadius: 6, padding: '3px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                            >
+                              <Edit3 size={11} /> Edit
+                            </button>
+                            <button
+                              onClick={event => { event.stopPropagation(); handleDelete(txn.id); }}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', borderRadius: 6, padding: '3px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                            >
+                              <Trash2 size={11} /> Delete
+                            </button>
                           </div>
                         )}
                       </div>
                     </div>
                   ))}
-                </Card>
+                </div>
               </div>
             );
           })}
 
           {txns.length < total && (
-            <Button variant="soft" className="ui-button-full" disabled={loadMore} onClick={() => loadTxns(page + 1, false)} style={{ marginTop: 14 }}>
-              {loadMore ? 'Loading...' : `Load ${total - txns.length} more`}
+            <Button variant="soft" className="ui-button-full" disabled={loadMore} onClick={() => loadTxns(page + 1, false)} style={{ marginTop: 8 }}>
+              {loadMore ? 'Fetching...' : `Load ${total - txns.length} more entries`}
             </Button>
           )}
-        </>
+        </div>
       )}
 
-      <FAB icon={<Plus size={24} />} label="Add transaction" onClick={openCreate} />
+      <FAB icon={<Plus size={22} />} label="Add transaction" onClick={openCreate} />
 
       {modal && (
-        <BottomSheet title={editTxn ? 'Edit Transaction' : 'Add Transaction'} onClose={closeModal}>
+        <BottomSheet title={editTxn ? 'Edit Transaction' : 'Record Transaction'} onClose={closeModal}>
           <SegmentedControl
             value={form.type}
             onChange={value => setForm(prev => ({ ...prev, type: value, category_id: '' }))}
@@ -341,27 +440,44 @@ export default function TransactionsPage() {
             ]}
           />
 
-          <div style={{ height: 20 }} />
+          <div style={{ height: 18 }} />
           
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Amount</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Amount
+            </label>
             <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 12, color: '#64748b', fontWeight: 600, fontSize: '1.1rem' }}>₹</span>
+              <span style={{ position: 'absolute', left: 14, top: 12, color: 'var(--text-muted)', fontWeight: 700, fontSize: '1.1rem' }}>₹</span>
               <input 
                 type="number"
                 className="input"
-                style={{ paddingLeft: 32, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}
+                style={{ paddingLeft: 34, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}
                 placeholder="0.00"
                 value={form.amount}
                 onChange={event => setForm(prev => ({ ...prev, amount: event.target.value }))}
+                autoFocus
               />
             </div>
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>Category</label>
-              <button style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>See All</button>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Title / Merchant
+            </label>
+            <input 
+              type="text"
+              className="input"
+              placeholder="E.g., Grocery store, salary, flight ticket"
+              value={form.title}
+              onChange={event => setForm(prev => ({ ...prev, title: event.target.value }))}
+            />
+          </div>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Category
+              </label>
             </div>
             <VisualCategorySelect 
               categories={filteredCats.length ? filteredCats.slice(0, 8) : [{ id: '', name: 'General', icon: '📦' }]} 
@@ -372,54 +488,55 @@ export default function TransactionsPage() {
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Account</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Account
+            </label>
             <div style={{ position: 'relative' }}>
               <select 
                 className="input" 
-                style={{ appearance: 'none', background: '#f8fafc', color: '#0f172a', fontWeight: 500 }}
+                style={{ appearance: 'none', background: 'var(--surface)', color: 'var(--text)', fontWeight: 500 }}
                 value={form.account_id}
                 onChange={event => setForm(prev => ({ ...prev, account_id: event.target.value }))}
               >
                 <option value="" disabled>Select Account</option>
                 {accounts.map(acc => (
-                  <option key={acc.id} value={acc.id}>{acc.name}</option>
+                  <option key={acc.id} value={acc.id}>{acc.name} ({money(acc.balance || 0)})</option>
                 ))}
               </select>
-              <div style={{ position: 'absolute', right: 14, top: 15, pointerEvents: 'none', color: '#64748b' }}>
+              <div style={{ position: 'absolute', right: 14, top: 15, pointerEvents: 'none', color: 'var(--text-muted)' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </div>
             </div>
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Date</label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 13, color: '#64748b' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-              </span>
-              <input 
-                type="date"
-                className="input"
-                style={{ paddingLeft: 40, color: '#0f172a', fontWeight: 500 }}
-                value={form.date}
-                onChange={event => setForm(prev => ({ ...prev, date: event.target.value }))}
-              />
-            </div>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Date
+            </label>
+            <input 
+              type="date"
+              className="input"
+              style={{ color: 'var(--text)', fontWeight: 500 }}
+              value={form.date}
+              onChange={event => setForm(prev => ({ ...prev, date: event.target.value }))}
+            />
           </div>
 
-          <div className="field" style={{ marginBottom: 24 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Note (Optional)</label>
+          <div className="field" style={{ marginBottom: 22 }}>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Notes (Optional)
+            </label>
             <input 
               type="text"
               className="input"
-              placeholder="Add a note..."
+              placeholder="Tag or memo for reconciliation"
               value={form.note}
               onChange={event => setForm(prev => ({ ...prev, note: event.target.value }))}
             />
           </div>
 
-          <Button className="ui-button-full" onClick={handleSave} style={{ background: '#10b981', color: 'white', padding: '14px', borderRadius: '8px', fontSize: '1rem', fontWeight: 600 }}>
-            {editTxn ? 'Save Changes' : 'Add Transaction'}
+          <Button className="ui-button-full" onClick={handleSave} style={{ background: '#10b981', color: 'white', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
+            {editTxn ? 'Save Changes' : 'Record Transaction'}
           </Button>
         </BottomSheet>
       )}

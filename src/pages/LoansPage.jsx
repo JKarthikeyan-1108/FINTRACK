@@ -104,7 +104,7 @@ export default function LoansPage() {
       setSummary(prev => ({
         ...prev,
         total_remaining: Number(prev.total_remaining || 0) + Number(principal),
-        total_emi: Number(prev.total_emi || 0) + Math.round(emi),
+        total_emi: Number(prev.total_emi || 0) + Math.round(finalEmi),
       }));
       setModal(false);
       setForm(blankForm());
@@ -128,7 +128,7 @@ export default function LoansPage() {
       });
       setLoans(prev => prev.map(item => item.id === loan.id ? data.data : item));
       setPayModal(null);
-      toast.success(done ? 'Loan fully paid' : 'EMI paid');
+      toast.success(done ? 'Loan fully paid' : 'EMI payment recorded');
     } catch {
       toast.error('Failed to mark EMI paid');
     }
@@ -147,41 +147,73 @@ export default function LoansPage() {
   return (
     <Page>
       <PageHeader
-        eyebrow="Liabilities"
+        eyebrow="Liabilities & Debt"
         title="Loans & EMI"
-        subtitle="Track remaining debt, EMI rhythm, and payoff progress."
+        subtitle="Track outstanding principal balance, monthly EMI burden, and payoff timeline."
         action={
           <div style={{ display: 'flex', gap: 8 }}>
-            <IconButton icon={<Calculator size={19} />} label="EMI calculator" onClick={() => setCalcMode(value => !value)} />
-            <Button onClick={() => setModal(true)}><Plus size={18} /> Add</Button>
+            <Button variant="soft" onClick={() => setCalcMode(value => !value)}>
+              <Calculator size={16} /> {calcMode ? 'Hide Calculator' : 'EMI Calculator'}
+            </Button>
+            <Button variant="primary" onClick={() => setModal(true)}>
+              <Plus size={16} /> Add Loan
+            </Button>
           </div>
         }
       />
 
       {calcMode && (
-        <Card tone="blue" style={{ marginBottom: 14 }}>
-          <div className="section-title" style={{ marginTop: 0 }}><span>EMI Calculator</span></div>
-          <div className="field-row">
-            <TextInput label="Principal" type="number" value={calc.principal} onChange={event => setCalc(prev => ({ ...prev, principal: event.target.value }))} placeholder="0" />
-            <TextInput label="Rate" type="number" value={calc.rate} onChange={event => setCalc(prev => ({ ...prev, rate: event.target.value }))} placeholder="%/yr" />
+        <div className="data-card" style={{ marginBottom: 20 }}>
+          <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+            <span className="data-card-title"><Calculator size={16} /> Loan EMI Estimator</span>
           </div>
-          <TextInput label="Months" type="number" value={calc.months} onChange={event => setCalc(prev => ({ ...prev, months: event.target.value }))} placeholder="60" />
-          {calcResult && (
-            <div className="metric-grid">
-              <MetricCard label="EMI" value={money(Math.round(calcResult.emi))} helper="Per month" tone="mint" icon={<WalletCards />} />
-              <MetricCard label="Total" value={money(Math.round(calcResult.total))} helper="Principal + interest" tone="blue" icon={<Calculator />} />
-              <MetricCard label="Interest" value={money(Math.round(calcResult.interest))} helper="Estimated" tone="pink" icon={<Landmark />} />
+          <div className="data-card-body" style={{ padding: '18px 20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 16 }}>
+              <TextInput label="Principal (₹)" type="number" value={calc.principal} onChange={event => setCalc(prev => ({ ...prev, principal: event.target.value }))} placeholder="1000000" />
+              <TextInput label="Interest Rate (% p.a.)" type="number" value={calc.rate} onChange={event => setCalc(prev => ({ ...prev, rate: event.target.value }))} placeholder="8.5" />
+              <TextInput label="Tenure (Months)" type="number" value={calc.months} onChange={event => setCalc(prev => ({ ...prev, months: event.target.value }))} placeholder="60" />
             </div>
-          )}
-        </Card>
+            {calcResult && (
+              <div className="metric-grid" style={{ marginBottom: 0 }}>
+                <MetricCard label="Monthly EMI" value={money(Math.round(calcResult.emi))} helper="Committed per month" tone="mint" icon={<WalletCards />} />
+                <MetricCard label="Total Outflow" value={money(Math.round(calcResult.total))} helper="Principal + total interest" tone="blue" icon={<Calculator />} />
+                <MetricCard label="Interest Cost" value={money(Math.round(calcResult.interest))} helper="Borrowing premium" tone="pink" icon={<Landmark />} />
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {loans.length > 0 && (
-        <div className="metric-grid" style={{ marginBottom: 14 }}>
-          <MetricCard label="Total Debt" value={money(summary.total_remaining)} helper="Remaining" tone="pink" icon={<Landmark />} />
-          <MetricCard label="Monthly EMI" value={money(summary.total_emi)} helper="Committed" tone="amber" icon={<WalletCards />} />
-          <MetricCard label="Loans" value={String(loans.length)} helper="Tracked" tone="blue" icon={<Calculator />} />
-          <MetricCard label="Active" value={String(loans.filter(loan => loan.is_active).length)} helper="Still paying" tone="mint" icon={<Home />} />
+        <div className="metric-grid" style={{ marginBottom: 20 }}>
+          <MetricCard
+            label="Total Outstanding"
+            value={money(summary.total_remaining || 0)}
+            helper="Remaining liabilities"
+            tone="pink"
+            icon={<Landmark />}
+          />
+          <MetricCard
+            label="Committed Monthly EMI"
+            value={money(summary.total_emi || 0)}
+            helper="Cashflow deduction"
+            tone="amber"
+            icon={<WalletCards />}
+          />
+          <MetricCard
+            label="Active Facilities"
+            value={String(loans.filter(loan => loan.is_active).length)}
+            helper="Ongoing debt lines"
+            tone="blue"
+            icon={<Home />}
+          />
+          <MetricCard
+            label="Paid / Completed"
+            value={String(loans.filter(loan => !loan.is_active).length)}
+            helper="Fully retired"
+            tone="mint"
+            icon={<Calculator />}
+          />
         </div>
       )}
 
@@ -192,12 +224,12 @@ export default function LoansPage() {
       ) : loans.length === 0 ? (
         <EmptyState
           icon={<Landmark />}
-          title="No loans tracked"
-          text="Add loans to see EMI totals, remaining balance, and payoff progress."
-          action={<Button onClick={() => setModal(true)}><Plus size={18} /> Add loan</Button>}
+          title="No debt liabilities tracked"
+          text="Track home loans, car loans, or education loans to plan accelerated payoffs."
+          action={<Button onClick={() => setModal(true)}><Plus size={16} /> Add loan</Button>}
         />
       ) : (
-        <div className="budget-list">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
           {loans.map(loan => {
             const info = TYPE_INFO[loan.type] || TYPE_INFO.other;
             const Icon = info.Icon;
@@ -206,44 +238,81 @@ export default function LoansPage() {
             const left = Number(loan.tenure_months || 0) - Number(loan.paid_months || 0);
 
             return (
-              <Card key={loan.id} tone={done ? 'mint' : 'plain'} style={{ opacity: done ? .75 : 1 }}>
-                <div className="transaction-row" style={{ borderBottom: 0, padding: 0 }}>
-                  <div className="transaction-icon">
-                    <Icon size={21} />
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <div className="transaction-title">{loan.name}</div>
-                    <div className="transaction-meta">{loan.lender || 'Lender'} - {loan.type} - {loan.interest_rate}% p.a.</div>
-                    <div style={{ marginTop: 8 }}>
-                      <ProgressBar value={paidPct} tone={done ? 'mint' : 'amber'} />
+              <div key={loan.id} className="data-card" style={{ opacity: done ? 0.75 : 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div className="data-card-header" style={{ padding: '14px 18px', background: 'var(--surface-strong)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', fontSize: '1.1rem' }}>
+                      {info.icon || '💳'}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>
+                        {loan.name}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                        {loan.lender || 'Direct Lender'} • {loan.interest_rate}% p.a.
+                      </div>
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div className="transaction-amount amount-expense">{money(loan.remaining)}</div>
-                    <div className="transaction-meta">remaining</div>
+                  <span className={`badge-pill ${done ? 'badge-pill-mint' : 'badge-pill-amber'}`}>
+                    {done ? 'Paid Off 🎉' : `${left} EMIs Left`}
+                  </span>
+                </div>
+
+                <div className="data-card-body" style={{ padding: '16px 18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+                    <div>
+                      <div style={{ fontSize: '1.35rem', fontWeight: 800, color: done ? '#10b981' : 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+                        {money(loan.remaining)}
+                      </div>
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                        EMI {money(loan.emi_amount)}/mo • Due on day {loan.emi_date || 1}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                        {paidPct.toFixed(0)}% Repaid
+                      </span>
+                    </div>
+                  </div>
+
+                  <ProgressBar value={paidPct} tone={done ? 'mint' : 'amber'} />
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 10, borderTop: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      {loan.paid_months || 0} of {loan.tenure_months} installments
+                    </span>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {!done && (
+                        <button
+                          onClick={() => setPayModal(loan)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: '1px solid rgba(16, 185, 129, 0.3)', background: 'rgba(16, 185, 129, 0.08)', color: '#10b981', borderRadius: 6, padding: '4px 10px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                        >
+                          <WalletCards size={12} /> Pay EMI
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteLoan(loan.id)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', borderRadius: 6, padding: '4px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="budget-row-meta" style={{ marginTop: 10 }}>
-                  <span>{loan.paid_months || 0}/{loan.tenure_months} EMIs paid</span>
-                  <span>EMI {money(loan.emi_amount)}/mo</span>
-                </div>
-                {!done && <p style={{ marginTop: 8 }}>{left} EMIs left at the current schedule.</p>}
-                <div className="row-actions">
-                  {!done && <button onClick={() => setPayModal(loan)}><WalletCards size={13} /> Pay EMI</button>}
-                  <button onClick={() => deleteLoan(loan.id)}><Trash2 size={13} /> Delete</button>
-                </div>
-              </Card>
+              </div>
             );
           })}
         </div>
       )}
 
-      <FAB icon={<Plus size={24} />} label="Add loan" onClick={() => setModal(true)} />
+      <FAB icon={<Plus size={22} />} label="Add loan" onClick={() => setModal(true)} />
 
       {modal && (
         <BottomSheet title="Add Loan" onClose={() => setModal(false)}>
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Loan Type</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Loan Type
+            </label>
             <SegmentedControl
               value={form.type}
               onChange={val => setForm(prev => ({ ...prev, type: val }))}
@@ -256,24 +325,29 @@ export default function LoansPage() {
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Loan Name</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Loan Facility Name
+            </label>
             <input 
               type="text"
               className="input"
-              placeholder="E.g., HDFC Home Loan"
+              placeholder="E.g., HDFC Home Loan, SBI Auto Loan"
               value={form.name}
               onChange={event => setForm(prev => ({ ...prev, name: event.target.value }))}
+              autoFocus
             />
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Principal Amount</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Principal Amount
+            </label>
             <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 12, color: '#64748b', fontWeight: 600, fontSize: '1.1rem' }}>₹</span>
+              <span style={{ position: 'absolute', left: 14, top: 12, color: 'var(--text-muted)', fontWeight: 700, fontSize: '1.1rem' }}>₹</span>
               <input 
                 type="number"
                 className="input"
-                style={{ paddingLeft: 32, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}
+                style={{ paddingLeft: 34, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}
                 placeholder="0.00"
                 value={form.principal}
                 onChange={event => setForm(prev => ({ ...prev, principal: event.target.value }))}
@@ -282,14 +356,16 @@ export default function LoansPage() {
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Interest Rate</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Annual Interest Rate (% p.a.)
+            </label>
             <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 12, color: '#64748b', fontWeight: 600, fontSize: '1.1rem' }}>%</span>
+              <span style={{ position: 'absolute', left: 14, top: 12, color: 'var(--text-muted)', fontWeight: 700, fontSize: '1.1rem' }}>%</span>
               <input 
                 type="number"
                 className="input"
-                style={{ paddingLeft: 32, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}
-                placeholder="0.00"
+                style={{ paddingLeft: 34, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}
+                placeholder="8.5"
                 value={form.interest_rate}
                 onChange={event => setForm(prev => ({ ...prev, interest_rate: event.target.value }))}
               />
@@ -297,95 +373,76 @@ export default function LoansPage() {
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>EMI Amount</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Monthly EMI Amount
+            </label>
             <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 12, color: '#64748b', fontWeight: 600, fontSize: '1.1rem' }}>₹</span>
+              <span style={{ position: 'absolute', left: 14, top: 12, color: 'var(--text-muted)', fontWeight: 700, fontSize: '1.1rem' }}>₹</span>
               <input 
                 type="number"
                 className="input"
-                style={{ paddingLeft: 32, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}
+                style={{ paddingLeft: 34, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}
                 placeholder={emiPreview > 0 ? String(Math.round(emiPreview)) : "0.00"}
                 value={form.emi_amount || ''}
                 onChange={event => setForm(prev => ({ ...prev, emi_amount: event.target.value }))}
               />
             </div>
-            {emiPreview > 0 && !form.emi_amount && <small style={{ color: '#64748b', marginTop: 4, display: 'block' }}>Estimated: {money(Math.round(emiPreview))}</small>}
+            {emiPreview > 0 && !form.emi_amount && (
+              <small style={{ color: '#10b981', marginTop: 4, display: 'block', fontWeight: 600 }}>
+                Computed EMI: {money(Math.round(emiPreview))}/month
+              </small>
+            )}
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Tenure (Months)</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Tenure in Months
+            </label>
             <input 
               type="number"
               className="input"
-              style={{ fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}
-              placeholder="0"
+              style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}
+              placeholder="E.g., 60, 120, 240"
               value={form.tenure_months}
               onChange={event => setForm(prev => ({ ...prev, tenure_months: event.target.value }))}
             />
           </div>
 
           <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Start Date</label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 13, color: '#64748b' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-              </span>
-              <input 
-                type="date"
-                className="input"
-                style={{ paddingLeft: 40, color: '#0f172a', fontWeight: 500 }}
-                value={form.start_date || new Date().toISOString().split('T')[0]}
-                onChange={event => setForm(prev => ({ ...prev, start_date: event.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Next EMI Date</label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 13, color: '#64748b' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-              </span>
-              <input 
-                type="date"
-                className="input"
-                style={{ paddingLeft: 40, color: '#0f172a', fontWeight: 500 }}
-                placeholder="Select date"
-                value={form.emi_date_full || ''}
-                onChange={event => {
-                  const dateVal = event.target.value;
-                  const day = dateVal ? parseInt(dateVal.split('-')[2], 10) : '';
-                  setForm(prev => ({ ...prev, emi_date_full: dateVal, emi_date: String(day) }));
-                }}
-              />
-            </div>
-          </div>
-          
-          <div className="field" style={{ marginBottom: 24 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>Note (Optional)</label>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Lender / Institution
+            </label>
             <input 
               type="text"
               className="input"
-              placeholder="Add a note..."
+              placeholder="E.g., HDFC Bank, ICICI, Axis"
               value={form.lender}
               onChange={event => setForm(prev => ({ ...prev, lender: event.target.value }))}
             />
           </div>
 
-          <Button className="ui-button-full" onClick={addLoan} style={{ background: '#10b981', color: 'white', padding: '14px', borderRadius: '8px', fontSize: '1rem', fontWeight: 600 }}>
-            Add Loan
+          <Button className="ui-button-full" onClick={addLoan} style={{ background: '#10b981', color: 'white', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700, marginTop: 8 }}>
+            Add Loan Facility
           </Button>
         </BottomSheet>
       )}
 
       {payModal && (
-        <BottomSheet title="Confirm EMI Payment" onClose={() => setPayModal(null)}>
-          <Card tone="amber" style={{ marginBottom: 14, textAlign: 'center' }}>
-            <span className="hero-balance-label">{payModal.name}</span>
-            <strong style={{ fontSize: 34 }}>{money(payModal.emi_amount)}</strong>
-            <p>EMI #{Number(payModal.paid_months || 0) + 1} of {payModal.tenure_months}</p>
-          </Card>
-          <Button className="ui-button-full" onClick={() => payEMI(payModal)}>Confirm payment</Button>
+        <BottomSheet title="Record EMI Payment" onClose={() => setPayModal(null)}>
+          <div className="data-card" style={{ marginBottom: 16 }}>
+            <div className="data-card-body" style={{ padding: '16px 20px', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>{payModal.name}</div>
+              <strong style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text)', display: 'block', margin: '4px 0', fontVariantNumeric: 'tabular-nums' }}>
+                {money(payModal.emi_amount)}
+              </strong>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                Recording installment #{Number(payModal.paid_months || 0) + 1} of {payModal.tenure_months}
+              </div>
+            </div>
+          </div>
+          <Button className="ui-button-full" onClick={() => payEMI(payModal)} style={{ background: '#10b981', color: 'white', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
+            Confirm EMI Paid
+          </Button>
         </BottomSheet>
       )}
     </Page>
