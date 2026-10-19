@@ -294,7 +294,7 @@ export default function SettingsPage() {
       />
 
       {/* ── Executive Profile Hero Card ─────────────────────────── */}
-      <div className="data-card" style={{ marginBottom: 20 }}>
+      <div className="data-card card-stagger" style={{ marginBottom: 20 }}>
         <div className="data-card-body" style={{ padding: '24px 28px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
@@ -402,7 +402,7 @@ export default function SettingsPage() {
       </div>
 
       {/* ── Security & Live Session Card ────────────────────────── */}
-      <div className="data-card" style={{ marginBottom: 20 }}>
+      <div className="data-card card-stagger" style={{ marginBottom: 20 }}>
         <div
           className="data-card-body"
           style={{
@@ -486,7 +486,7 @@ export default function SettingsPage() {
         {/* Left Column: Accounts & Data Portability */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Accounts & Wallets */}
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <Wallet size={17} color="#10b981" /> Accounts & Wallets
@@ -603,7 +603,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Data Portability & Backup */}
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <Download size={17} color="#0ea5e9" /> Data Export & Portability
@@ -669,7 +669,7 @@ export default function SettingsPage() {
         {/* Right Column: Preferences, Currencies & Tools */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Preferences & System Switches */}
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <LockKeyhole size={17} color="#8b5cf6" /> Security & App Preferences
@@ -744,7 +744,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Additional Links & Tools */}
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <Info size={17} color="#0ea5e9" /> Tools & Resources

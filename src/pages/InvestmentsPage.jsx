@@ -214,36 +214,44 @@ export default function InvestmentsPage() {
       </div>
 
       <div className="metric-grid" style={{ marginBottom: 20 }}>
-        <MetricCard
-          label="Portfolio Value"
-          value={money(displayTotal)}
-          helper="User-entered valuation"
-          tone="mint"
-          icon={<WalletCards />}
-          trend="up"
-          trendValue={returnPct >= 0 ? `+${returnPct.toFixed(1)}%` : `${returnPct.toFixed(1)}%`}
-        />
-        <MetricCard
-          label="Invested Principal"
-          value={money(totalInvested)}
-          helper="Capital deployed"
-          tone="blue"
-          icon={<Banknote />}
-        />
-        <MetricCard
-          label="Total Return"
-          value={money(Math.abs(totalGain))}
-          helper={totalGain >= 0 ? 'Net profit accrued' : 'Net loss'}
-          tone={totalGain >= 0 ? 'amber' : 'pink'}
-          icon={<TrendingUp />}
-        />
-        <MetricCard
-          label="Holdings Count"
-          value={String(myInvests.length)}
-          helper="Diversified positions"
-          tone="purple"
-          icon={<Coins />}
-        />
+        <div className="card-stagger">
+          <MetricCard
+            label="Portfolio Value"
+            value={money(displayTotal)}
+            helper="User-entered valuation"
+            tone="mint"
+            icon={<WalletCards />}
+            trend="up"
+            trendValue={returnPct >= 0 ? `+${returnPct.toFixed(1)}%` : `${returnPct.toFixed(1)}%`}
+          />
+        </div>
+        <div className="card-stagger">
+          <MetricCard
+            label="Invested Principal"
+            value={money(totalInvested)}
+            helper="Capital deployed"
+            tone="blue"
+            icon={<Banknote />}
+          />
+        </div>
+        <div className="card-stagger">
+          <MetricCard
+            label="Total Return"
+            value={money(Math.abs(totalGain))}
+            helper={totalGain >= 0 ? 'Net profit accrued' : 'Net loss'}
+            tone={totalGain >= 0 ? 'amber' : 'pink'}
+            icon={<TrendingUp />}
+          />
+        </div>
+        <div className="card-stagger">
+          <MetricCard
+            label="Holdings Count"
+            value={String(myInvests.length)}
+            helper="Diversified positions"
+            tone="purple"
+            icon={<Coins />}
+          />
+        </div>
       </div>
 
       <div className="dashboard-grid">
@@ -258,6 +266,7 @@ export default function InvestmentsPage() {
             ]}
           />
 
+          <div key={tab} className="tab-transition-container">
           {tab === 'suggestions' && (
             <div style={{ marginTop: 14 }}>
               <Card tone="amber" style={{ marginBottom: 14 }}>
@@ -500,6 +509,7 @@ export default function InvestmentsPage() {
               )}
             </div>
           )}
+          </div>
         </div>
 
         <aside>

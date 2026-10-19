@@ -119,7 +119,7 @@ export default function SubscriptionsPage() {
 
       {subs.length > 0 && (
         <>
-          <div className="data-card" style={{ marginBottom: 20 }}>
+          <div className="data-card card-stagger" style={{ marginBottom: 20 }}>
             <div className="data-card-body" style={{ padding: '20px 24px' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
                 <div>
@@ -171,10 +171,10 @@ export default function SubscriptionsPage() {
           </div>
 
           <div className="metric-grid" style={{ marginBottom: 20 }}>
-            <MetricCard label="Active Services" value={String(active.length)} helper="Currently billing" tone="mint" icon={<Repeat2 />} />
-            <MetricCard label="Paused" value={String(paused.length)} helper="Billing frozen" tone="amber" icon={<Pause />} />
-            <MetricCard label="Due Soon" value={String(upcoming)} helper="Renewing soon" tone="pink" icon={<BellRing />} />
-            <MetricCard label="Monthly Equiv." value={money(Math.round(monthly))} helper="Blended run rate" tone="purple" icon={<CalendarClock />} />
+            <div className="card-stagger"><MetricCard label="Active Services" value={String(active.length)} helper="Currently billing" tone="mint" icon={<Repeat2 />} /></div>
+            <div className="card-stagger"><MetricCard label="Paused" value={String(paused.length)} helper="Billing frozen" tone="amber" icon={<Pause />} /></div>
+            <div className="card-stagger"><MetricCard label="Due Soon" value={String(upcoming)} helper="Renewing soon" tone="pink" icon={<BellRing />} /></div>
+            <div className="card-stagger"><MetricCard label="Monthly Equiv." value={money(Math.round(monthly))} helper="Blended run rate" tone="purple" icon={<CalendarClock />} /></div>
           </div>
         </>
       )}
@@ -191,13 +191,13 @@ export default function SubscriptionsPage() {
           action={<Button onClick={() => setModal(true)}><Plus size={16} /> Add subscription</Button>}
         />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div className="tab-transition-container" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {active.length > 0 && (
             <div>
               <div style={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12 }}>
                 Active Subscriptions ({active.length})
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+              <div className="category-grid-animate" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
                 {active.map(sub => <SubscriptionCard key={sub.id} sub={sub} onToggle={toggleActive} onDelete={deleteSub} />)}
               </div>
             </div>
@@ -208,7 +208,7 @@ export default function SubscriptionsPage() {
               <div style={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12 }}>
                 Paused / Inactive ({paused.length})
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+              <div className="category-grid-animate" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
                 {paused.map(sub => <SubscriptionCard key={sub.id} sub={sub} paused onToggle={toggleActive} onDelete={deleteSub} />)}
               </div>
             </div>
@@ -306,7 +306,7 @@ function SubscriptionCard({ sub, paused, onToggle, onDelete }) {
   const dueSoon = days !== null && days <= 7 && days >= 0;
 
   return (
-    <div className="data-card" style={{ opacity: paused ? 0.65 : 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <div className="data-card card-stagger" style={{ opacity: paused ? 0.65 : 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
       <div className="data-card-header" style={{ padding: '12px 16px', background: 'var(--surface-strong)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 34, height: 34, borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', fontSize: '1rem' }}>

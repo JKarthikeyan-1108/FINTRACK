@@ -231,38 +231,46 @@ export default function TransactionsPage() {
       />
 
       <div className="metric-grid">
-        <MetricCard
-          label="Total Income"
-          value={money(summary.income)}
-          helper="This calendar month"
-          tone="mint"
-          icon={<ArrowUpRight />}
-          trend="up"
-          trendValue="+12.4%"
-        />
-        <MetricCard
-          label="Total Expenses"
-          value={money(summary.expenses)}
-          helper="This calendar month"
-          tone="pink"
-          icon={<ArrowDownRight />}
-          trend="down"
-          trendValue="-3.1%"
-        />
-        <MetricCard
-          label="Net Flow"
-          value={money(net)}
-          helper={net >= 0 ? 'Surplus retained' : 'Deficit run'}
-          tone={net >= 0 ? 'blue' : 'amber'}
-          icon={<WalletCards />}
-        />
-        <MetricCard
-          label="Total Entries"
-          value={String(total)}
-          helper="Reconciled transactions"
-          tone="purple"
-          icon={<ReceiptText />}
-        />
+        <div className="card-stagger">
+          <MetricCard
+            label="Total Income"
+            value={money(summary.income)}
+            helper="This calendar month"
+            tone="mint"
+            icon={<ArrowUpRight />}
+            trend="up"
+            trendValue="+12.4%"
+          />
+        </div>
+        <div className="card-stagger">
+          <MetricCard
+            label="Total Expenses"
+            value={money(summary.expenses)}
+            helper="This calendar month"
+            tone="pink"
+            icon={<ArrowDownRight />}
+            trend="down"
+            trendValue="-3.1%"
+          />
+        </div>
+        <div className="card-stagger">
+          <MetricCard
+            label="Net Flow"
+            value={money(net)}
+            helper={net >= 0 ? 'Surplus retained' : 'Deficit run'}
+            tone={net >= 0 ? 'blue' : 'amber'}
+            icon={<WalletCards />}
+          />
+        </div>
+        <div className="card-stagger">
+          <MetricCard
+            label="Total Entries"
+            value={String(total)}
+            helper="Reconciled transactions"
+            tone="purple"
+            icon={<ReceiptText />}
+          />
+        </div>
       </div>
 
       {/* Modern Filter Toolbar */}
@@ -343,11 +351,11 @@ export default function TransactionsPage() {
           action={!search && <Button onClick={openCreate}><Plus size={16} /> Add transaction</Button>}
         />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div key={`${typeFilter || 'all'}-${fromDate}-${toDate}-${search}`} className="tab-transition-container" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {Object.entries(grouped).map(([date, items]) => {
             const dayTotal = items.reduce((sum, txn) => sum + (txn.type === 'income' ? Number(txn.amount) : -Number(txn.amount)), 0);
             return (
-              <div key={date} className="data-card">
+              <div key={date} className="data-card card-stagger">
                 <div className="data-card-header" style={{ padding: '12px 18px', background: 'var(--surface-strong)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)' }}>{date}</span>

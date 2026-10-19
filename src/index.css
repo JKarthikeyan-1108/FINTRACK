@@ -175,7 +175,7 @@ button { color: inherit; }
   background: transparent;
   text-decoration: none;
   width: 100%;
-  transition: all 0.18s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
 }
 [data-theme="light"] .sidebar-item {
@@ -184,6 +184,7 @@ button { color: inherit; }
 .sidebar-item:hover {
   background: var(--surface-hover);
   color: var(--text);
+  transform: translateX(3px);
 }
 [data-theme="light"] .sidebar-item:hover {
   background: rgba(255, 255, 255, 0.06);
@@ -193,6 +194,7 @@ button { color: inherit; }
   background: rgba(16, 185, 129, 0.12);
   color: #10b981;
   font-weight: 700;
+  transform: translateX(3px);
 }
 [data-theme="light"] .sidebar-item.active {
   background: rgba(16, 185, 129, 0.16);
@@ -729,11 +731,142 @@ p { font-size: 14px; line-height: 1.55; color: var(--text-muted); }
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
 }
 .data-card:hover {
+  transform: translateY(-2px);
   border-color: var(--border-hover);
+  box-shadow: var(--shadow);
 }
+[data-theme="dark"] .data-card:hover {
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.5), 0 8px 12px -6px rgba(0, 0, 0, 0.35);
+  border-color: rgba(16, 185, 129, 0.22);
+}
+
+/* ── Route Progress Bar (Next.js 14 / Vercel style) ────── */
+.route-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #059669 100%);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.85);
+  z-index: 99999;
+  animation: routeProgress 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes routeProgress {
+  0% { transform: scaleX(0); transform-origin: left; opacity: 1; }
+  60% { transform: scaleX(0.8); transform-origin: left; opacity: 1; }
+  90% { transform: scaleX(1); transform-origin: left; opacity: 1; }
+  100% { transform: scaleX(1); transform-origin: left; opacity: 0; }
+}
+
+/* ── Page View Transitions (Next.js 14 fluid navigation) ── */
+.view-transition-container {
+  min-height: 100%;
+  animation: v14PageEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes v14PageEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Staggered Card Entrance ─────────────────────────── */
+.card-stagger {
+  animation: v14CardEnter 0.34s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  will-change: transform, opacity;
+}
+.card-stagger:nth-child(1) { animation-delay: 20ms; }
+.card-stagger:nth-child(2) { animation-delay: 45ms; }
+.card-stagger:nth-child(3) { animation-delay: 70ms; }
+.card-stagger:nth-child(4) { animation-delay: 95ms; }
+.card-stagger:nth-child(5) { animation-delay: 120ms; }
+.card-stagger:nth-child(6) { animation-delay: 145ms; }
+.card-stagger:nth-child(7) { animation-delay: 170ms; }
+.card-stagger:nth-child(8) { animation-delay: 195ms; }
+.card-stagger:nth-child(n+9) { animation-delay: 220ms; }
+
+@keyframes v14CardEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.982);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Interactive Tab/Category Switch Transition ─────── */
+.tab-transition-container,
+.category-grid-animate {
+  animation: v14TabEnter 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes v14TabEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Smooth Progress Fill Motion ──────────────────────── */
+.progress-track span,
+.progress-bar-fill,
+.progress-bar > div {
+  transition: width 0.75s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* ── Micro-interactions: Rows, Pills, and Active Press ── */
+.modern-row {
+  transition: background-color 0.16s ease, transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.modern-row:hover {
+  background: var(--surface-hover);
+  transform: translateX(3px);
+}
+
+.quick-action-pill {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.quick-action-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.1);
+}
+[data-theme="dark"] .quick-action-pill:hover {
+  box-shadow: 0 6px 20px -2px rgba(0, 0, 0, 0.4);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+/* ── Theme Switch Interpolation ───────────────────────── */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *:before,
+html.theme-transitioning *:after {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease !important;
+}
+
+/* ── Interactive tactile press ───────────────────────── */
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
 .data-card-header {
   padding: 16px 20px;
   display: flex;
@@ -1024,30 +1157,37 @@ p { font-size: 14px; line-height: 1.55; color: var(--text-muted); }
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  gap: 4px;
+  gap: 6px;
   padding: 4px;
-  background: rgba(255,255,255,.6);
+  background: var(--surface-strong);
   border: 1px solid var(--border);
-  border-radius: 17px;
+  border-radius: 12px;
 }
 .segmented-control button {
   min-height: 38px;
-  border: 0;
-  border-radius: 13px;
+  border: 1px solid transparent;
+  border-radius: 9px;
   background: transparent;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text-muted);
   cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.segmented-control button:hover:not(.active) {
+  color: var(--text);
+  background: var(--surface-hover);
 }
 .segmented-control button.active {
   background: var(--surface);
-  color: var(--text);
-  box-shadow: 0 4px 14px rgba(43,72,46,.1);
+  color: #10b981;
+  font-weight: 800;
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
 }
 .segmented-control svg { width: 16px; height: 16px; }
 

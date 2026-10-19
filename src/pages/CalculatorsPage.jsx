@@ -166,11 +166,12 @@ export default function CalculatorsPage() {
         <span>{activeTabMeta.desc}</span>
       </div>
 
-      {/* 1. Loan EMI Calculator */}
-      {activeTab === 'emi' && (
+      <div key={activeTab} className="tab-transition-container">
+        {/* 1. Loan EMI Calculator */}
+        {activeTab === 'emi' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
           {/* Inputs Card */}
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <Landmark size={17} color="#10b981" /> Loan Parameters
@@ -252,7 +253,7 @@ export default function CalculatorsPage() {
           </div>
 
           {/* Results Breakdown Card */}
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <CheckCircle2 size={17} color="#10b981" /> Amortization Summary
@@ -330,7 +331,7 @@ export default function CalculatorsPage() {
       {/* 2. SIP Calculator */}
       {activeTab === 'sip' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <TrendingUp size={17} color="#0ea5e9" /> SIP Investment Parameters
@@ -410,7 +411,7 @@ export default function CalculatorsPage() {
             </div>
           </div>
 
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <Sparkles size={17} color="#0ea5e9" /> Projected Wealth Accumulation
@@ -472,7 +473,7 @@ export default function CalculatorsPage() {
       {/* 3. Compound Interest Calculator */}
       {activeTab === 'compound' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <Percent size={17} color="#8b5cf6" /> Fixed Deposit / Lump Sum Inputs
@@ -523,7 +524,7 @@ export default function CalculatorsPage() {
             </div>
           </div>
 
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <Sparkles size={17} color="#8b5cf6" /> Compound Growth Result
@@ -580,7 +581,7 @@ export default function CalculatorsPage() {
       {/* 4. Simple Interest Calculator */}
       {activeTab === 'simple' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <Calculator size={17} color="#f59e0b" /> Simple Interest Parameters
@@ -614,7 +615,7 @@ export default function CalculatorsPage() {
             </div>
           </div>
 
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <CheckCircle2 size={17} color="#f59e0b" /> Flat Interest Summary
@@ -660,7 +661,7 @@ export default function CalculatorsPage() {
       {/* 5. Savings Goal Calculator */}
       {activeTab === 'savings' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <PiggyBank size={17} color="#10b981" /> Target Savings Parameters
@@ -692,7 +693,7 @@ export default function CalculatorsPage() {
             </div>
           </div>
 
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <Sparkles size={17} color="#10b981" /> Required Savings Trajectory
@@ -750,7 +751,7 @@ export default function CalculatorsPage() {
       {/* 6. 50/30/20 Budget Calculator */}
       {activeTab === 'budget' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <PieChart size={17} color="#0ea5e9" /> Monthly Income Input
@@ -792,7 +793,7 @@ export default function CalculatorsPage() {
             </div>
           </div>
 
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
                 <Sparkles size={17} color="#10b981" /> Balanced Envelope Allocation
@@ -872,6 +873,7 @@ export default function CalculatorsPage() {
           </div>
         </div>
       )}
+      </div>
     </Page>
   );
 }

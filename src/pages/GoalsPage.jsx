@@ -120,7 +120,7 @@ export default function GoalsPage() {
       />
 
       {goals.length > 0 && (
-        <div className="data-card" style={{ marginBottom: 20 }}>
+        <div className="data-card card-stagger" style={{ marginBottom: 20 }}>
           <div className="data-card-body" style={{ padding: '20px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
               <div>
@@ -186,7 +186,7 @@ export default function GoalsPage() {
           action={<Button onClick={() => setModal(true)}><Plus size={16} /> Establish goal</Button>}
         />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+        <div className="category-grid-animate" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
           {goals.map(goal => {
             const saved = Number(goal.saved_amount || goal.current_amount || 0);
             const target = Number(goal.target_amount);
@@ -196,7 +196,7 @@ export default function GoalsPage() {
             const cat = GOAL_CATEGORIES.find(c => c.id === goal.category_id);
 
             return (
-              <div key={goal.id} className="data-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div key={goal.id} className="data-card card-stagger" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div className="data-card-header" style={{ padding: '14px 18px', background: 'var(--surface-strong)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 34, height: 34, borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', fontSize: '1.1rem' }}>

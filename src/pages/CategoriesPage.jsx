@@ -210,9 +210,9 @@ export default function CategoriesPage() {
           action={<Button onClick={openCreate}><Plus size={16} /> Create category</Button>}
         />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
+        <div key={typeFilter || 'all'} className="category-grid-animate" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
           {filtered.map(cat => (
-            <div key={cat.id} className="data-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '14px 16px' }}>
+            <div key={cat.id} className="data-card card-stagger" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '14px 16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div
                   style={{

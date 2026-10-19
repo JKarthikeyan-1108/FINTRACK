@@ -179,67 +179,75 @@ export default function HomePage() {
 
       {/* 4 Primary Metric Cards */}
       <div className="metric-grid">
-        <MetricCard
-          label="Total Net Worth"
-          value={money(netWorth)}
-          helper="Liquid + Portfolio Assets"
-          icon={<Wallet />}
-          tone="blue"
-          trend="up"
-          trendValue="+12.4%"
-        />
-        <MetricCard
-          label="Monthly Inflow"
-          value={money(overview?.income)}
-          helper="Earned this month"
-          icon={<TrendingUp />}
-          tone="mint"
-          trend="up"
-          trendValue="+5.8%"
-        />
-        <MetricCard
-          label="Monthly Outflow"
-          value={money(overview?.expenses)}
-          helper="Spent this month"
-          icon={<ArrowDownRight />}
-          tone="pink"
-          trend={Number(overview?.expenses) > Number(overview?.income) ? 'down' : 'up'}
-          trendValue="Spend"
-        />
-        <MetricCard
-          label="Monthly Net Saved"
-          value={money(overview?.savings)}
-          helper={`${savingsRate}% savings rate`}
-          icon={<Flag />}
-          tone="purple"
-          trend={Number(overview?.savings) >= 0 ? 'up' : 'down'}
-          trendValue={`${savingsRate}%`}
-        />
+        <div className="card-stagger">
+          <MetricCard
+            label="Total Net Worth"
+            value={money(netWorth)}
+            helper="Liquid + Portfolio Assets"
+            icon={<Wallet />}
+            tone="blue"
+            trend="up"
+            trendValue="+12.4%"
+          />
+        </div>
+        <div className="card-stagger">
+          <MetricCard
+            label="Monthly Inflow"
+            value={money(overview?.income)}
+            helper="Earned this month"
+            icon={<TrendingUp />}
+            tone="mint"
+            trend="up"
+            trendValue="+5.8%"
+          />
+        </div>
+        <div className="card-stagger">
+          <MetricCard
+            label="Monthly Outflow"
+            value={money(overview?.expenses)}
+            helper="Spent this month"
+            icon={<ArrowDownRight />}
+            tone="pink"
+            trend={Number(overview?.expenses) > Number(overview?.income) ? 'down' : 'up'}
+            trendValue="Spend"
+          />
+        </div>
+        <div className="card-stagger">
+          <MetricCard
+            label="Monthly Net Saved"
+            value={money(overview?.savings)}
+            helper={`${savingsRate}% savings rate`}
+            icon={<Flag />}
+            tone="purple"
+            trend={Number(overview?.savings) >= 0 ? 'up' : 'down'}
+            trendValue={`${savingsRate}%`}
+          />
+        </div>
       </div>
 
       {/* Quick Action Pills */}
       <div className="quick-actions-bar">
-        <button type="button" className="quick-action-pill" onClick={() => navigate('/transactions')}>
+        <button type="button" className="quick-action-pill card-stagger" onClick={() => navigate('/transactions')}>
           <span className="quick-action-pill-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>+</span>
           <span>Add Transaction</span>
         </button>
-        <button type="button" className="quick-action-pill" onClick={() => navigate('/budgets')}>
+        <button type="button" className="quick-action-pill card-stagger" onClick={() => navigate('/budgets')}>
           <span className="quick-action-pill-icon" style={{ background: 'rgba(14, 165, 233, 0.15)', color: '#0284c7' }}><ChartPie size={13} /></span>
           <span>Budgets ({budgets.length})</span>
         </button>
-        <button type="button" className="quick-action-pill" onClick={() => navigate('/goals')}>
+        <button type="button" className="quick-action-pill card-stagger" onClick={() => navigate('/goals')}>
           <span className="quick-action-pill-icon" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6' }}><Target size={13} /></span>
           <span>Savings Goals ({goals.length})</span>
         </button>
-        <button type="button" className="quick-action-pill" onClick={() => navigate('/investments')}>
+        <button type="button" className="quick-action-pill card-stagger" onClick={() => navigate('/investments')}>
           <span className="quick-action-pill-icon" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}><TrendingUp size={13} /></span>
           <span>Investments</span>
         </button>
-        <button type="button" className="quick-action-pill" onClick={() => navigate('/loans')}>
+        <button type="button" className="quick-action-pill card-stagger" onClick={() => navigate('/loans')}>
           <span className="quick-action-pill-icon" style={{ background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e' }}><Banknote size={13} /></span>
           <span>Loans & EMI</span>
         </button>
-        <button type="button" className="quick-action-pill" onClick={() => navigate('/calculators')}>
+        <button type="button" className="quick-action-pill card-stagger" onClick={() => navigate('/calculators')}>
           <span className="quick-action-pill-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>₹</span>
           <span>Calculators Suite</span>
         </button>
@@ -250,7 +258,7 @@ export default function HomePage() {
         {/* Left / Main Column */}
         <div className="dashboard-column">
           {/* Cashflow Trends Area Chart */}
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header">
               <div className="data-card-title">
                 <TrendingUp size={18} style={{ color: '#10b981' }} />
@@ -268,7 +276,7 @@ export default function HomePage() {
           </div>
 
           {/* Recent Activity Ledger */}
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header">
               <div className="data-card-title">
                 <ReceiptText size={18} style={{ color: '#0284c7' }} />
@@ -316,7 +324,7 @@ export default function HomePage() {
           </div>
 
           {/* Active Budgets Card */}
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header">
               <div className="data-card-title">
                 <ChartPie size={18} style={{ color: '#f59e0b' }} />
@@ -365,7 +373,7 @@ export default function HomePage() {
         <div className="dashboard-column">
           {/* Connected Accounts */}
           {accounts.length > 0 && (
-            <div className="data-card">
+            <div className="data-card card-stagger">
               <div className="data-card-header">
                 <div className="data-card-title">
                   <WalletCards size={18} style={{ color: '#0284c7' }} />
@@ -395,7 +403,7 @@ export default function HomePage() {
           )}
 
           {/* Savings Goals Snapshot */}
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header">
               <div className="data-card-title">
                 <Target size={18} style={{ color: '#8b5cf6' }} />
@@ -437,7 +445,7 @@ export default function HomePage() {
           </div>
 
           {/* Upcoming Bills & Subscriptions */}
-          <div className="data-card">
+          <div className="data-card card-stagger">
             <div className="data-card-header">
               <div className="data-card-title">
                 <Banknote size={18} style={{ color: '#f43f5e' }} />

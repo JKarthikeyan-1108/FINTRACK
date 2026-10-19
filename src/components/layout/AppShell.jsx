@@ -85,6 +85,7 @@ export default function AppShell() {
   const [time, setTime] = useState('');
   const [moreOpen, setMoreOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [navProgress, setNavProgress] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
 
   useEffect(() => {
@@ -93,8 +94,18 @@ export default function AppShell() {
   }, [theme]);
 
   const toggleTheme = () => {
+    document.documentElement.classList.add('theme-transitioning');
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    setTimeout(() => {
+      document.documentElement.classList.remove('theme-transitioning');
+    }, 300);
   };
+
+  useEffect(() => {
+    setNavProgress(true);
+    const timer = setTimeout(() => setNavProgress(false), 380);
+    return () => clearTimeout(timer);
+  }, [loc.pathname]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -186,6 +197,8 @@ export default function AppShell() {
 
       {/* Main Container */}
       <div className="main-wrapper">
+        {navProgress && <div className="route-progress-bar" />}
+
         {/* Responsive Header */}
         <header className="responsive-header">
           <div className="mobile-only status-bar-time">{time}</div>
@@ -271,7 +284,9 @@ export default function AppShell() {
 
         {/* The single Outlet */}
         <div className="app-content-scroll" onClick={() => setMoreOpen(false)}>
-          <Outlet />
+          <div key={loc.pathname} className="view-transition-container">
+            <Outlet />
+          </div>
         </div>
 
         {/* Mobile Popover & Bottom Nav */}

@@ -191,43 +191,51 @@ export default function AnalyticsPage() {
       />
 
       <div className="metric-grid" style={{ marginBottom: 20 }}>
-        <MetricCard
-          label="12-Month Inflow"
-          value={money(totalIncome)}
-          helper="Annualized income"
-          tone="mint"
-          icon={<TrendingUp />}
-          trend="up"
-          trendValue="+14.2%"
-        />
-        <MetricCard
-          label="12-Month Outflow"
-          value={money(totalExpense)}
-          helper="Annualized expenses"
-          tone="pink"
-          icon={<TrendingDown />}
-          trend="down"
-          trendValue="-2.8%"
-        />
-        <MetricCard
-          label="Average Savings Rate"
-          value={`${avgSavingsRate}%`}
-          helper="Income retained"
-          tone={Number(avgSavingsRate) >= 20 ? 'mint' : 'amber'}
-          icon={<Activity />}
-          trend="up"
-          trendValue={Number(avgSavingsRate) >= 20 ? 'Target Achieved' : 'Below 20% benchmark'}
-        />
-        <MetricCard
-          label="Net Retained Wealth"
-          value={money(totalSaved)}
-          helper="12-month net capital"
-          tone={totalSaved >= 0 ? 'blue' : 'amber'}
-          icon={<FileText />}
-        />
+        <div className="card-stagger">
+          <MetricCard
+            label="12-Month Inflow"
+            value={money(totalIncome)}
+            helper="Annualized income"
+            tone="mint"
+            icon={<TrendingUp />}
+            trend="up"
+            trendValue="+14.2%"
+          />
+        </div>
+        <div className="card-stagger">
+          <MetricCard
+            label="12-Month Outflow"
+            value={money(totalExpense)}
+            helper="Annualized expenses"
+            tone="pink"
+            icon={<TrendingDown />}
+            trend="down"
+            trendValue="-2.8%"
+          />
+        </div>
+        <div className="card-stagger">
+          <MetricCard
+            label="Average Savings Rate"
+            value={`${avgSavingsRate}%`}
+            helper="Income retained"
+            tone={Number(avgSavingsRate) >= 20 ? 'mint' : 'amber'}
+            icon={<Activity />}
+            trend="up"
+            trendValue={Number(avgSavingsRate) >= 20 ? 'Target Achieved' : 'Below 20% benchmark'}
+          />
+        </div>
+        <div className="card-stagger">
+          <MetricCard
+            label="Net Retained Wealth"
+            value={money(totalSaved)}
+            helper="12-month net capital"
+            tone={totalSaved >= 0 ? 'blue' : 'amber'}
+            icon={<FileText />}
+          />
+        </div>
       </div>
 
-      <div className="data-card" style={{ marginBottom: 20 }}>
+      <div className="data-card card-stagger" style={{ marginBottom: 20 }}>
         <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
           <span className="data-card-title"><Activity size={16} /> 12-Month Cashflow Trajectory</span>
           <span className="badge-pill badge-pill-neutral">Income vs Expense</span>
@@ -267,7 +275,7 @@ export default function AnalyticsPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, paddingBottom: 20 }}>
-        <div className="data-card">
+        <div className="data-card card-stagger">
           <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
             <span className="data-card-title"><TrendingUp size={16} /> Monthly Savings Velocity</span>
             <span className="badge-pill badge-pill-blue">Target: 20%+</span>
@@ -305,7 +313,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        <div className="data-card">
+        <div className="data-card card-stagger">
           <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
             <span className="data-card-title"><PieIcon size={16} /> Monthly Expense Allocation</span>
             <span className="badge-pill badge-pill-neutral">By Category</span>

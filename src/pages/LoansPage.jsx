@@ -186,34 +186,42 @@ export default function LoansPage() {
 
       {loans.length > 0 && (
         <div className="metric-grid" style={{ marginBottom: 20 }}>
-          <MetricCard
-            label="Total Outstanding"
-            value={money(summary.total_remaining || 0)}
-            helper="Remaining liabilities"
-            tone="pink"
-            icon={<Landmark />}
-          />
-          <MetricCard
-            label="Committed Monthly EMI"
-            value={money(summary.total_emi || 0)}
-            helper="Cashflow deduction"
-            tone="amber"
-            icon={<WalletCards />}
-          />
-          <MetricCard
-            label="Active Facilities"
-            value={String(loans.filter(loan => loan.is_active).length)}
-            helper="Ongoing debt lines"
-            tone="blue"
-            icon={<Home />}
-          />
-          <MetricCard
-            label="Paid / Completed"
-            value={String(loans.filter(loan => !loan.is_active).length)}
-            helper="Fully retired"
-            tone="mint"
-            icon={<Calculator />}
-          />
+          <div className="card-stagger">
+            <MetricCard
+              label="Total Outstanding"
+              value={money(summary.total_remaining || 0)}
+              helper="Remaining liabilities"
+              tone="pink"
+              icon={<Landmark />}
+            />
+          </div>
+          <div className="card-stagger">
+            <MetricCard
+              label="Committed Monthly EMI"
+              value={money(summary.total_emi || 0)}
+              helper="Cashflow deduction"
+              tone="amber"
+              icon={<WalletCards />}
+            />
+          </div>
+          <div className="card-stagger">
+            <MetricCard
+              label="Active Facilities"
+              value={String(loans.filter(loan => loan.is_active).length)}
+              helper="Ongoing debt lines"
+              tone="blue"
+              icon={<Home />}
+            />
+          </div>
+          <div className="card-stagger">
+            <MetricCard
+              label="Paid / Completed"
+              value={String(loans.filter(loan => !loan.is_active).length)}
+              helper="Fully retired"
+              tone="mint"
+              icon={<Calculator />}
+            />
+          </div>
         </div>
       )}
 
@@ -229,7 +237,7 @@ export default function LoansPage() {
           action={<Button onClick={() => setModal(true)}><Plus size={16} /> Add loan</Button>}
         />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+        <div className="category-grid-animate" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
           {loans.map(loan => {
             const info = TYPE_INFO[loan.type] || TYPE_INFO.other;
             const Icon = info.Icon;
@@ -238,7 +246,7 @@ export default function LoansPage() {
             const left = Number(loan.tenure_months || 0) - Number(loan.paid_months || 0);
 
             return (
-              <div key={loan.id} className="data-card" style={{ opacity: done ? 0.75 : 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div key={loan.id} className="data-card card-stagger" style={{ opacity: done ? 0.75 : 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div className="data-card-header" style={{ padding: '14px 18px', background: 'var(--surface-strong)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 34, height: 34, borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', fontSize: '1.1rem' }}>

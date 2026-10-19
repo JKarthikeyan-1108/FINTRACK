@@ -41,7 +41,7 @@ export default function JWTInspector() {
 
       {/* Session Health Card */}
       <div
-        className="data-card"
+        className="data-card card-stagger"
         style={{
           marginBottom: 20,
           background: tokenStatus === 'critical' ? 'rgba(244, 63, 94, 0.08)' : tokenStatus === 'warning' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(16, 185, 129, 0.06)',
@@ -91,7 +91,7 @@ export default function JWTInspector() {
       </div>
 
       {/* Raw Token Breakdown */}
-      <div className="data-card" style={{ marginBottom: 20 }}>
+      <div className="data-card card-stagger" style={{ marginBottom: 20 }}>
         <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
           <div className="data-card-title">
             <KeyRound size={16} color="#0ea5e9" /> Raw Token Structure (Header . Payload . Signature)
@@ -126,7 +126,7 @@ export default function JWTInspector() {
       </div>
 
       {/* Payload Claims */}
-      <div className="data-card" style={{ marginBottom: 20 }}>
+      <div className="data-card card-stagger" style={{ marginBottom: 20 }}>
         <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
           <div className="data-card-title">
             <Sparkles size={16} color="#8b5cf6" /> Decoded Claims Payload
@@ -155,7 +155,7 @@ export default function JWTInspector() {
       </div>
 
       {/* Security Protocol Overview */}
-      <div className="data-card" style={{ marginBottom: 24 }}>
+      <div className="data-card card-stagger" style={{ marginBottom: 24 }}>
         <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
           <div className="data-card-title">
             <ShieldCheck size={16} color="#10b981" /> FinTrack Token Security Lifecycle

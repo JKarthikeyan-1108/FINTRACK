@@ -135,7 +135,7 @@ export default function BudgetsPage() {
       />
 
       {budgets.length > 0 && (
-        <div className="data-card" style={{ marginBottom: 20 }}>
+        <div className="data-card card-stagger" style={{ marginBottom: 20 }}>
           <div className="data-card-body" style={{ padding: '20px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
               <div>
@@ -205,7 +205,7 @@ export default function BudgetsPage() {
           action={<Button onClick={openCreate}><Plus size={16} /> Create budget</Button>}
         />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+        <div className="category-grid-animate" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
           {budgets.map(budget => {
             const spent = Number(budget.spent || budget.spent_amount || 0);
             const limit = Number(budget.amount);
@@ -214,7 +214,7 @@ export default function BudgetsPage() {
             const left = limit - spent;
 
             return (
-              <div key={budget.id} className="data-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div key={budget.id} className="data-card card-stagger" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div className="data-card-header" style={{ padding: '14px 18px', background: 'var(--surface-strong)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', fontSize: '1rem' }}>
