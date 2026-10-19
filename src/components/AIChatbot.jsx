@@ -1,11 +1,23 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Send, X, MessageSquare, Loader2 } from 'lucide-react';
-import api from '../services/api'; // Or just axios, wait we use axios instance in api.js
+import { useState, useRef, useEffect } from 'react';
+import { Bot, Send, X, MessageSquare, Loader2, Sparkles, TrendingUp, HelpCircle } from 'lucide-react';
+import { chatAPI } from '../services/api';
+
+const PROMPT_SUGGESTIONS = [
+  'What did I spend this month?',
+  'How much did I earn?',
+  'What is my savings rate?',
+  'Check my budget limits',
+];
 
 export default function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { id: 1, text: 'Hi there! I am your FinTrack AI Assistant. Ask me about your spending, budgets, or savings!', sender: 'ai' }
+    {
+      id: 1,
+      text: 'Hello! I am **FinBot**, your FinTrack financial intelligence assistant. Ask me about your monthly cashflow, budgets, expenses, or savings goals.',
+      sender: 'ai',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -19,33 +31,45 @@ export default function AIChatbot() {
     if (isOpen) scrollToBottom();
   }, [messages, isOpen]);
 
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  const handleSend = async (e, customMsg) => {
+    if (e) e.preventDefault();
+    const query = customMsg || input;
+    if (!query.trim() || isLoading) return;
 
-    const userMsg = input.trim();
-    setInput('');
-    setMessages(prev => [...prev, { id: Date.now(), text: userMsg, sender: 'user' }]);
+    const userMsg = query.trim();
+    if (!customMsg) setInput('');
+    setMessages(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        text: userMsg,
+        sender: 'user',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ]);
     setIsLoading(true);
 
     try {
-      // Need to import the axios instance properly
-      // api.js exports `authAPI`, `dashAPI`, etc., but we can use fetch for simplicity if we pass the token, 
-      // or we can just import the raw api client. Wait, api.js exports default api.
-      const token = localStorage.getItem('fintrack_token');
-      const res = await fetch('http://localhost:5173/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+      const { data } = await chatAPI.sendMessage(userMsg);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          text: data.reply || 'Analysis complete.',
+          sender: 'ai',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
-        body: JSON.stringify({ message: userMsg })
-      });
-      const data = await res.json();
-      
-      setMessages(prev => [...prev, { id: Date.now() + 1, text: data.reply || data.error, sender: 'ai' }]);
+      ]);
     } catch (err) {
-      setMessages(prev => [...prev, { id: Date.now() + 1, text: 'Sorry, I am having trouble connecting to the server.', sender: 'ai' }]);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          text: err.response?.data?.error || 'Unable to retrieve data right now. Please ensure your session is active.',
+          sender: 'ai',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -53,150 +77,222 @@ export default function AIChatbot() {
 
   if (!isOpen) {
     return (
-      <button 
+      <button
         onClick={() => setIsOpen(true)}
+        aria-label="Open AI Financial Assistant"
+        title="FinBot AI Financial Assistant"
         style={{
           position: 'fixed',
           bottom: '24px',
           right: '24px',
-          width: '60px',
-          height: '60px',
-          borderRadius: '30px',
-          backgroundColor: '#10b981',
-          color: 'white',
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          color: '#ffffff',
           border: 'none',
-          boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.4)',
+          boxShadow: '0 8px 24px rgba(16, 185, 129, 0.4)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
           zIndex: 9999,
-          transition: 'transform 0.2s',
+          transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
-        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
       >
-        <MessageSquare size={28} />
+        <Bot size={26} strokeWidth={2.2} />
       </button>
     );
   }
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: '24px',
-      right: '24px',
-      width: '350px',
-      height: '500px',
-      backgroundColor: 'var(--surface)',
-      borderRadius: '16px',
-      boxShadow: 'var(--shadow)',
-      display: 'flex',
-      flexDirection: 'column',
-      zIndex: 9999,
-      border: '1px solid var(--border)',
-      overflow: 'hidden'
-    }}>
-      {/* Header */}
-      <div style={{
-        padding: '16px',
-        backgroundColor: '#10b981',
-        color: 'white',
+    <div
+      style={{
+        position: 'fixed',
+        bottom: '24px',
+        right: '24px',
+        width: 'min(380px, calc(100vw - 32px))',
+        height: '540px',
+        backgroundColor: 'var(--surface)',
+        borderRadius: '16px',
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Bot size={20} />
-          <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>FinTrack AI</span>
+        flexDirection: 'column',
+        zIndex: 9999,
+        border: '1px solid var(--border)',
+        overflow: 'hidden',
+        backdropFilter: 'blur(16px)',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          padding: '14px 18px',
+          background: 'var(--surface-strong)',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              color: '#ffffff',
+              display: 'grid',
+              placeItems: 'center',
+            }}
+          >
+            <Bot size={18} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <strong style={{ fontSize: '0.92rem', color: 'var(--text)' }}>FinBot AI</strong>
+              <span className="badge-pill badge-pill-mint" style={{ fontSize: '0.65rem' }}>Active</span>
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Financial Intelligence Assistant</div>
+          </div>
         </div>
-        <button 
+        <button
           onClick={() => setIsOpen(false)}
-          style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex' }}
+          aria-label="Close Assistant"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--text-muted)',
+            cursor: 'pointer',
+            padding: 4,
+            borderRadius: 6,
+            display: 'flex',
+          }}
         >
-          <X size={20} />
+          <X size={18} />
         </button>
       </div>
 
       {/* Messages */}
-      <div style={{
-        flex: 1,
-        padding: '16px',
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        backgroundColor: 'var(--bg)'
-      }}>
+      <div
+        style={{
+          flex: 1,
+          padding: '16px',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          backgroundColor: 'var(--bg)',
+        }}
+      >
         {messages.map(msg => (
-          <div key={msg.id} style={{
-            alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-            maxWidth: '80%',
-            backgroundColor: msg.sender === 'user' ? 'var(--mint)' : 'var(--surface)',
-            color: msg.sender === 'user' ? 'white' : 'var(--text)',
-            padding: '10px 14px',
-            borderRadius: msg.sender === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-            border: msg.sender === 'user' ? 'none' : '1px solid var(--border)',
-            fontSize: '0.95rem',
-            lineHeight: 1.4
-          }}>
-            {/* Convert simple markdown ** to bold */}
-            {msg.text.split('**').map((part, i) => i % 2 === 1 ? <strong key={i}>{part}</strong> : part)}
+          <div
+            key={msg.id}
+            style={{
+              alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+              maxWidth: '82%',
+              backgroundColor: msg.sender === 'user' ? '#10b981' : 'var(--surface)',
+              color: msg.sender === 'user' ? '#ffffff' : 'var(--text)',
+              padding: '10px 14px',
+              borderRadius: msg.sender === 'user' ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
+              boxShadow: 'var(--shadow-sm)',
+              border: msg.sender === 'user' ? 'none' : '1px solid var(--border)',
+              fontSize: '0.86rem',
+              lineHeight: 1.5,
+            }}
+          >
+            <div>
+              {msg.text.split('**').map((part, i) => (i % 2 === 1 ? <strong key={i}>{part}</strong> : part))}
+            </div>
+            {msg.time && (
+              <div
+                style={{
+                  fontSize: '0.65rem',
+                  color: msg.sender === 'user' ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)',
+                  marginTop: 4,
+                  textAlign: msg.sender === 'user' ? 'right' : 'left',
+                }}
+              >
+                {msg.time}
+              </div>
+            )}
           </div>
         ))}
         {isLoading && (
-          <div style={{ alignSelf: 'flex-start', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Loader2 size={16} className="spin" style={{ animation: 'spin 1s linear infinite' }} />
-            <span style={{ fontSize: '0.875rem' }}>Thinking...</span>
+          <div style={{ alignSelf: 'flex-start', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)' }}>
+            <Loader2 size={15} className="spin" />
+            <span style={{ fontSize: '0.8rem' }}>Analyzing ledger records...</span>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Suggested Chips */}
+      {messages.length <= 2 && (
+        <div style={{ padding: '6px 14px', background: 'var(--surface)', borderTop: '1px solid var(--border-subtle)', display: 'flex', gap: 6, overflowX: 'auto' }}>
+          {PROMPT_SUGGESTIONS.map(prompt => (
+            <button
+              key={prompt}
+              type="button"
+              onClick={() => handleSend(null, prompt)}
+              className="badge-pill badge-pill-neutral"
+              style={{ cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '0.72rem', padding: '4px 8px' }}
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Input */}
-      <form onSubmit={handleSend} style={{
-        padding: '12px 16px',
-        borderTop: '1px solid var(--border)',
-        display: 'flex',
-        gap: '8px',
-        backgroundColor: 'var(--surface)'
-      }}>
-        <input 
-          type="text" 
-          placeholder="Ask me anything..." 
+      <form
+        onSubmit={handleSend}
+        style={{
+          padding: '12px 14px',
+          borderTop: '1px solid var(--border)',
+          display: 'flex',
+          gap: '8px',
+          backgroundColor: 'var(--surface-strong)',
+        }}
+      >
+        <input
+          type="text"
+          placeholder="Ask FinBot about expenses, budgets..."
           value={input}
           onChange={e => setInput(e.target.value)}
           disabled={isLoading}
           style={{
             flex: 1,
-            padding: '10px 14px',
+            padding: '9px 14px',
             border: '1px solid var(--border)',
-            backgroundColor: 'var(--bg)',
+            backgroundColor: 'var(--surface)',
             color: 'var(--text)',
-            borderRadius: '24px',
+            borderRadius: '10px',
             outline: 'none',
-            fontSize: '0.95rem'
+            fontSize: '0.85rem',
           }}
         />
-        <button 
+        <button
           type="submit"
           disabled={isLoading || !input.trim()}
           style={{
-            background: isLoading || !input.trim() ? 'var(--text-muted)' : 'var(--mint)',
-            color: 'white',
-            border: 'none',
-            width: '40px',
-            height: '40px',
-            borderRadius: '20px',
+            background: isLoading || !input.trim() ? 'var(--surface-strong)' : '#10b981',
+            color: isLoading || !input.trim() ? 'var(--text-muted)' : '#ffffff',
+            border: '1px solid var(--border)',
+            width: '38px',
+            height: '38px',
+            borderRadius: '10px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: isLoading || !input.trim() ? 'not-allowed' : 'pointer',
-            transition: 'background 0.2s'
+            transition: 'all 0.15s ease',
           }}
         >
-          <Send size={18} style={{ marginLeft: '2px' }} />
+          <Send size={16} />
         </button>
       </form>
     </div>

@@ -122,4 +122,9 @@ export const subAPI = {
   remove:  id             => api.delete(`/subscriptions/${id}`),
 };
 
+// ── AI Chatbot ─────────────────────────────────────────
+export const chatAPI = {
+  sendMessage: message => api.post('/chat', { message }),
+};
+
 export default api;

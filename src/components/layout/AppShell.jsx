@@ -2,6 +2,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import AIChatbot from '../AIChatbot';
+import CommandPalette from '../CommandPalette';
 import {
   Award,
   Bell,
@@ -83,6 +84,7 @@ export default function AppShell() {
   const loc = useLocation();
   const [time, setTime] = useState('');
   const [moreOpen, setMoreOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
 
   useEffect(() => {
@@ -93,6 +95,17 @@ export default function AppShell() {
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const tick = () => {
@@ -185,11 +198,17 @@ export default function AppShell() {
             </div>
           </div>
 
-          <div className="desktop-only search-bar">
+          <div
+            className="desktop-only search-bar"
+            onClick={() => setPaletteOpen(true)}
+            style={{ cursor: 'pointer' }}
+          >
             <input
               type="text"
-              placeholder="Search ledger, budgets, investments..."
-              aria-label="Search"
+              placeholder="Search or jump to... (⌘K)"
+              aria-label="Search or jump to"
+              readOnly
+              style={{ cursor: 'pointer' }}
             />
             <Search size={16} className="search-icon" />
             <span className="search-shortcut-badge">⌘K</span>
@@ -285,6 +304,12 @@ export default function AppShell() {
         </nav>
       </div>
 
+      <CommandPalette
+        isOpen={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        onToggleTheme={toggleTheme}
+        onRefreshToken={refreshToken}
+      />
       <AIChatbot />
     </div>
   );
