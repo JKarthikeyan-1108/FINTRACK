@@ -291,29 +291,47 @@ export default function AppShell() {
 
         {/* Mobile Popover & Bottom Nav */}
         {moreOpen && (
-          <div className="mobile-only more-popover" onClick={event => event.stopPropagation()}>
-            {MORE_NAV.map(({ path, Icon, label, sub }) => (
-              <button key={path} className={isActive(path) ? 'active' : ''} onClick={() => navTo(path)}>
-                <Icon />
-                <span>
-                  <strong>{label}</strong>
-                  <small>{sub}</small>
+          <>
+            <div className="mobile-only more-popover-backdrop" onClick={() => setMoreOpen(false)} />
+            <div className="mobile-only more-popover" onClick={event => event.stopPropagation()} role="dialog" aria-modal="true" aria-label="Extended Modules">
+              <div className="more-popover-header">
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+                  Platform Modules
                 </span>
-                <ChevronRight size={17} />
-              </button>
-            ))}
-          </div>
+                <button
+                  type="button"
+                  className="more-popover-close"
+                  onClick={() => setMoreOpen(false)}
+                  aria-label="Close menu"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="more-popover-list">
+                {MORE_NAV.map(({ path, Icon, label, sub }) => (
+                  <button key={path} className={isActive(path) ? 'active' : ''} onClick={() => navTo(path)}>
+                    <Icon />
+                    <span>
+                      <strong>{label}</strong>
+                      <small>{sub}</small>
+                    </span>
+                    <ChevronRight size={17} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
         )}
 
-        <nav className="mobile-only bottom-nav" onClick={event => event.stopPropagation()}>
+        <nav className="mobile-only bottom-nav" onClick={event => event.stopPropagation()} aria-label="Mobile Navigation">
           {PRIMARY_NAV.map(({ path, label, Icon }) => (
             <button key={path} className={`nav-item ${isActive(path) ? 'active' : ''}`} onClick={() => navTo(path)}>
-              <Icon />
+              <Icon size={20} />
               <span>{label}</span>
             </button>
           ))}
-          <button className={`nav-item ${moreOpen || moreActive ? 'active' : ''}`} onClick={() => setMoreOpen(value => !value)}>
-            <MoreHorizontal />
+          <button className={`nav-item ${moreOpen || moreActive ? 'active' : ''}`} onClick={() => setMoreOpen(value => !value)} aria-expanded={moreOpen}>
+            <MoreHorizontal size={20} />
             <span>More</span>
           </button>
         </nav>

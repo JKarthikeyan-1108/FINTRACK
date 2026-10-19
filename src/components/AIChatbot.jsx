@@ -81,51 +81,17 @@ export default function AIChatbot() {
         onClick={() => setIsOpen(true)}
         aria-label="Open AI Financial Assistant"
         title="FinBot AI Financial Assistant"
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: '24px',
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          color: '#ffffff',
-          border: 'none',
-          boxShadow: '0 8px 24px rgba(16, 185, 129, 0.4)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          zIndex: 9999,
-          transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-        }}
+        className="ai-chatbot-trigger"
         onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
         onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
       >
-        <Bot size={26} strokeWidth={2.2} />
+        <Bot size={24} strokeWidth={2.2} />
       </button>
     );
   }
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: '24px',
-        right: '24px',
-        width: 'min(380px, calc(100vw - 32px))',
-        height: '540px',
-        backgroundColor: 'var(--surface)',
-        borderRadius: '16px',
-        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
-        display: 'flex',
-        flexDirection: 'column',
-        zIndex: 9999,
-        border: '1px solid var(--border)',
-        overflow: 'hidden',
-        backdropFilter: 'blur(16px)',
-      }}
-    >
+    <div className="ai-chatbot-window">
       {/* Header */}
       <div
         style={{

@@ -5,10 +5,18 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:mobile": "vite build && cap sync",
+    "cap:sync": "cap sync",
+    "cap:add:android": "cap add android",
+    "cap:add:ios": "cap add ios",
+    "cap:open:android": "cap open android",
+    "cap:open:ios": "cap open ios",
     "preview": "vite preview",
     "test": "node --test backend/tests/*.test.js"
   },
   "dependencies": {
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
     "axios": "^1.7.2",
     "chart.js": "^4.4.3",
     "cors": "^2.8.5",
