@@ -6,6 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:mobile": "vite build && cap sync",
+    "build:apk": "vite build && cap sync && cd android && .\\gradlew.bat assembleDebug",
     "cap:sync": "cap sync",
     "cap:add:android": "cap add android",
     "cap:add:ios": "cap add ios",
@@ -15,6 +16,7 @@
     "test": "node --test backend/tests/*.test.js"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.3",
     "@capacitor/cli": "^8.5.3",
     "@capacitor/core": "^8.5.3",
     "axios": "^1.7.2",
