@@ -142,7 +142,13 @@ export default function AppShell() {
 
   function navTo(path) {
     setMoreOpen(false);
-    nav(path);
+    if (typeof document !== 'undefined' && document.startViewTransition && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.startViewTransition(() => {
+        nav(path);
+      });
+    } else {
+      nav(path);
+    }
   }
 
   return (

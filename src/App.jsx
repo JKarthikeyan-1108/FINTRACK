@@ -21,10 +21,10 @@ function Protected({ children }) {
 
   if (loading) {
     return (
-      <div style={{ display: 'grid', placeItems: 'center', minHeight: '100dvh', background: '#eef7ef' }}>
+      <div style={{ display: 'grid', placeItems: 'center', minHeight: '100dvh', background: 'var(--bg, #090d16)' }}>
         <div style={{ textAlign: 'center' }}>
           <div className="spinner" style={{ margin: '0 auto 16px' }} />
-          <div style={{ fontSize: 13, color: '#66706a', fontWeight: 800 }}>Loading FinTrack...</div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted, #94a3b8)', fontWeight: 800 }}>Loading FinTrack…</div>
         </div>
       </div>
     );
@@ -37,10 +37,10 @@ function PublicOnly({ children }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) {
     return (
-      <div style={{ display: 'grid', placeItems: 'center', minHeight: '100dvh', background: '#eef7ef' }}>
+      <div style={{ display: 'grid', placeItems: 'center', minHeight: '100dvh', background: 'var(--bg, #090d16)' }}>
         <div style={{ textAlign: 'center' }}>
           <div className="spinner" style={{ margin: '0 auto 16px' }} />
-          <div style={{ fontSize: 13, color: '#66706a', fontWeight: 800 }}>Loading FinTrack...</div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted, #94a3b8)', fontWeight: 800 }}>Loading FinTrack…</div>
         </div>
       </div>
     );
