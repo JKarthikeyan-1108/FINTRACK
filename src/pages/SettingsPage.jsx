@@ -16,24 +16,25 @@ import {
   Mail,
   Phone,
   Plus,
+  RefreshCw,
   ShieldCheck,
   Star,
   Tag,
   Trash2,
   UserRound,
   Wallet,
+  Sparkles,
+  Check,
+  KeyRound,
+  ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { accountAPI, txnAPI } from '../services/api';
 import {
   BottomSheet,
   Button,
-  Card,
-  Chip,
-  IconButton,
   Page,
   PageHeader,
-  SectionTitle,
   TextInput,
   SelectInput,
 } from '../components/ui/CashewUI';
@@ -48,7 +49,7 @@ const CURRENCIES = [
 ];
 
 const ACCOUNT_TYPES = ['savings', 'current', 'credit', 'wallet', 'cash', 'investment'];
-const ACCOUNT_COLORS = ['#4a9eff', '#2db87d', '#e24b4a', '#ef9f27', '#9b59b6', '#1abc9c', '#e74c3c', '#3498db'];
+const ACCOUNT_COLORS = ['#10b981', '#0ea5e9', '#8b5cf6', '#f59e0b', '#f43f5e', '#14b8a6', '#6366f1', '#ec4899'];
 
 const ACCOUNT_ICONS = {
   savings: '🏦',
@@ -63,7 +64,7 @@ const blankAccountForm = () => ({
   name: '',
   type: 'savings',
   balance: '',
-  color: '#4a9eff',
+  color: '#10b981',
 });
 
 export default function SettingsPage() {
@@ -87,6 +88,7 @@ export default function SettingsPage() {
 
   // Exporting
   const [exporting, setExporting] = useState(false);
+  const [isRefreshingToken, setIsRefreshingToken] = useState(false);
 
   useEffect(() => {
     accountAPI.getAll()
@@ -97,6 +99,18 @@ export default function SettingsPage() {
 
   function toggle(key) {
     setToggles(prev => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  async function handleTokenRefresh() {
+    setIsRefreshingToken(true);
+    try {
+      await refreshToken();
+      toast.success('Session token refreshed');
+    } catch {
+      toast.error('Token refresh failed');
+    } finally {
+      setIsRefreshingToken(false);
+    }
   }
 
   // ── Profile ─────────────────────────────────
@@ -138,7 +152,7 @@ export default function SettingsPage() {
       name: acc.name,
       type: acc.type || 'savings',
       balance: String(acc.balance || 0),
-      color: acc.color || '#4a9eff',
+      color: acc.color || '#10b981',
     });
     setAccountModal(true);
   }
@@ -209,7 +223,7 @@ export default function SettingsPage() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success(`Exported ${transactions.length} transactions`);
+      toast.success(`Exported ${transactions.length} transactions as JSON`);
     } catch {
       toast.error('Export failed');
     } finally {
@@ -252,201 +266,570 @@ export default function SettingsPage() {
 
   // ── Logout ─────────────────────────────────
   async function handleLogout() {
-    if (!confirm('Sign out of FinTrack?')) return;
+    if (!confirm('Sign out of FinTrack on this device?')) return;
     await logout();
     navigate('/login', { replace: true });
   }
 
   const authMethod = user?.auth_method || 'phone';
-  const statusTone = tokenStatus === 'critical' ? 'pink' : tokenStatus === 'warning' ? 'amber' : 'mint';
   const totalBalance = accounts.reduce((sum, a) => sum + Number(a.balance || 0), 0);
 
   const prefs = [
-    { key: 'notifications', Icon: Bell, label: 'Push Notifications', sub: 'Transaction alerts and reminders' },
-    { key: 'biometric', Icon: LockKeyhole, label: 'Biometric Lock', sub: 'Face ID or fingerprint unlock' },
-    { key: 'cloudSync', Icon: Cloud, label: 'Cloud Sync', sub: 'Sync across devices' },
-  ];
-
-  const links = [
-    { Icon: Tag, label: 'Manage Categories', sub: 'Organize your transactions', action: () => navigate('/categories') },
-    { Icon: Download, label: 'Export Data (JSON)', sub: 'Download full backup as JSON', action: handleExport, loading: exporting },
-    { Icon: Download, label: 'Export Data (CSV)', sub: 'Download transactions as CSV for Excel', action: handleExportCSV, loading: exporting },
-    { Icon: ShieldCheck, label: 'JWT Inspector', sub: 'Developer security view', action: () => navigate('/jwt'), badge: 'DEV' },
-    { Icon: HelpCircle, label: 'Help & Support', sub: 'Get help with FinTrack', action: () => toast('help@fintrack.app') },
-    { Icon: Star, label: 'Rate FinTrack', sub: 'Share your experience', action: () => toast('Thank you!') },
-    { Icon: Info, label: 'About', sub: 'App version and info', action: () => toast('FinTrack v2.0 — React + JWT'), badge: 'v2.0' },
+    { key: 'notifications', Icon: Bell, label: 'Push Notifications', sub: 'Instant transaction alerts & budget milestones' },
+    { key: 'biometric', Icon: LockKeyhole, label: 'Biometric Access', sub: 'Require Touch ID / Face ID upon session resume' },
+    { key: 'cloudSync', Icon: Cloud, label: 'Cloud Synchronization', sub: 'Continuous encrypted cloud synchronization' },
   ];
 
   return (
     <Page>
       <PageHeader
-        eyebrow="Account"
+        eyebrow="Account & Preferences"
         title="Settings"
-        subtitle="Your profile, accounts, preferences, and app configuration."
+        subtitle="Manage your profile, connected accounts, security session, and platform configurations"
+        action={
+          <span className="badge-pill badge-pill-mint" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
+            <Sparkles size={14} /> FinTrack PRO v14
+          </span>
+        }
       />
 
-      {/* ── Profile Card ─────────────────────────── */}
-      <Card tone="mint" style={{ marginBottom: 14 }}>
-        <div className="settings-profile-hero">
-          <div className="settings-avatar">
-            {(user?.name || 'U')[0].toUpperCase()}
-          </div>
-          <div className="settings-profile-info">
-            <h2>{user?.name || 'User'}</h2>
-            <p>{user?.email || user?.phone || 'No contact saved'}</p>
-            <div className="settings-profile-badges">
-              <Chip tone="blue">
-                {authMethod === 'google' ? '🔗 Google' : authMethod === 'email' ? '📧 Email' : '📱 Phone'}
-              </Chip>
-              <Chip tone="mint">{user?.currency || 'INR'}</Chip>
-            </div>
-          </div>
-          <IconButton icon={<Edit3 size={18} />} label="Edit profile" onClick={openProfileEdit} />
-        </div>
-      </Card>
-
-      {/* ── Session Status ────────────────────────── */}
-      <Card tone={statusTone} onClick={refreshToken} style={{ marginBottom: 14, cursor: 'pointer' }}>
-        <div className="transaction-row" style={{ borderBottom: 0, padding: 0 }}>
-          <div className="settings-section-icon mint">
-            <ShieldCheck size={20} />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div className="transaction-title">
-              {tokenStatus === 'critical' ? '🔴 Token expiring now' : tokenStatus === 'warning' ? '🟡 Session expiring soon' : '🟢 Session active'}
-            </div>
-            <div className="transaction-meta">JWT expires in {typeof fmtCountdown === 'function' ? fmtCountdown(secsLeft) : '1h'}. Tap to refresh.</div>
-          </div>
-          <ChevronRight size={18} />
-        </div>
-      </Card>
-
-      <div className="settings-grid">
-        {/* ── Accounts & Wallets ────────────────────── */}
-        <div>
-          <SectionTitle action={<Button variant="soft" onClick={openCreateAccount}><Plus size={16} /> Add</Button>}>
-            Accounts & Wallets
-          </SectionTitle>
-          <Card className="list-card">
-            {accountsLoading ? (
-              <div style={{ display: 'grid', placeItems: 'center', padding: 32 }}>
-                <div className="spinner" />
+      {/* ── Executive Profile Hero Card ─────────────────────────── */}
+      <div className="data-card" style={{ marginBottom: 20 }}>
+        <div className="data-card-body" style={{ padding: '24px 28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+              <div
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #10b981 0%, #0ea5e9 100%)',
+                  color: '#ffffff',
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontSize: '1.6rem',
+                  fontWeight: 900,
+                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)',
+                  flexShrink: 0,
+                }}
+              >
+                {(user?.name || 'U')[0].toUpperCase()}
               </div>
-            ) : accounts.length === 0 ? (
-              <div style={{ padding: '24px 0', textAlign: 'center' }}>
-                <p>No accounts yet</p>
-                <Button variant="soft" onClick={openCreateAccount} style={{ marginTop: 10 }}>
-                  <Plus size={16} /> Create account
-                </Button>
-              </div>
-            ) : (
-              <>
-                {accounts.map(acc => (
-                  <div key={acc.id} className="account-manage-row">
-                    <div
-                      className="account-manage-icon"
-                      style={{ background: `${acc.color || '#4a9eff'}18`, color: acc.color || '#4a9eff' }}
-                    >
-                      {ACCOUNT_ICONS[acc.type] || '🏦'}
-                    </div>
-                    <div>
-                      <strong>{acc.name}</strong>
-                      <small>{acc.type || 'savings'}{acc.is_default ? ' • Default' : ''}</small>
-                    </div>
-                    <div className="account-manage-right">
-                      <b>{money(acc.balance)}</b>
-                      {!acc.is_default && (
-                        <div className="account-manage-actions">
-                          <button onClick={() => openEditAccount(acc)}><Edit3 size={11} /> Edit</button>
-                          <button onClick={() => deleteAccount(acc)}><Trash2 size={11} /></button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 12, fontSize: 13 }}>
-                  <span style={{ fontWeight: 850, color: 'var(--text-muted)' }}>TOTAL BALANCE</span>
-                  <b style={{ fontWeight: 900 }}>{money(totalBalance)}</b>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <h2 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0, color: 'var(--text)' }}>
+                    {user?.name || 'FinTrack User'}
+                  </h2>
+                  <span className="badge-pill badge-pill-mint">PRO Plan</span>
+                  <span className="badge-pill badge-pill-blue">
+                    {authMethod === 'google' ? 'Google OAuth' : authMethod === 'email' ? 'Verified Email' : 'Phone Verified'}
+                  </span>
                 </div>
-              </>
-            )}
-          </Card>
-        </div>
-
-        {/* ── Preferences ──────────────────────────── */}
-        <div>
-          <SectionTitle>Preferences</SectionTitle>
-          <Card className="list-card">
-            {prefs.map(pref => (
-              <SettingsRow
-                key={pref.key}
-                Icon={pref.Icon}
-                title={pref.label}
-                sub={pref.sub}
-                trailing={<Toggle on={toggles[pref.key]} onToggle={() => toggle(pref.key)} />}
-              />
-            ))}
-
-            {/* Currency selector inline */}
-            <div style={{ padding: '12px 0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <div className="settings-section-icon amber"><Landmark size={18} /></div>
-                <div>
-                  <div className="transaction-title" style={{ fontSize: 14 }}>Currency</div>
-                  <div className="transaction-meta">{CURRENCIES.find(c => c.code === (user?.currency || 'INR'))?.label || 'Indian Rupee'}</div>
+                <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {authMethod === 'email' ? <Mail size={14} /> : <Phone size={14} />}
+                  <span>{user?.email || user?.phone || 'account@fintrack.app'}</span>
                 </div>
               </div>
-              <div className="currency-grid">
-                {CURRENCIES.map(c => (
-                  <button
-                    key={c.code}
-                    className={`currency-btn ${(user?.currency || 'INR') === c.code ? 'active' : ''}`}
-                    onClick={async () => {
-                      try {
-                        await updateProfile({ currency: c.code });
-                        toast.success(`Currency set to ${c.code}`);
-                      } catch { toast.error('Failed to update currency'); }
-                    }}
-                  >
-                    {c.symbol} {c.code}
-                  </button>
-                ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={openProfileEdit}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '9px 18px',
+                borderRadius: 10,
+                background: 'var(--surface-strong)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)',
+                fontSize: '0.84rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Edit3 size={15} /> Edit Profile
+            </button>
+          </div>
+
+          {/* Quick Stats Banner inside Profile */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: 12,
+              marginTop: 20,
+              paddingTop: 18,
+              borderTop: '1px solid var(--border-subtle)',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                Consolidated Balance
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text)', marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>
+                {money(totalBalance)}
               </div>
             </div>
-          </Card>
-        </div>
-
-        {/* ── Quick Links ──────────────────────────── */}
-        <div className="settings-grid-full">
-          <SectionTitle>More</SectionTitle>
-          <Card className="list-card">
-            {links.map(link => (
-              <SettingsRow
-                key={link.label}
-                Icon={link.Icon}
-                title={link.label}
-                sub={link.sub}
-                onClick={link.loading ? undefined : link.action}
-                trailing={
-                  <>
-                    {link.badge && <Chip tone="blue">{link.badge}</Chip>}
-                    {link.loading ? <div className="spinner" style={{ width: 18, height: 18 }} /> : <ChevronRight size={17} />}
-                  </>
-                }
-              />
-            ))}
-          </Card>
+            <div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                Active Accounts
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text)', marginTop: 2 }}>
+                {accounts.length} Wallets / Banks
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                Default Currency
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#10b981', marginTop: 2 }}>
+                {user?.currency || 'INR'} ({CURRENCIES.find(c => c.code === (user?.currency || 'INR'))?.symbol || '₹'})
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                Session Integrity
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0ea5e9', marginTop: 2 }}>
+                JWT HS256 Protected
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── Danger Zone ───────────────────────────── */}
-      <div className="settings-danger">
-        <p style={{ textAlign: 'center', margin: '0 0 12px', fontSize: 12, color: 'var(--text-soft)' }}>
-          FINTRACK v2.0 — React + JWT HS256
-        </p>
-        <Button variant="danger" className="ui-button-full" onClick={handleLogout}>
-          <LogOut size={18} /> Sign Out
-        </Button>
+      {/* ── Security & Live Session Card ────────────────────────── */}
+      <div className="data-card" style={{ marginBottom: 20 }}>
+        <div
+          className="data-card-body"
+          style={{
+            padding: '16px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 14,
+            background: tokenStatus === 'critical' ? 'rgba(244, 63, 94, 0.08)' : tokenStatus === 'warning' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(16, 185, 129, 0.06)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 12,
+                background: tokenStatus === 'critical' ? '#f43f5e' : tokenStatus === 'warning' ? '#f59e0b' : '#10b981',
+                color: '#ffffff',
+                display: 'grid',
+                placeItems: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <ShieldCheck size={22} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <strong style={{ fontSize: '0.92rem', color: 'var(--text)' }}>
+                  {tokenStatus === 'critical' ? 'Session Expiring Imminently' : tokenStatus === 'warning' ? 'Session Renewal Advised' : 'Active Authenticated Session'}
+                </strong>
+                <span className={`badge-pill ${tokenStatus === 'critical' ? 'badge-pill-pink' : tokenStatus === 'warning' ? 'badge-pill-amber' : 'badge-pill-mint'}`}>
+                  {typeof fmtCountdown === 'function' ? fmtCountdown(secsLeft) : '1h'} remaining
+                </span>
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                Cryptographic token is validated on all requests. Click refresh to extend session lifetime.
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/jwt')}
+              className="badge-pill badge-pill-neutral"
+              style={{ cursor: 'pointer', padding: '8px 12px', fontSize: '0.78rem', border: '1px solid var(--border)' }}
+            >
+              <KeyRound size={13} /> Token Inspector
+            </button>
+            <button
+              type="button"
+              onClick={handleTokenRefresh}
+              disabled={isRefreshingToken}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 14px',
+                borderRadius: 8,
+                background: '#10b981',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                transition: 'opacity 0.15s ease',
+                opacity: isRefreshingToken ? 0.7 : 1,
+              }}
+            >
+              <RefreshCw size={14} className={isRefreshingToken ? 'spin' : ''} />
+              {isRefreshingToken ? 'Refreshing...' : 'Renew Token'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 2-Column Dashboard Grid ────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 20 }}>
+        {/* Left Column: Accounts & Data Portability */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Accounts & Wallets */}
+          <div className="data-card">
+            <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+              <div className="data-card-title">
+                <Wallet size={17} color="#10b981" /> Accounts & Wallets
+              </div>
+              <button
+                type="button"
+                onClick={openCreateAccount}
+                className="data-card-action"
+                style={{ color: '#10b981' }}
+              >
+                <Plus size={15} /> Add Account
+              </button>
+            </div>
+            <div className="data-card-body" style={{ padding: '8px 20px 16px' }}>
+              {accountsLoading ? (
+                <div style={{ display: 'grid', placeItems: 'center', padding: '36px 0' }}>
+                  <div className="spinner" />
+                </div>
+              ) : accounts.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                  <div style={{ fontSize: '1.8rem', marginBottom: 6 }}>🏦</div>
+                  <div style={{ fontWeight: 700, color: 'var(--text)' }}>No accounts configured</div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4 }}>Add your bank account, credit card, or wallet</div>
+                  <Button variant="soft" onClick={openCreateAccount} style={{ marginTop: 14 }}>
+                    <Plus size={15} /> Create First Account
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {accounts.map(acc => (
+                      <div
+                        key={acc.id}
+                        className="modern-row"
+                        style={{ padding: '12px 0' }}
+                      >
+                        <div
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 10,
+                            background: `${acc.color || '#10b981'}1a`,
+                            color: acc.color || '#10b981',
+                            display: 'grid',
+                            placeItems: 'center',
+                            fontSize: '1.1rem',
+                            border: `1px solid ${acc.color || '#10b981'}33`,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {ACCOUNT_ICONS[acc.type] || '🏦'}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <strong style={{ fontSize: '0.9rem', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {acc.name}
+                            </strong>
+                            {acc.is_default && (
+                              <span className="badge-pill badge-pill-mint" style={{ fontSize: '0.65rem' }}>Default</span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', textTransform: 'capitalize', marginTop: 2 }}>
+                            {acc.type || 'savings'}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '0.95rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                            {money(acc.balance)}
+                          </div>
+                          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 4 }}>
+                            <button
+                              type="button"
+                              onClick={() => openEditAccount(acc)}
+                              className="account-manage-actions button"
+                              style={{ border: '1px solid var(--border)', background: 'var(--surface-strong)', color: 'var(--text)', padding: '2px 8px', borderRadius: 6, fontSize: '0.72rem', cursor: 'pointer' }}
+                            >
+                              <Edit3 size={11} /> Edit
+                            </button>
+                            {!acc.is_default && (
+                              <button
+                                type="button"
+                                onClick={() => deleteAccount(acc)}
+                                style={{ border: '1px solid rgba(244, 63, 94, 0.3)', background: 'rgba(244, 63, 94, 0.08)', color: '#f43f5e', padding: '2px 8px', borderRadius: 6, fontSize: '0.72rem', cursor: 'pointer' }}
+                              >
+                                <Trash2 size={11} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      paddingTop: 14,
+                      marginTop: 6,
+                      borderTop: '1px solid var(--border)',
+                    }}
+                  >
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                      Consolidated Balance
+                    </span>
+                    <span style={{ fontSize: '1.15rem', fontWeight: 900, color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>
+                      {money(totalBalance)}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Data Portability & Backup */}
+          <div className="data-card">
+            <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+              <div className="data-card-title">
+                <Download size={17} color="#0ea5e9" /> Data Export & Portability
+              </div>
+              <span className="badge-pill badge-pill-blue">Full Ownership</span>
+            </div>
+            <div className="data-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                Your financial data belongs exclusively to you. Export the complete transactional ledger at any time in standardized formats.
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  disabled={exporting}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    padding: '12px 16px',
+                    borderRadius: 10,
+                    background: 'var(--surface-strong)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)',
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <Download size={15} color="#0ea5e9" /> JSON Backup
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportCSV}
+                  disabled={exporting}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    padding: '12px 16px',
+                    borderRadius: 10,
+                    background: 'var(--surface-strong)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)',
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <Download size={15} color="#10b981" /> CSV for Excel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Preferences, Currencies & Tools */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Preferences & System Switches */}
+          <div className="data-card">
+            <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+              <div className="data-card-title">
+                <LockKeyhole size={17} color="#8b5cf6" /> Security & App Preferences
+              </div>
+              <span className="badge-pill badge-pill-purple">Device Level</span>
+            </div>
+            <div className="data-card-body" style={{ padding: '8px 20px 16px' }}>
+              {prefs.map(pref => (
+                <div
+                  key={pref.key}
+                  className="modern-row"
+                  style={{ padding: '14px 0' }}
+                >
+                  <div
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 10,
+                      background: 'var(--surface-strong)',
+                      border: '1px solid var(--border)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      color: 'var(--text)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <pref.Icon size={18} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
+                    <strong style={{ fontSize: '0.88rem', color: 'var(--text)' }}>{pref.label}</strong>
+                    <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 2 }}>{pref.sub}</div>
+                  </div>
+                  <Toggle on={toggles[pref.key]} onToggle={() => toggle(pref.key)} />
+                </div>
+              ))}
+
+              {/* Currency Selector */}
+              <div style={{ paddingTop: 16, borderTop: '1px solid var(--border-subtle)', marginTop: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Landmark size={16} color="#10b981" />
+                    <span style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text)' }}>Base Currency</span>
+                  </div>
+                  <span className="badge-pill badge-pill-mint">{user?.currency || 'INR'} Selected</span>
+                </div>
+
+                <div className="currency-grid">
+                  {CURRENCIES.map(c => {
+                    const isSelected = (user?.currency || 'INR') === c.code;
+                    return (
+                      <button
+                        key={c.code}
+                        type="button"
+                        className={`currency-btn ${isSelected ? 'active' : ''}`}
+                        onClick={async () => {
+                          try {
+                            await updateProfile({ currency: c.code });
+                            toast.success(`Currency switched to ${c.code}`);
+                          } catch {
+                            toast.error('Failed to update currency');
+                          }
+                        }}
+                      >
+                        <div style={{ fontSize: '1rem', fontWeight: 800 }}>{c.symbol}</div>
+                        <div style={{ fontSize: '0.72rem', fontWeight: 600, opacity: 0.85 }}>{c.code}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Links & Tools */}
+          <div className="data-card">
+            <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+              <div className="data-card-title">
+                <Info size={17} color="#0ea5e9" /> Tools & Resources
+              </div>
+              <span className="badge-pill badge-pill-neutral">Quick Links</span>
+            </div>
+            <div className="data-card-body" style={{ padding: '6px 20px 14px' }}>
+              {[
+                { Icon: Tag, label: 'Manage Categories', sub: 'Customize expense & income taxonomy', action: () => navigate('/categories') },
+                { Icon: ShieldCheck, label: 'JWT Security Inspector', sub: 'Inspect access token headers, payload and signature', action: () => navigate('/jwt'), badge: 'DEV' },
+                { Icon: HelpCircle, label: 'Help & Support', sub: 'Questions, bug reports or feedback', action: () => toast('Support contact: help@fintrack.app') },
+                { Icon: Star, label: 'Rate FinTrack', sub: 'Help us improve the personal finance platform', action: () => toast.success('Thank you for rating FinTrack!') },
+              ].map(item => (
+                <div
+                  key={item.label}
+                  className="modern-row"
+                  onClick={item.action}
+                  style={{ cursor: 'pointer', padding: '12px 0' }}
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      background: 'var(--surface-strong)',
+                      border: '1px solid var(--border)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      color: 'var(--text)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <item.Icon size={17} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <strong style={{ fontSize: '0.86rem', color: 'var(--text)' }}>{item.label}</strong>
+                      {item.badge && <span className="badge-pill badge-pill-blue" style={{ fontSize: '0.65rem' }}>{item.badge}</span>}
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 2 }}>{item.sub}</div>
+                  </div>
+                  <ChevronRight size={16} color="var(--text-muted)" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Danger Zone: Sign Out */}
+          <div
+            className="data-card"
+            style={{
+              borderColor: 'rgba(244, 63, 94, 0.3)',
+              background: 'rgba(244, 63, 94, 0.03)',
+            }}
+          >
+            <div className="data-card-body" style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+              <div>
+                <strong style={{ fontSize: '0.9rem', color: '#f43f5e' }}>Sign Out of Session</strong>
+                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                  Clears local credentials and terminates active authentication session.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '9px 18px',
+                  borderRadius: 8,
+                  background: 'rgba(244, 63, 94, 0.12)',
+                  border: '1px solid rgba(244, 63, 94, 0.3)',
+                  color: '#f43f5e',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <LogOut size={15} /> Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── Profile Edit Sheet ────────────────────── */}
@@ -459,7 +842,7 @@ export default function SettingsPage() {
             placeholder="Your name"
           />
           <div className="field">
-            <span>Currency</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Currency</span>
             <div className="currency-grid">
               {CURRENCIES.map(c => (
                 <button
@@ -468,13 +851,14 @@ export default function SettingsPage() {
                   className={`currency-btn ${profileForm.currency === c.code ? 'active' : ''}`}
                   onClick={() => setProfileForm(prev => ({ ...prev, currency: c.code }))}
                 >
-                  {c.symbol} {c.code}
+                  <div style={{ fontSize: '1rem', fontWeight: 800 }}>{c.symbol}</div>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 600, opacity: 0.85 }}>{c.code}</div>
                 </button>
               ))}
             </div>
           </div>
           <Button className="ui-button-full" onClick={saveProfile} disabled={profileSaving}>
-            <UserRound size={18} /> {profileSaving ? 'Saving...' : 'Save profile'}
+            <UserRound size={18} /> {profileSaving ? 'Saving Changes...' : 'Save Profile'}
           </Button>
         </BottomSheet>
       )}
@@ -508,13 +892,23 @@ export default function SettingsPage() {
           </div>
 
           <div className="field">
-            <span>Color</span>
-            <div className="swatch-grid">
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Color Accent</span>
+            <div className="swatch-grid" style={{ display: 'flex', gap: 10, marginTop: 8 }}>
               {ACCOUNT_COLORS.map(color => (
                 <button
                   key={color}
+                  type="button"
                   className={`swatch ${accountForm.color === color ? 'active' : ''}`}
-                  style={{ background: color }}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    background: color,
+                    border: accountForm.color === color ? '3px solid #ffffff' : '2px solid transparent',
+                    boxShadow: accountForm.color === color ? `0 0 0 2px ${color}` : 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
                   aria-label={`Select ${color}`}
                   onClick={() => setAccountForm(prev => ({ ...prev, color }))}
                 />
@@ -522,8 +916,8 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <Button className="ui-button-full" onClick={saveAccount}>
-            <Wallet size={18} /> {editAccount ? 'Save changes' : 'Create account'}
+          <Button className="ui-button-full" onClick={saveAccount} style={{ marginTop: 14 }}>
+            <Wallet size={18} /> {editAccount ? 'Save Changes' : 'Create Account'}
           </Button>
         </BottomSheet>
       )}
@@ -531,50 +925,37 @@ export default function SettingsPage() {
   );
 }
 
-// ── Helper Components ──────────────────────────────────
-function SettingsRow({ Icon, title, sub, trailing, onClick }) {
-  return (
-    <div className="transaction-row" onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }}>
-      <div className="transaction-icon">
-        <Icon size={20} />
-      </div>
-      <div style={{ minWidth: 0 }}>
-        <div className="transaction-title">{title}</div>
-        {sub && <div className="transaction-meta">{sub}</div>}
-      </div>
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>{trailing}</div>
-    </div>
-  );
-}
-
+// ── Polished Toggle Switch ──────────────────────────────────
 function Toggle({ on, onToggle }) {
   return (
     <button
+      type="button"
       onClick={event => { event.stopPropagation(); onToggle(); }}
       aria-pressed={on}
       style={{
-        width: 46,
-        height: 28,
+        width: 44,
+        height: 26,
         borderRadius: 999,
-        border: '1px solid rgba(17,23,25,.1)',
-        background: on ? '#315f3b' : '#dce4dc',
+        border: '1px solid var(--border)',
+        background: on ? '#10b981' : 'var(--surface-strong)',
         cursor: 'pointer',
         position: 'relative',
         padding: 0,
-        transition: 'background .18s ease',
+        transition: 'all .2s ease',
+        flexShrink: 0,
       }}
     >
       <span
         style={{
-          width: 22,
-          height: 22,
+          width: 20,
+          height: 20,
           borderRadius: '50%',
-          background: '#fff',
+          background: '#ffffff',
           position: 'absolute',
           top: 2,
-          left: on ? 21 : 2,
-          transition: 'left .18s ease',
-          boxShadow: '0 2px 7px rgba(17,23,25,.2)',
+          left: on ? 20 : 2,
+          transition: 'left .2s cubic-bezier(0.4, 0, 0.2, 1)',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
         }}
       />
     </button>

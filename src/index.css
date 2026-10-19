@@ -1862,48 +1862,54 @@ p { font-size: 14px; line-height: 1.55; color: var(--text-muted); }
 }
 .account-manage-actions button {
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(255,255,255,.72);
-  padding: 4px 7px;
+  border-radius: 6px;
+  background: var(--surface-strong);
+  color: var(--text);
+  padding: 4px 8px;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-size: 10px;
-  font-weight: 850;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
   cursor: pointer;
-  transition: background .12s;
+  transition: all .15s ease;
 }
-.account-manage-actions button:hover { background: rgba(255,255,255,.95); }
+.account-manage-actions button:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+}
 .settings-danger {
   margin-top: 10px;
   padding-top: 16px;
-  border-top: 1px dashed rgba(200, 77, 77, 0.3);
+  border-top: 1px dashed rgba(244, 63, 94, 0.3);
 }
 .currency-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
+  gap: 8px;
   margin: 6px 0 14px;
 }
 .currency-btn {
-  min-height: 42px;
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  background: rgba(255,255,255,.6);
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-strong);
+  color: var(--text);
   font-size: 13px;
-  font-weight: 850;
+  font-weight: 700;
   cursor: pointer;
   display: grid;
   place-items: center;
-  transition: border-color .12s ease, background .12s ease;
+  transition: all .15s ease;
 }
 .currency-btn:hover {
-  background: var(--surface-mint);
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
 }
 .currency-btn.active {
-  border-color: var(--mint-dark);
-  background: var(--surface-mint);
-  color: var(--mint-dark);
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
 }
 
 @media (max-width: 390px) {
