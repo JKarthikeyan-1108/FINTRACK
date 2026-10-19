@@ -11,6 +11,8 @@ const processRecurringTransactions = require('./utils/recurringProcessor');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 app.set('json replacer', (key, value) =>
   value && typeof value === 'object' &&
   typeof value._seconds === 'number' && typeof value._nanoseconds === 'number'
@@ -51,8 +53,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 60, standardHeaders: true }));
-app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, max: 500, standardHeaders: true }));
+app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 60, standardHeaders: true, validate: { xForwardedForHeader: false } }));
+app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, max: 500, standardHeaders: true, validate: { xForwardedForHeader: false } }));
 
 let bootstrapped = false;
 let lastRecurringRun = 0;
