@@ -1,10 +1,12 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useSecurity } from '../../context/SecurityContext';
 import AIChatbot from '../AIChatbot';
 import CommandPalette from '../CommandPalette';
 import NetworkStatusBanner from '../NetworkStatusBanner';
 import PWAInstallPrompt from '../PWAInstallPrompt';
+import SecurityLockModal from '../SecurityLockModal';
 import { triggerHaptic } from '../../lib/haptics';
 import {
   Award,
@@ -16,6 +18,7 @@ import {
   Flag,
   Home,
   Landmark,
+  Lock,
   Moon,
   Sun,
   MoreHorizontal,
@@ -83,6 +86,7 @@ const MORE_NAV = [
 
 export default function AppShell() {
   const { tokenStatus, secsLeft, fmtCountdown, user, logout, refreshToken } = useAuth();
+  const { pinEnabled, lockNow } = useSecurity();
   const nav = useNavigate();
   const loc = useLocation();
   const [time, setTime] = useState('');
@@ -272,6 +276,19 @@ export default function AppShell() {
               {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
 
+            {pinEnabled && (
+              <button
+                type="button"
+                onClick={lockNow}
+                className="icon-btn"
+                title="Lock FinTrack Vault Now"
+                aria-label="Lock FinTrack Vault Now"
+                style={{ color: '#10b981' }}
+              >
+                <Lock size={17} />
+              </button>
+            )}
+
             <button
               type="button"
               className="icon-btn desktop-only"
@@ -357,6 +374,7 @@ export default function AppShell() {
         onRefreshToken={refreshToken}
       />
       <AIChatbot />
+      <SecurityLockModal />
     </div>
   );
 }

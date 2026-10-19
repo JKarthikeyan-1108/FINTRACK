@@ -12,10 +12,26 @@ import {
   ArcElement,
 } from 'chart.js';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
-import { FileText, Download, TrendingUp, TrendingDown, PieChart as PieIcon, Activity } from 'lucide-react';
+import {
+  FileText,
+  Download,
+  TrendingUp,
+  TrendingDown,
+  PieChart as PieIcon,
+  Activity,
+  ShieldCheck,
+  Zap,
+  Globe,
+  ArrowRightLeft,
+  Sparkles,
+} from 'lucide-react';
 import { txnAPI, categoryAPI } from '../services/api';
-import { Page, PageHeader, Card, SectionTitle, Button, Chip } from '../components/ui/CashewUI';
+import { useAuth } from '../context/AuthContext';
+import { Page, PageHeader, Card, SectionTitle, Button, Chip, ProgressBar } from '../components/ui/CashewUI';
 import { money } from '../lib/format';
+import { calculateHealthScore } from '../lib/healthScore';
+import { generateFinancialStatement } from '../lib/pdfReport';
+import { SUPPORTED_CURRENCIES, getExchangeRate, convertCurrency, formatCurrencyFX } from '../lib/currency';
 import toast from 'react-hot-toast';
 
 ChartJS.register(
@@ -31,9 +47,13 @@ ChartJS.register(
 );
 
 export default function AnalyticsPage() {
+  const { user } = useAuth();
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fxAmount, setFxAmount] = useState('1000');
+  const [fxFrom, setFxFrom] = useState(user?.currency || 'INR');
+  const [fxTo, setFxTo] = useState('USD');
 
   useEffect(() => {
     Promise.all([
@@ -147,6 +167,17 @@ export default function AnalyticsPage() {
   const totalSaved = totalIncome - totalExpense;
   const avgSavingsRate = totalIncome > 0 ? ((totalSaved / totalIncome) * 100).toFixed(1) : 0;
 
+  const currentMonthTxAll = transactions.filter(t => t.date.startsWith(currentMonthPrefix));
+  const currentMonthIncome = currentMonthTxAll.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount || 0), 0);
+  const currentMonthExpense = currentMonthTxAll.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount || 0), 0);
+  const health = calculateHealthScore({
+    income: currentMonthIncome || (totalIncome / 12),
+    expenses: currentMonthExpense || (totalExpense / 12),
+    savings: (currentMonthIncome - currentMonthExpense),
+    liquidBalance: totalSaved > 0 ? totalSaved : 50000,
+    budgets: [],
+  });
+
   function handleExportCSV() {
     if (transactions.length === 0) {
       toast.error('No transactions to export');
@@ -189,9 +220,25 @@ export default function AnalyticsPage() {
         title="Analytics"
         subtitle="Longitudinal cash flow analysis, savings velocity, and category distribution."
         action={
-          <Button variant="soft" onClick={handleExportCSV}>
-            <Download size={16} /> Export CSV Ledger
-          </Button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                generateFinancialStatement({
+                  user,
+                  periodLabel: '12-Month Annualized Financial Audit',
+                  overview: { income: totalIncome, expenses: totalExpense, savings: totalSaved },
+                  transactions,
+                });
+                toast.success('Generated official financial audit statement');
+              }}
+            >
+              <FileText size={15} /> PDF Statement
+            </Button>
+            <Button variant="soft" onClick={handleExportCSV}>
+              <Download size={15} /> Export CSV
+            </Button>
+          </div>
         }
       />
 
@@ -237,6 +284,86 @@ export default function AnalyticsPage() {
             tone={totalSaved >= 0 ? 'blue' : 'amber'}
             icon={<FileText />}
           />
+        </div>
+      </div>
+
+      {/* Financial Health Scorecard & Pillar Breakdown */}
+      <div className="data-card card-stagger" style={{ marginBottom: 20 }}>
+        <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+          <div className="data-card-title">
+            <ShieldCheck size={18} color="#10b981" />
+            <span>FinTrack Health Index & Autonomous Diagnostics</span>
+          </div>
+          <span className={`badge-pill ${health.badgeClass}`}>
+            Overall Score: {health.score}/100 • {health.tier}
+          </span>
+        </div>
+        <div className="data-card-body" style={{ padding: '20px 22px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 18, marginBottom: 20 }}>
+            {/* Pillar 1: Savings Rate */}
+            <div style={{ background: 'var(--surface-strong)', padding: '14px 16px', borderRadius: 10, border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)' }}>Savings Discipline</span>
+                <span className="badge-pill badge-pill-mint">{health.breakdown.savings.rate}</span>
+              </div>
+              <ProgressBar value={(health.breakdown.savings.score / 25) * 100} tone="mint" />
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 6 }}>
+                Score: {health.breakdown.savings.score}/25 points
+              </div>
+            </div>
+
+            {/* Pillar 2: Liquidity Runway */}
+            <div style={{ background: 'var(--surface-strong)', padding: '14px 16px', borderRadius: 10, border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)' }}>Emergency Runway</span>
+                <span className="badge-pill badge-pill-blue">{health.breakdown.liquidity.months} Mo</span>
+              </div>
+              <ProgressBar value={(health.breakdown.liquidity.score / 25) * 100} tone="blue" />
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 6 }}>
+                Score: {health.breakdown.liquidity.score}/25 points
+              </div>
+            </div>
+
+            {/* Pillar 3: Budget Adherence */}
+            <div style={{ background: 'var(--surface-strong)', padding: '14px 16px', borderRadius: 10, border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)' }}>Budget Control</span>
+                <span className="badge-pill badge-pill-purple">{health.breakdown.budget.score}/25</span>
+              </div>
+              <ProgressBar value={(health.breakdown.budget.score / 25) * 100} tone="purple" />
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 6 }}>
+                Spending ceilings & allocation
+              </div>
+            </div>
+
+            {/* Pillar 4: Debt & Obligations */}
+            <div style={{ background: 'var(--surface-strong)', padding: '14px 16px', borderRadius: 10, border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)' }}>Debt & Commitments</span>
+                <span className="badge-pill badge-pill-amber">{health.breakdown.debt.dti} DTI</span>
+              </div>
+              <ProgressBar value={(health.breakdown.debt.score / 25) * 100} tone="amber" />
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 6 }}>
+                Score: {health.breakdown.debt.score}/25 points
+              </div>
+            </div>
+          </div>
+
+          {/* AI Prescriptive Guidance */}
+          <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <Sparkles size={15} color="#8b5cf6" />
+              <strong style={{ fontSize: '0.86rem', color: 'var(--text)' }}>AI Financial Prescriptions</strong>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 10 }}>
+              {health.tips.map((tip, idx) => (
+                <div key={idx} style={{ background: 'var(--surface-strong)', padding: '10px 14px', borderRadius: 8, fontSize: '0.8rem' }}>
+                  <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>• {tip.title}</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.76rem' }}>{tip.detail}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -355,6 +482,118 @@ export default function AnalyticsPage() {
                   },
                 }}
               />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Real-Time Multi-Currency FX Engine */}
+      <div className="data-card card-stagger" style={{ marginTop: 20 }}>
+        <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+          <div className="data-card-title">
+            <Globe size={18} color="#0ea5e9" />
+            <span>Global Multi-Currency FX Matrix</span>
+          </div>
+          <span className="badge-pill badge-pill-mint">Live Reference Rates</span>
+        </div>
+        <div className="data-card-body" style={{ padding: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
+            {/* Quick Converter Widget */}
+            <div style={{ background: 'var(--surface-strong)', padding: '16px', borderRadius: 12, border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <ArrowRightLeft size={16} color="#0ea5e9" /> Instant Currency Calculator
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4, fontWeight: 700 }}>AMOUNT</label>
+                  <input
+                    type="number"
+                    value={fxAmount}
+                    onChange={(e) => setFxAmount(e.target.value)}
+                    style={{
+                      width: '100%',
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      padding: '8px 10px',
+                      color: 'var(--text)',
+                      fontWeight: 700,
+                      fontSize: '0.9rem',
+                    }}
+                  />
+                </div>
+                <div style={{ width: 90 }}>
+                  <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4, fontWeight: 700 }}>FROM</label>
+                  <select
+                    value={fxFrom}
+                    onChange={(e) => setFxFrom(e.target.value)}
+                    style={{
+                      width: '100%',
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      padding: '8px 6px',
+                      color: 'var(--text)',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    {SUPPORTED_CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} ({c.symbol})</option>)}
+                  </select>
+                </div>
+                <div style={{ width: 90 }}>
+                  <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4, fontWeight: 700 }}>TO</label>
+                  <select
+                    value={fxTo}
+                    onChange={(e) => setFxTo(e.target.value)}
+                    style={{
+                      width: '100%',
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      padding: '8px 6px',
+                      color: 'var(--text)',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    {SUPPORTED_CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} ({c.symbol})</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--surface)', padding: '12px 14px', borderRadius: 8, border: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Converted Equivalent:</span>
+                <strong style={{ fontSize: '1.1rem', color: '#10b981', fontWeight: 900 }}>
+                  {formatCurrencyFX(convertCurrency(Number(fxAmount || 0), fxFrom, fxTo), fxTo)}
+                </strong>
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 8, textAlign: 'right' }}>
+                1 {fxFrom} = {getExchangeRate(fxFrom, fxTo).toFixed(4)} {fxTo}
+              </div>
+            </div>
+
+            {/* Exchange Rate Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
+              {SUPPORTED_CURRENCIES.filter(c => c.code !== (user?.currency || 'INR')).map(c => {
+                const userCur = user?.currency || 'INR';
+                const rate = getExchangeRate(c.code, userCur);
+                return (
+                  <div key={c.code} style={{ background: 'var(--surface-strong)', padding: '12px', borderRadius: 10, border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: '1.1rem' }}>{c.flag}</span>
+                      <strong style={{ fontSize: '0.86rem', color: 'var(--text)' }}>1 {c.code}</strong>
+                    </div>
+                    <div style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--text)', marginTop: 4 }}>
+                      {money(rate)}
+                    </div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                      {c.name}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

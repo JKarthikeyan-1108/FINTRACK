@@ -4,13 +4,16 @@ import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
+import { SecurityProvider } from './context/SecurityContext';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <SecurityProvider>
+          <App />
+        </SecurityProvider>
         <Toaster
           position="top-center"
           containerStyle={{ top: 52 }}

@@ -18,6 +18,10 @@ import {
   WalletCards,
   Wallet,
   Home,
+  Activity,
+  ShieldCheck,
+  Zap,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { dashAPI, budgetAPI, goalAPI } from '../services/api';
@@ -33,6 +37,8 @@ import {
   SectionTitle,
 } from '../components/ui/CashewUI';
 import { dateLong, dateShort, money } from '../lib/format';
+import { calculateHealthScore } from '../lib/healthScore';
+import { generateFinancialStatement } from '../lib/pdfReport';
 
 Chart.register(...registerables);
 
@@ -87,6 +93,31 @@ export default function HomePage() {
   const savingsRate = Number(overview?.savings_rate || 0);
   const recent = overview?.recent_transactions || [];
   const accounts = overview?.accounts || [];
+
+  const health = calculateHealthScore({
+    income: overview?.income,
+    expenses: overview?.expenses,
+    savings: overview?.savings,
+    liquidBalance: overview?.net_worth,
+    budgets,
+    subscriptions: overview?.subscriptions || [],
+  });
+
+  const handleDownloadStatement = () => {
+    try {
+      generateFinancialStatement({
+        user,
+        periodLabel: `${new Date().toLocaleString('default', { month: 'long', year: 'numeric' })} Statement`,
+        overview,
+        accounts,
+        transactions: overview?.recent_transactions || [],
+        budgets,
+      });
+      toast.success('Generated financial statement');
+    } catch {
+      toast.error('Failed to generate statement');
+    }
+  };
 
   const labels = trends.map(row => {
     if (!row?.month) return '';
@@ -195,6 +226,15 @@ export default function HomePage() {
         subtitle="Real-time financial intelligence across your cashflow, budgets, investments, and debt."
         action={
           <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              className="quick-action-pill"
+              onClick={handleDownloadStatement}
+              style={{ background: 'var(--surface-strong)', border: '1px solid var(--border)', cursor: 'pointer' }}
+            >
+              <Download size={14} color="#8b5cf6" />
+              <span>PDF Statement</span>
+            </button>
             <Button variant="primary" onClick={() => navigate('/transactions')}>
               <Plus size={16} /> New Transaction
             </Button>
@@ -292,6 +332,84 @@ export default function HomePage() {
           <span className="quick-action-pill-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>₹</span>
           <span>Calculators Suite</span>
         </button>
+      </div>
+
+      {/* AI Financial Health Score & Velocity Intelligence Hub */}
+      <div
+        className="data-card card-stagger"
+        style={{
+          marginBottom: 20,
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, rgba(14, 165, 233, 0.04) 50%, rgba(139, 92, 246, 0.04) 100%)',
+          border: '1px solid var(--border)',
+        }}
+      >
+        <div className="data-card-body" style={{ padding: '18px 22px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+            {/* Health Score Pillar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 260 }}>
+              <div
+                style={{
+                  width: 58,
+                  height: 58,
+                  borderRadius: 16,
+                  background: 'var(--surface-strong)',
+                  border: '2px solid var(--border)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: health.score >= 80 ? '#10b981' : health.score >= 60 ? '#0ea5e9' : '#f59e0b', lineHeight: 1 }}>
+                  {health.score}
+                </div>
+                <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: 2 }}>
+                  Score
+                </div>
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <ShieldCheck size={16} color="#10b981" />
+                  <strong style={{ fontSize: '0.96rem', color: 'var(--text)' }}>FinTrack Health Index</strong>
+                  <span className={`badge-pill ${health.badgeClass}`} style={{ fontSize: '0.7rem' }}>{health.tier}</span>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                  Savings: <strong>{health.breakdown.savings.rate}</strong> • Runway: <strong>{health.breakdown.liquidity.months} mo</strong> • Budgets: <strong>{health.breakdown.budget.score}/25</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Velocity / Run-rate Indicator */}
+            <div style={{ flex: 1, minWidth: 280, borderLeft: '1px solid var(--border-subtle)', paddingLeft: 18 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <Zap size={14} color={health.velocity.tone === 'pink' ? '#f43f5e' : health.velocity.tone === 'amber' ? '#f59e0b' : '#10b981'} />
+                <span style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text)' }}>
+                  {health.velocity.title}
+                </span>
+                <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                  (Day {health.velocity.daysElapsed} of {health.velocity.daysTotal})
+                </span>
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                {health.tips[0]?.detail || health.velocity.description}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => navigate('/analytics')}
+                className="data-card-action"
+                style={{ fontSize: '0.8rem', padding: '6px 12px', background: 'var(--surface-strong)', borderRadius: 8, border: '1px solid var(--border)' }}
+              >
+                Deep Insights &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 2-Column Responsive Dashboard Layout */}

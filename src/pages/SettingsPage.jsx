@@ -27,8 +27,13 @@ import {
   Check,
   KeyRound,
   ExternalLink,
+  ShieldAlert,
+  Smartphone,
+  EyeOff,
+  Sliders,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSecurity } from '../context/SecurityContext';
 import { accountAPI, txnAPI } from '../services/api';
 import {
   BottomSheet,
@@ -39,14 +44,8 @@ import {
   SelectInput,
 } from '../components/ui/CashewUI';
 import { money } from '../lib/format';
-
-const CURRENCIES = [
-  { code: 'INR', symbol: '₹', label: 'Indian Rupee' },
-  { code: 'USD', symbol: '$', label: 'US Dollar' },
-  { code: 'EUR', symbol: '€', label: 'Euro' },
-  { code: 'GBP', symbol: '£', label: 'British Pound' },
-  { code: 'JPY', symbol: '¥', label: 'Japanese Yen' },
-];
+import { SUPPORTED_CURRENCIES, getExchangeRate } from '../lib/currency';
+import { generateFinancialStatement } from '../lib/pdfReport';
 
 const ACCOUNT_TYPES = ['savings', 'current', 'credit', 'wallet', 'cash', 'investment'];
 const ACCOUNT_COLORS = ['#10b981', '#0ea5e9', '#8b5cf6', '#f59e0b', '#f43f5e', '#14b8a6', '#6366f1', '#ec4899'];
@@ -70,9 +69,22 @@ const blankAccountForm = () => ({
 export default function SettingsPage() {
   const { user, logout, tokenStatus, secsLeft, fmtCountdown, refreshToken, updateProfile } = useAuth();
   const navigate = useNavigate();
+  const {
+    pinEnabled,
+    isLocked,
+    autoLockTimeout,
+    biometricAvailable,
+    lockNow,
+    setupPin,
+    disablePin,
+    updateAutoLock,
+  } = useSecurity();
+
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinForm, setPinForm] = useState({ pin: '', confirm: '' });
 
   // Preferences (visual-only toggles)
-  const [toggles, setToggles] = useState({ biometric: false, notifications: true, cloudSync: true });
+  const [toggles, setToggles] = useState({ notifications: true, cloudSync: true });
 
   // Profile editing
   const [profileModal, setProfileModal] = useState(false);
@@ -263,6 +275,56 @@ export default function SettingsPage() {
       setExporting(false);
     }
   }
+
+  async function handleExportPDF() {
+    setExporting(true);
+    try {
+      const { data } = await txnAPI.getAll({ limit: 200 });
+      const transactions = data.data || [];
+      generateFinancialStatement({
+        user,
+        periodLabel: 'Official Fiscal Statement',
+        overview: {
+          income: transactions.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount || 0), 0),
+          expenses: transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount || 0), 0),
+        },
+        accounts,
+        transactions,
+      });
+      toast.success('Generated official financial statement');
+    } catch {
+      toast.error('Failed to generate PDF statement');
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const handleSetupPinSubmit = async () => {
+    if (pinForm.pin.length !== 4 || !/^\d{4}$/.test(pinForm.pin)) {
+      toast.error('PIN must be exactly 4 numeric digits');
+      return;
+    }
+    if (pinForm.pin !== pinForm.confirm) {
+      toast.error('PIN confirmation does not match');
+      return;
+    }
+    await setupPin(pinForm.pin);
+    toast.success('4-Digit Security PIN successfully activated');
+    setShowPinModal(false);
+    setPinForm({ pin: '', confirm: '' });
+  };
+
+  const handleTogglePin = () => {
+    if (pinEnabled) {
+      if (window.confirm('Disable PIN Lock? The application will no longer require a PIN upon launch.')) {
+        disablePin();
+        toast.success('App Security Lock disabled');
+      }
+    } else {
+      setPinForm({ pin: '', confirm: '' });
+      setShowPinModal(true);
+    }
+  };
 
   // ── Logout ─────────────────────────────────
   async function handleLogout() {
@@ -661,6 +723,29 @@ export default function SettingsPage() {
                 >
                   <Download size={15} color="#10b981" /> CSV for Excel
                 </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportPDF}
+                  disabled={exporting}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    padding: '12px 16px',
+                    borderRadius: 10,
+                    background: 'var(--surface-strong)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)',
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <Download size={15} color="#8b5cf6" /> PDF Statement
+                </button>
               </div>
             </div>
           </div>
@@ -668,21 +753,85 @@ export default function SettingsPage() {
 
         {/* Right Column: Preferences, Currencies & Tools */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* Preferences & System Switches */}
+          {/* App Security & Privacy Vault */}
           <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
-                <LockKeyhole size={17} color="#8b5cf6" /> Security & App Preferences
+                <LockKeyhole size={17} color="#8b5cf6" /> App Security & Privacy Vault
               </div>
-              <span className="badge-pill badge-pill-purple">Device Level</span>
+              <span className={`badge-pill ${pinEnabled ? 'badge-pill-mint' : 'badge-pill-pink'}`}>
+                {pinEnabled ? 'PIN Vault Active' : 'Unprotected'}
+              </span>
             </div>
             <div className="data-card-body" style={{ padding: '8px 20px 16px' }}>
-              {prefs.map(pref => (
+              {/* Row 1: PIN Protection */}
+              <div className="modern-row" style={{ padding: '14px 0' }}>
                 <div
-                  key={pref.key}
-                  className="modern-row"
-                  style={{ padding: '14px 0' }}
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    background: pinEnabled ? 'rgba(16, 185, 129, 0.12)' : 'var(--surface-strong)',
+                    border: '1px solid var(--border)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    color: pinEnabled ? '#10b981' : 'var(--text)',
+                    flexShrink: 0,
+                  }}
                 >
+                  <KeyRound size={18} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <strong style={{ fontSize: '0.88rem', color: 'var(--text)' }}>4-Digit Privacy PIN</strong>
+                    {pinEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => { setPinForm({ pin: '', confirm: '' }); setShowPinModal(true); }}
+                        style={{ background: 'none', border: 'none', color: '#0ea5e9', fontSize: '0.74rem', cursor: 'pointer', textDecoration: 'underline' }}
+                      >
+                        Change
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                    {pinEnabled ? 'Requires PIN on app launch or inactivity' : 'Lock your financial accounts behind a PIN'}
+                  </div>
+                </div>
+                <Toggle on={pinEnabled} onToggle={handleTogglePin} />
+              </div>
+
+              {/* Row 2: Biometric Hardware Key */}
+              <div className="modern-row" style={{ padding: '14px 0' }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    background: 'var(--surface-strong)',
+                    border: '1px solid var(--border)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    color: biometricAvailable ? '#0ea5e9' : 'var(--text-muted)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Smartphone size={18} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
+                  <strong style={{ fontSize: '0.88rem', color: 'var(--text)' }}>Biometric Hardware Sensor</strong>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                    {biometricAvailable ? 'Platform authenticator (TouchID/FaceID) detected' : 'SHA-256 cryptographic client vault enabled'}
+                  </div>
+                </div>
+                <span className={`badge-pill ${biometricAvailable ? 'badge-pill-blue' : 'badge-pill-neutral'}`} style={{ fontSize: '0.7rem' }}>
+                  {biometricAvailable ? 'Available' : 'Emulated'}
+                </span>
+              </div>
+
+              {/* Row 3: Auto-Lock Timeout */}
+              {pinEnabled && (
+                <div className="modern-row" style={{ padding: '14px 0' }}>
                   <div
                     style={{
                       width: 38,
@@ -692,49 +841,98 @@ export default function SettingsPage() {
                       border: '1px solid var(--border)',
                       display: 'grid',
                       placeItems: 'center',
-                      color: 'var(--text)',
+                      color: '#f59e0b',
                       flexShrink: 0,
                     }}
                   >
-                    <pref.Icon size={18} />
+                    <Sliders size={18} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
-                    <strong style={{ fontSize: '0.88rem', color: 'var(--text)' }}>{pref.label}</strong>
-                    <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 2 }}>{pref.sub}</div>
+                    <strong style={{ fontSize: '0.88rem', color: 'var(--text)' }}>Auto-Lock Inactivity</strong>
+                    <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                      Locks screen after period of inactivity
+                    </div>
                   </div>
-                  <Toggle on={toggles[pref.key]} onToggle={() => toggle(pref.key)} />
+                  <select
+                    value={autoLockTimeout}
+                    onChange={(e) => updateAutoLock(Number(e.target.value))}
+                    style={{
+                      background: 'var(--surface-strong)',
+                      color: 'var(--text)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      padding: '4px 8px',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                    }}
+                  >
+                    <option value={0}>Immediately on background</option>
+                    <option value={1}>1 Minute</option>
+                    <option value={5}>5 Minutes</option>
+                    <option value={15}>15 Minutes</option>
+                    <option value={30}>30 Minutes</option>
+                  </select>
                 </div>
-              ))}
+              )}
+
+              {/* Row 4: Quick Lock Trigger */}
+              {pinEnabled && (
+                <div style={{ paddingTop: 10, paddingBottom: 6 }}>
+                  <button
+                    type="button"
+                    onClick={lockNow}
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      background: 'rgba(239, 68, 68, 0.08)',
+                      border: '1px solid rgba(239, 68, 68, 0.25)',
+                      color: '#ef4444',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <LockKeyhole size={14} /> Lock FinTrack Vault Immediately
+                  </button>
+                </div>
+              )}
 
               {/* Currency Selector */}
-              <div style={{ paddingTop: 16, borderTop: '1px solid var(--border-subtle)', marginTop: 4 }}>
+              <div style={{ paddingTop: 16, borderTop: '1px solid var(--border-subtle)', marginTop: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Landmark size={16} color="#10b981" />
-                    <span style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text)' }}>Base Currency</span>
+                    <span style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text)' }}>Base Currency & FX</span>
                   </div>
                   <span className="badge-pill badge-pill-mint">{user?.currency || 'INR'} Selected</span>
                 </div>
 
-                <div className="currency-grid">
-                  {CURRENCIES.map(c => {
+                <div className="currency-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+                  {SUPPORTED_CURRENCIES.map(c => {
                     const isSelected = (user?.currency || 'INR') === c.code;
                     return (
                       <button
                         key={c.code}
                         type="button"
                         className={`currency-btn ${isSelected ? 'active' : ''}`}
+                        title={`${c.name} (${c.region})`}
                         onClick={async () => {
                           try {
                             await updateProfile({ currency: c.code });
-                            toast.success(`Currency switched to ${c.code}`);
+                            toast.success(`Currency switched to ${c.code} (${c.name})`);
                           } catch {
                             toast.error('Failed to update currency');
                           }
                         }}
                       >
-                        <div style={{ fontSize: '1rem', fontWeight: 800 }}>{c.symbol}</div>
-                        <div style={{ fontSize: '0.72rem', fontWeight: 600, opacity: 0.85 }}>{c.code}</div>
+                        <div style={{ fontSize: '1.15rem' }}>{c.flag}</div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 800, marginTop: 2 }}>{c.code}</div>
+                        <div style={{ fontSize: '0.68rem', opacity: 0.75 }}>{c.symbol}</div>
                       </button>
                     );
                   })}
@@ -919,6 +1117,45 @@ export default function SettingsPage() {
           <Button className="ui-button-full" onClick={saveAccount} style={{ marginTop: 14 }}>
             <Wallet size={18} /> {editAccount ? 'Save Changes' : 'Create Account'}
           </Button>
+        </BottomSheet>
+      )}
+
+      {/* ── PIN Setup Modal ──────────────────────── */}
+      {showPinModal && (
+        <BottomSheet title={pinEnabled ? 'Change Security PIN' : 'Set 4-Digit Security PIN'} onClose={() => setShowPinModal(false)}>
+          <div style={{ padding: '4px 0 16px' }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 16 }}>
+              Set a secure 4-digit numeric code to guard your accounts, transaction ledger, and financial reports from unauthorized eyes.
+            </p>
+
+            <TextInput
+              label="Enter 4-Digit PIN"
+              type="password"
+              maxLength={4}
+              value={pinForm.pin}
+              onChange={e => setPinForm(prev => ({ ...prev, pin: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
+              placeholder="••••"
+              autoFocus
+            />
+
+            <TextInput
+              label="Confirm 4-Digit PIN"
+              type="password"
+              maxLength={4}
+              value={pinForm.confirm}
+              onChange={e => setPinForm(prev => ({ ...prev, confirm: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
+              placeholder="••••"
+            />
+
+            <Button
+              className="ui-button-full"
+              onClick={handleSetupPinSubmit}
+              disabled={pinForm.pin.length !== 4 || pinForm.pin !== pinForm.confirm}
+              style={{ marginTop: 14 }}
+            >
+              <KeyRound size={18} /> Save & Activate PIN Lock
+            </Button>
+          </div>
         </BottomSheet>
       )}
     </Page>

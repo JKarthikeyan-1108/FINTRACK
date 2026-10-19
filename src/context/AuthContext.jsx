@@ -135,7 +135,12 @@ export function AuthProvider({ children }) {
 
   const updateProfile = async (data) => {
     const { data: result } = await authAPI.updateProfile(data);
-    if (result.user) setUser(prev => ({ ...prev, ...result.user }));
+    if (result.user) {
+      setUser(prev => ({ ...prev, ...result.user }));
+      if (result.user.currency) {
+        setMoneyFormat({ currency: result.user.currency, locale: result.user.date_format });
+      }
+    }
     return result;
   };
 

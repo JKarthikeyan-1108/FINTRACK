@@ -11,6 +11,7 @@ import {
   Trash2,
   WalletCards,
   X,
+  Download,
 } from 'lucide-react';
 import { accountAPI, categoryAPI, txnAPI } from '../services/api';
 import {
@@ -29,6 +30,7 @@ import {
   TextInput,
 } from '../components/ui/CashewUI';
 import { dateShort, money } from '../lib/format';
+import { generateFinancialStatement } from '../lib/pdfReport';
 
 const blankForm = () => ({
   type: 'expense',
@@ -220,6 +222,20 @@ export default function TransactionsPage() {
         subtitle={`${total} reconciled records in your financial journal.`}
         action={
           <div style={{ display: 'flex', gap: '8px' }}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                generateFinancialStatement({
+                  periodLabel: 'Reconciled Transaction Journal',
+                  overview: { income: summary.income, expenses: summary.expenses, savings: summary.income - summary.expenses },
+                  accounts,
+                  transactions: txns,
+                });
+                toast.success('Generated official financial statement');
+              }}
+            >
+              <Download size={15} /> PDF Statement
+            </Button>
             <Button variant="soft" onClick={handleScanReceipt} disabled={isScanning}>
               <Camera size={16} /> {isScanning ? 'Processing...' : 'Scan Receipt'}
             </Button>
