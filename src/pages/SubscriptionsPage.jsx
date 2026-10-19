@@ -46,15 +46,19 @@ const SUB_CATEGORIES = [
   { id: 'Other', name: 'Other', icon: '💰' },
 ];
 
-const blankForm = () => ({
-  name: '',
-  icon: 'subscription',
-  amount: '',
-  period: 'monthly',
-  next_due: '',
-  category: 'Entertainment',
-  is_trial: false,
-});
+const blankForm = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  return {
+    name: '',
+    icon: 'subscription',
+    amount: '',
+    period: 'monthly',
+    next_due: d.toISOString().split('T')[0],
+    category: 'Entertainment',
+    is_trial: false,
+  };
+};
 
 function monthlyEquivalent(sub) {
   if (sub.period === 'yearly') return Number(sub.amount) / 12;

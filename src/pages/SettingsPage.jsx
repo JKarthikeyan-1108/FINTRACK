@@ -43,9 +43,7 @@ import {
   TextInput,
   SelectInput,
 } from '../components/ui/CashewUI';
-import { money } from '../lib/format';
-import { SUPPORTED_CURRENCIES, getExchangeRate } from '../lib/currency';
-import { generateFinancialStatement } from '../lib/pdfReport';
+import { SUPPORTED_CURRENCIES, SUPPORTED_CURRENCIES as CURRENCIES, getExchangeRate } from '../lib/currency';
 
 const ACCOUNT_TYPES = ['savings', 'current', 'credit', 'wallet', 'cash', 'investment'];
 const ACCOUNT_COLORS = ['#10b981', '#0ea5e9', '#8b5cf6', '#f59e0b', '#f43f5e', '#14b8a6', '#6366f1', '#ec4899'];
