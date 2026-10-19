@@ -302,16 +302,28 @@ export default function GoalsPage() {
             />
           </div>
 
-          <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Target Amount
+          <div className="field" style={{ marginBottom: 18, background: 'var(--surface-strong)', padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)' }}>
+            <label style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Target Capital Amount
             </label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 12, color: 'var(--text-muted)', fontWeight: 700, fontSize: '1.1rem' }}>₹</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: '1.6rem', fontWeight: 800, color: '#8b5cf6' }}>₹</span>
               <input 
                 type="number"
+                step="any"
                 className="input"
-                style={{ paddingLeft: 34, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  padding: 0,
+                  fontSize: '1.85rem',
+                  fontWeight: 800,
+                  color: 'var(--text)',
+                  boxShadow: 'none',
+                  fontVariantNumeric: 'tabular-nums',
+                  height: 'auto',
+                  minHeight: 'auto',
+                }}
                 placeholder="0.00"
                 value={form.target_amount}
                 onChange={event => setForm(prev => ({ ...prev, target_amount: event.target.value }))}
@@ -359,14 +371,28 @@ export default function GoalsPage() {
             </div>
           </div>
 
-          <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase' }}>Deposit Amount</label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 12, color: 'var(--text-muted)', fontWeight: 700, fontSize: '1.1rem' }}>₹</span>
+          <div className="field" style={{ marginBottom: 18, background: 'var(--surface-strong)', padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)' }}>
+            <label style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Deposit Amount
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: '1.6rem', fontWeight: 800, color: '#10b981' }}>+₹</span>
               <input 
-                type="number" 
-                className="input" 
-                style={{ paddingLeft: 34, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}
+                type="number"
+                step="any"
+                className="input"
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  padding: 0,
+                  fontSize: '1.85rem',
+                  fontWeight: 800,
+                  color: 'var(--text)',
+                  boxShadow: 'none',
+                  fontVariantNumeric: 'tabular-nums',
+                  height: 'auto',
+                  minHeight: 'auto',
+                }}
                 value={depositAmt} 
                 autoFocus 
                 onChange={event => setDepositAmt(event.target.value)} 

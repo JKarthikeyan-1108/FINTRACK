@@ -450,16 +450,30 @@ export default function TransactionsPage() {
 
           <div style={{ height: 18 }} />
           
-          <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Amount
+          <div className="field" style={{ marginBottom: 18, background: 'var(--surface-strong)', padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)' }}>
+            <label style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Transaction Amount
             </label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: 12, color: 'var(--text-muted)', fontWeight: 700, fontSize: '1.1rem' }}>₹</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: '1.6rem', fontWeight: 800, color: form.type === 'income' ? '#10b981' : 'var(--text-muted)' }}>
+                {form.type === 'income' ? '+₹' : '₹'}
+              </span>
               <input 
                 type="number"
+                step="any"
                 className="input"
-                style={{ paddingLeft: 34, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  padding: 0,
+                  fontSize: '1.85rem',
+                  fontWeight: 800,
+                  color: 'var(--text)',
+                  boxShadow: 'none',
+                  fontVariantNumeric: 'tabular-nums',
+                  height: 'auto',
+                  minHeight: 'auto',
+                }}
                 placeholder="0.00"
                 value={form.amount}
                 onChange={event => setForm(prev => ({ ...prev, amount: event.target.value }))}

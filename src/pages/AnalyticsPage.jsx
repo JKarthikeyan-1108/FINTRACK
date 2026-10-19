@@ -85,14 +85,14 @@ export default function AnalyticsPage() {
       {
         label: 'Income',
         data: incomes,
-        backgroundColor: '#22c55e',
-        borderRadius: 4,
+        backgroundColor: '#10b981',
+        borderRadius: 6,
       },
       {
         label: 'Expense',
         data: expenses,
-        backgroundColor: '#ef4444',
-        borderRadius: 4,
+        backgroundColor: '#f43f5e',
+        borderRadius: 6,
       },
     ],
   };
@@ -103,11 +103,16 @@ export default function AnalyticsPage() {
       {
         label: 'Savings Rate (%)',
         data: savingsRates,
-        borderColor: '#3b82f6',
-        backgroundColor: '#3b82f6',
+        borderColor: '#0284c7',
+        backgroundColor: 'rgba(2, 132, 199, 0.1)',
         tension: 0.4,
-        borderWidth: 3,
+        borderWidth: 2.5,
+        fill: true,
         pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: '#0284c7',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
       },
     ],
   };
@@ -125,7 +130,7 @@ export default function AnalyticsPage() {
   const catLabels = Object.keys(categoryTotals);
   const catData = Object.values(categoryTotals);
   
-  const pieColors = ['#4f46e5', '#ec4899', '#f59e0b', '#10b981', '#6366f1', '#14b8a6', '#f43f5e', '#8b5cf6'];
+  const pieColors = ['#10b981', '#0284c7', '#8b5cf6', '#f59e0b', '#f43f5e', '#06b6d4', '#ec4899', '#6366f1'];
   const pieChartData = {
     labels: catLabels.length ? catLabels : ['No Data'],
     datasets: [
@@ -250,22 +255,37 @@ export default function AnalyticsPage() {
                 plugins: {
                   legend: {
                     position: 'top',
-                    labels: { color: textColor, font: { family: 'inherit', size: 12, weight: 600 } }
+                    align: 'end',
+                    labels: {
+                      boxWidth: 8,
+                      boxHeight: 8,
+                      usePointStyle: true,
+                      pointStyle: 'circle',
+                      color: textColor,
+                      font: { family: 'inherit', size: 12, weight: 600 }
+                    }
                   },
                   tooltip: {
                     padding: 10,
                     cornerRadius: 8,
+                    callbacks: {
+                      label: ctx => `  ${ctx.dataset.label}: ${money(ctx.parsed.y)}`
+                    }
                   }
                 },
                 scales: {
                   x: {
                     grid: { display: false },
-                    ticks: { color: textColor, font: { size: 11 } }
+                    ticks: { color: textColor, font: { size: 11, weight: 500 } }
                   },
                   y: {
                     beginAtZero: true,
                     grid: { color: gridColor },
-                    ticks: { color: textColor, font: { size: 11 } }
+                    ticks: {
+                      color: textColor,
+                      font: { size: 11, weight: 500 },
+                      callback: val => money(val, true)
+                    }
                   }
                 }
               }}
