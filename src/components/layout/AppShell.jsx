@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import AIChatbot from '../AIChatbot';
 import CommandPalette from '../CommandPalette';
+import NetworkStatusBanner from '../NetworkStatusBanner';
+import PWAInstallPrompt from '../PWAInstallPrompt';
+import { triggerHaptic } from '../../lib/haptics';
 import {
   Award,
   Bell,
@@ -141,6 +144,7 @@ export default function AppShell() {
   const currentPageTitle = currentNav ? currentNav.label : 'Dashboard';
 
   function navTo(path) {
+    triggerHaptic('selection');
     setMoreOpen(false);
     if (typeof document !== 'undefined' && document.startViewTransition && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       document.startViewTransition(() => {
@@ -187,6 +191,7 @@ export default function AppShell() {
         </nav>
 
         <div className="sidebar-footer">
+          <PWAInstallPrompt />
           {user && (
             <div className="sidebar-user-card">
               <div className="sidebar-user-avatar">
@@ -203,6 +208,7 @@ export default function AppShell() {
 
       {/* Main Container */}
       <div className="main-wrapper">
+        <NetworkStatusBanner />
         {navProgress && <div className="route-progress-bar" />}
 
         {/* Responsive Header */}
@@ -234,6 +240,7 @@ export default function AppShell() {
           </div>
 
           <div className="header-actions">
+            <PWAInstallPrompt compact />
             {tokenStatus && tokenStatus !== 'valid' && typeof fmtCountdown === 'function' && (
               <button
                 type="button"
