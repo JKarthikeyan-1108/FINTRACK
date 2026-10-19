@@ -6,9 +6,12 @@
 //   3. FIREBASE_PROJECT_ID + FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY
 //   4. Emulator (FIRESTORE_EMULATOR_HOST / FIREBASE_AUTH_EMULATOR_HOST) or
 //      GOOGLE_APPLICATION_CREDENTIALS, using FIREBASE_PROJECT_ID
-require('dotenv').config();
-const fs    = require('fs');
 const path  = require('path');
+require('dotenv').config();
+if (!process.env.VERCEL) {
+  require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+}
+const fs    = require('fs');
 const { initializeApp, getApps, getApp, cert } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 
@@ -23,14 +26,19 @@ function loadServiceAccount() {
 
   if (FIREBASE_SERVICE_ACCOUNT_PATH) {
     const file = path.resolve(__dirname, '..', FIREBASE_SERVICE_ACCOUNT_PATH);
-    if (!fs.existsSync(file)) {
-      throw new Error(`FIREBASE_SERVICE_ACCOUNT_PATH not found: ${file}`);
+    if (fs.existsSync(file)) {
+      return JSON.parse(fs.readFileSync(file, 'utf8'));
     }
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
   }
 
   if (FIREBASE_SERVICE_ACCOUNT_JSON) {
-    return JSON.parse(FIREBASE_SERVICE_ACCOUNT_JSON);
+    try {
+      return typeof FIREBASE_SERVICE_ACCOUNT_JSON === 'object'
+        ? FIREBASE_SERVICE_ACCOUNT_JSON
+        : JSON.parse(FIREBASE_SERVICE_ACCOUNT_JSON);
+    } catch (e) {
+      console.warn('⚠️  Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON:', e.message);
+    }
   }
 
   if (FIREBASE_PROJECT_ID && FIREBASE_CLIENT_EMAIL && FIREBASE_PRIVATE_KEY) {

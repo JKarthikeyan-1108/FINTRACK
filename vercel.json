@@ -1,4 +1,5 @@
 {
+  "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
@@ -8,7 +9,7 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 30,
-      "includeFiles": "backend/**"
+      "includeFiles": "backend/{app.js,config/**,controllers/**,middleware/**,models/**,routes/**,utils/**}"
     }
   }
 }
