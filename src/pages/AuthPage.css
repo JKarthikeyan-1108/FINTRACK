@@ -247,7 +247,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: #10b981;
+  background: var(--brand-primary);
 }
 
 .mockup-item {
@@ -346,7 +346,7 @@
   letter-spacing: -0.5px;
 }
 .auth-right-header .logo .logo-icon {
-  color: #10b981;
+  color: var(--brand-primary);
 }
 
 .auth-right-header h2 {

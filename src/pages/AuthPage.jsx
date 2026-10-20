@@ -265,8 +265,8 @@ export default function AuthPage() {
           
           {(authView !== 'success') && (
             <div className="auth-right-header" style={{ marginBottom: authView === 'login' || authView === 'register' ? '2.5rem' : '1.5rem' }}>
-              <div className="logo" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', fontSize: '1.8rem', fontWeight: 800, color: '#0f172a', marginBottom: '2rem' }}>
-                <TrendingUp size={32} style={{ color: '#10b981' }} /> FINTRACK
+              <div className="logo" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '2rem' }}>
+                <TrendingUp size={32} style={{ color: 'var(--brand-primary)' }} /> FINTRACK
               </div>
               
               {authView === 'login' && (
@@ -488,7 +488,7 @@ export default function AuthPage() {
 
             {/* SUBMIT BUTTON */}
             {authView !== 'success' && (
-              <button type="submit" className="auth-submit-btn" disabled={loading} style={{ background: '#10b981', color: 'white' }}>
+              <button type="submit" className="auth-submit-btn" disabled={loading}>
                 {loading ? 'Please wait...' : 
                   authView === 'login' ? 'Sign In' : 
                   authView === 'register' ? 'Create Account' : 
