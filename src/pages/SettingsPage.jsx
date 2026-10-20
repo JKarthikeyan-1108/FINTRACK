@@ -31,9 +31,14 @@ import {
   Smartphone,
   EyeOff,
   Sliders,
+  Sun,
+  Moon,
+  Laptop,
+  Palette,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSecurity } from '../context/SecurityContext';
+import { getStoredThemePreference, applyTheme } from '../lib/theme';
 import { accountAPI, txnAPI } from '../services/api';
 import {
   BottomSheet,
@@ -43,7 +48,9 @@ import {
   TextInput,
   SelectInput,
 } from '../components/ui/CashewUI';
-import { SUPPORTED_CURRENCIES, SUPPORTED_CURRENCIES as CURRENCIES, getExchangeRate } from '../lib/currency';
+import { SUPPORTED_CURRENCIES, getExchangeRate } from '../lib/currency';
+
+const CURRENCIES = SUPPORTED_CURRENCIES || [];
 
 const ACCOUNT_TYPES = ['savings', 'current', 'credit', 'wallet', 'cash', 'investment'];
 const ACCOUNT_COLORS = ['#10b981', '#0ea5e9', '#8b5cf6', '#f59e0b', '#f43f5e', '#14b8a6', '#6366f1', '#ec4899'];
@@ -80,6 +87,15 @@ export default function SettingsPage() {
 
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinForm, setPinForm] = useState({ pin: '', confirm: '' });
+
+  // Theme Preference
+  const [themePref, setThemePref] = useState(getStoredThemePreference);
+
+  function handleThemeChange(newPref) {
+    setThemePref(newPref);
+    applyTheme(newPref);
+    toast.success(`Theme switched to ${newPref.charAt(0).toUpperCase() + newPref.slice(1)} Mode`);
+  }
 
   // Preferences (visual-only toggles)
   const [toggles, setToggles] = useState({ notifications: true, cloudSync: true });
@@ -752,6 +768,92 @@ export default function SettingsPage() {
 
         {/* Right Column: Preferences, Currencies & Tools */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Appearance & Theme Settings */}
+          <div className="data-card card-stagger">
+            <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+              <div className="data-card-title">
+                <Palette size={17} color="var(--brand-primary)" /> Appearance & Theme
+              </div>
+              <span className="badge-pill badge-pill-mint" style={{ textTransform: 'capitalize' }}>
+                {themePref} Mode
+              </span>
+            </div>
+            <div className="data-card-body" style={{ padding: '16px 20px' }}>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 12 }}>
+                FinTrack Burgundy & Rose Design System with seamless light, dark, and system theme preferences.
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+                {[
+                  { key: 'light', label: 'Light', desc: 'Burgundy & Rose Mist', Icon: Sun },
+                  { key: 'dark', label: 'Dark', desc: 'Dark Wine & Rose', Icon: Moon },
+                  { key: 'system', label: 'System', desc: 'Follows OS mode', Icon: Laptop },
+                ].map(({ key, label, desc, Icon }) => {
+                  const isSelected = themePref === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleThemeChange(key)}
+                      style={{
+                        padding: '12px 10px',
+                        borderRadius: 12,
+                        border: isSelected ? '2px solid var(--border-focus)' : '1px solid var(--border-default)',
+                        background: isSelected ? 'var(--brand-soft)' : 'var(--bg-surface)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        textAlign: 'center',
+                        gap: 6,
+                        transition: 'all 0.18s ease',
+                      }}
+                    >
+                      <Icon size={20} color={isSelected ? 'var(--brand-primary)' : 'var(--text-secondary)'} />
+                      <strong style={{ fontSize: '0.85rem', color: isSelected ? 'var(--brand-primary)' : 'var(--text-primary)' }}>
+                        {label}
+                      </strong>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.2 }}>
+                        {desc}
+                      </span>
+                      {isSelected && (
+                        <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--brand-primary)', marginTop: 2 }}>
+                          ● Active
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Brand Palette Swatches */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px solid var(--border-default)' }}>
+                <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>Brand Palette</span>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  {[
+                    { color: '#702632', name: 'Burgundy' },
+                    { color: '#A83F55', name: 'Rose' },
+                    { color: '#E9A3B0', name: 'Blush' },
+                    { color: '#FFF1F2', name: 'Rose Mist' },
+                    { color: '#1F1720', name: 'Wine Ink' },
+                  ].map(s => (
+                    <div
+                      key={s.name}
+                      title={`${s.name} (${s.color})`}
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: 4,
+                        background: s.color,
+                        border: '1px solid rgba(0,0,0,0.12)',
+                        cursor: 'pointer',
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* App Security & Privacy Vault */}
           <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>

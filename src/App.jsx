@@ -79,6 +79,9 @@ export default function App() {
       <Route path="/explore" element={<Protected><AppShell /></Protected>}>
         <Route index element={<ExploreInvestmentsPage />} />
       </Route>
+      <Route path="/explore-investments" element={<Protected><AppShell /></Protected>}>
+        <Route index element={<ExploreInvestmentsPage />} />
+      </Route>
       <Route path="/transactions" element={<Protected><AppShell /></Protected>}>
         <Route index element={<TransactionsPage />} />
       </Route>

@@ -99,19 +99,23 @@ export default function AnalyticsPage() {
     return inc > 0 ? ((inc - exp) / inc) * 100 : 0;
   });
 
+  const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
+  const gridColor = isDark ? 'rgba(255, 241, 242, 0.08)' : 'rgba(112, 38, 50, 0.08)';
+  const textColor = isDark ? '#D0BFC7' : '#74636A';
+
   const barChartData = {
     labels,
     datasets: [
       {
         label: 'Income',
         data: incomes,
-        backgroundColor: '#10b981',
+        backgroundColor: isDark ? '#4ADE80' : '#15803D',
         borderRadius: 6,
       },
       {
         label: 'Expense',
         data: expenses,
-        backgroundColor: '#f43f5e',
+        backgroundColor: isDark ? '#FDA4AF' : '#B42318',
         borderRadius: 6,
       },
     ],
@@ -123,14 +127,14 @@ export default function AnalyticsPage() {
       {
         label: 'Savings Rate (%)',
         data: savingsRates,
-        borderColor: '#0284c7',
-        backgroundColor: 'rgba(2, 132, 199, 0.1)',
+        borderColor: isDark ? '#F2B7C3' : '#702632',
+        backgroundColor: isDark ? 'rgba(242, 183, 195, 0.12)' : 'rgba(112, 38, 50, 0.08)',
         tension: 0.4,
         borderWidth: 2.5,
         fill: true,
         pointRadius: 4,
         pointHoverRadius: 6,
-        pointBackgroundColor: '#0284c7',
+        pointBackgroundColor: isDark ? '#F2B7C3' : '#702632',
         pointBorderColor: '#ffffff',
         pointBorderWidth: 2,
       },
@@ -150,13 +154,15 @@ export default function AnalyticsPage() {
   const catLabels = Object.keys(categoryTotals);
   const catData = Object.values(categoryTotals);
   
-  const pieColors = ['#10b981', '#0284c7', '#8b5cf6', '#f59e0b', '#f43f5e', '#06b6d4', '#ec4899', '#6366f1'];
+  const chartSeriesLight = ['#702632', '#A83F55', '#D9778C', '#E9A3B0', '#8B7DB8', '#B68A3A', '#2563EB', '#0F766E'];
+  const chartSeriesDark = ['#F2B7C3', '#E18A9D', '#C96A83', '#9D6D8A', '#B8A6F6', '#B68A3A', '#93C5FD', '#14B8A6'];
+  const pieColors = isDark ? chartSeriesDark : chartSeriesLight;
   const pieChartData = {
     labels: catLabels.length ? catLabels : ['No Data'],
     datasets: [
       {
         data: catData.length ? catData : [1],
-        backgroundColor: catData.length ? pieColors.slice(0, catData.length) : ['#e2e8f0'],
+        backgroundColor: catData.length ? pieColors.slice(0, catData.length) : [isDark ? '#30212B' : '#E9DDE1'],
         borderWidth: 0,
       },
     ],
@@ -208,10 +214,6 @@ export default function AnalyticsPage() {
       </Page>
     );
   }
-
-  const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
-  const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
-  const textColor = isDark ? '#94a3b8' : '#64748b';
 
   return (
     <Page>

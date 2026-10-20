@@ -126,34 +126,42 @@ export default function HomePage() {
     return new Date(year, (month || 1) - 1).toLocaleString('en-IN', { month: 'short' });
   });
 
+  const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
+  const posColor = isDark ? '#4ADE80' : '#15803D';
+  const posBg = isDark ? 'rgba(74, 222, 128, 0.12)' : 'rgba(21, 128, 61, 0.08)';
+  const negColor = isDark ? '#FDA4AF' : '#B42318';
+  const negBg = isDark ? 'rgba(253, 164, 175, 0.12)' : 'rgba(180, 35, 24, 0.08)';
+  const gridColor = isDark ? 'rgba(255, 241, 242, 0.08)' : 'rgba(112, 38, 50, 0.08)';
+  const textColor = isDark ? '#D0BFC7' : '#74636A';
+
   const chartData = {
     labels,
     datasets: [
       {
         label: 'Income',
         data: trends.map(row => row.income),
-        borderColor: '#10b981',
-        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+        borderColor: posColor,
+        backgroundColor: posBg,
         borderWidth: 2.5,
         tension: 0.4,
         fill: true,
         pointRadius: 0,
         pointHoverRadius: 5,
-        pointHoverBackgroundColor: '#10b981',
+        pointHoverBackgroundColor: posColor,
         pointHoverBorderColor: '#ffffff',
         pointHoverBorderWidth: 2,
       },
       {
         label: 'Expenses',
         data: trends.map(row => row.expenses),
-        borderColor: '#f43f5e',
-        backgroundColor: 'rgba(244, 63, 94, 0.08)',
+        borderColor: negColor,
+        backgroundColor: negBg,
         borderWidth: 2.5,
         tension: 0.4,
         fill: true,
         pointRadius: 0,
         pointHoverRadius: 5,
-        pointHoverBackgroundColor: '#f43f5e',
+        pointHoverBackgroundColor: negColor,
         pointHoverBorderColor: '#ffffff',
         pointHoverBorderWidth: 2,
       },
@@ -177,16 +185,16 @@ export default function HomePage() {
           boxHeight: 8,
           usePointStyle: true,
           pointStyle: 'circle',
-          color: 'var(--text-muted, #94a3b8)',
+          color: textColor,
           font: { family: 'inherit', size: 11, weight: 600 },
           padding: 12,
         },
       },
       tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.92)',
+        backgroundColor: isDark ? 'rgba(36, 27, 35, 0.94)' : 'rgba(31, 23, 32, 0.94)',
         titleColor: '#ffffff',
         bodyColor: '#e2e8f0',
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderColor: isDark ? 'rgba(255, 241, 242, 0.15)' : 'rgba(255, 255, 255, 0.1)',
         borderWidth: 1,
         padding: 10,
         boxPadding: 4,
@@ -200,11 +208,11 @@ export default function HomePage() {
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: '#94a3b8', font: { size: 11, weight: 500 } },
+        ticks: { color: textColor, font: { size: 11, weight: 500 } },
       },
       y: {
-        grid: { color: 'rgba(148, 163, 184, 0.08)' },
-        ticks: { color: '#94a3b8', font: { size: 11, weight: 500 }, callback: value => money(value, true) },
+        grid: { color: gridColor },
+        ticks: { color: textColor, font: { size: 11, weight: 500 }, callback: value => money(value, true) },
       },
     },
   };

@@ -17,6 +17,8 @@ export const SUPPORTED_CURRENCIES = [
   { code: 'CHF', symbol: 'Fr', name: 'Swiss Franc', flag: '🇨🇭', region: 'Switzerland', locale: 'de-CH' },
 ];
 
+export const CURRENCIES = SUPPORTED_CURRENCIES;
+
 // Baseline reference rates relative to 1 USD
 export const BASE_USD_RATES = {
   USD: 1.0,
