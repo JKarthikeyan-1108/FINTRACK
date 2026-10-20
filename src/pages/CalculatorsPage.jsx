@@ -10,6 +10,10 @@ import {
   ArrowRight,
   Info,
   CheckCircle2,
+  ShieldCheck,
+  Award,
+  Receipt,
+  Flame,
 } from 'lucide-react';
 import {
   Page,
@@ -25,10 +29,15 @@ import {
   monthlySavingsRequired,
   runMonteCarloSimulation,
 } from '../lib/finance';
+import {
+  compareTaxRegimes,
+  analyzeTaxLossHarvesting,
+} from '../lib/taxOptimization';
 
 const TABS = [
   { id: 'emi', label: 'Loan EMI', icon: Landmark, desc: 'Amortization & monthly debt obligations' },
   { id: 'sip', label: 'SIP / Wealth', icon: TrendingUp, desc: 'Systematic mutual fund wealth generation' },
+  { id: 'tax', label: 'AI Tax & Deductions', icon: ShieldCheck, desc: 'Old vs New Tax Regime comparison (FY 2024-25+), 80C/80D/NPS shields & tax-loss harvesting' },
   { id: 'montecarlo', label: 'Monte Carlo Wealth Sim', icon: Sparkles, desc: 'Probabilistic multi-year wealth path under volatile markets' },
   { id: 'compound', label: 'Compound Interest', icon: Percent, desc: 'Exponential growth with periodic compounding' },
   { id: 'simple', label: 'Simple Interest', icon: Calculator, desc: 'Flat rate debt or fixed return calculations' },
@@ -76,6 +85,18 @@ export default function CalculatorsPage() {
   const [mcVol, setMcVol] = useState('15');
   const [mcInflation, setMcInflation] = useState('6');
 
+  // 8. Tax Optimization state
+  const [taxGrossIncome, setTaxGrossIncome] = useState('1200000');
+  const [taxIsSalaried, setTaxIsSalaried] = useState(true);
+  const [tax80C, setTax80C] = useState('150000');
+  const [tax80D, setTax80D] = useState('25000');
+  const [tax80CCD, setTax80CCD] = useState('50000');
+  const [taxSec24, setTaxSec24] = useState('0');
+  const [taxHra, setTaxHra] = useState('0');
+  const [taxOther, setTaxOther] = useState('0');
+  const [simCapitalGain, setSimCapitalGain] = useState('180000');
+  const [simHarvestLoss, setSimHarvestLoss] = useState('40000');
+
   // Calculations
   // Monte Carlo
   const mc = runMonteCarloSimulation({
@@ -121,6 +142,25 @@ export default function CalculatorsPage() {
   const needs = Math.round(incomeNum * 0.5);
   const wants = Math.round(incomeNum * 0.3);
   const savings = Math.round(incomeNum * 0.2);
+
+  // 8. Tax Optimization calculations
+  const taxComparison = compareTaxRegimes(
+    Number(taxGrossIncome || 0),
+    {
+      sec80C: Number(tax80C || 0),
+      sec80D: Number(tax80D || 0),
+      sec80CCD: Number(tax80CCD || 0),
+      homeLoanSec24: Number(taxSec24 || 0),
+      hraExemption: Number(taxHra || 0),
+      otherDeductions: Number(taxOther || 0),
+    },
+    taxIsSalaried
+  );
+
+  const taxLossHarvestSim = analyzeTaxLossHarvesting([
+    { name: 'Simulated Gain Position', invested_amount: 100000, current_value: 100000 + Number(simCapitalGain || 0) },
+    { name: 'Simulated Loss Position', invested_amount: 100000, current_value: 100000 - Number(simHarvestLoss || 0) },
+  ]);
 
   const activeTabMeta = TABS.find(t => t.id === activeTab) || TABS[0];
 
@@ -1131,6 +1171,393 @@ export default function CalculatorsPage() {
           </div>
         </div>
       )}
+
+        {/* 8. AI Tax & Deductions Engine */}
+        {activeTab === 'tax' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 20 }}>
+            {/* Left Inputs Column */}
+            <div className="data-card card-stagger">
+              <div className="data-card-header" style={{ background: 'var(--surface-strong)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <ShieldCheck size={18} color="#10b981" />
+                  <strong style={{ fontSize: '0.95rem', color: 'var(--text)' }}>Income & Tax Profile</strong>
+                </div>
+                <span className="badge-pill badge-pill-mint" style={{ fontSize: '0.72rem' }}>
+                  FY 2024-25 / 2025-26
+                </span>
+              </div>
+
+              <div className="data-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div>
+                  <TextInput
+                    label="Annual Gross Salary / CTC (₹)"
+                    type="number"
+                    value={taxGrossIncome}
+                    onChange={e => setTaxGrossIncome(e.target.value)}
+                    placeholder="e.g. 1200000"
+                  />
+                  <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                    {[750000, 1000000, 1200000, 1500000, 2000000, 3000000].map(val => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setTaxGrossIncome(String(val))}
+                        className="badge-pill badge-pill-neutral"
+                        style={{ cursor: 'pointer', border: '1px solid var(--border)' }}
+                      >
+                        ₹{(val / 100000).toFixed(val % 100000 === 0 ? 0 : 1)}L
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>
+                    Employment Status
+                  </label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => setTaxIsSalaried(true)}
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        borderRadius: 8,
+                        border: taxIsSalaried ? '1px solid #10b981' : '1px solid var(--border)',
+                        background: taxIsSalaried ? 'rgba(16, 185, 129, 0.15)' : 'var(--surface)',
+                        color: taxIsSalaried ? '#10b981' : 'var(--text-muted)',
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Salaried Employee
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTaxIsSalaried(false)}
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        borderRadius: 8,
+                        border: !taxIsSalaried ? '1px solid #10b981' : '1px solid var(--border)',
+                        background: !taxIsSalaried ? 'rgba(16, 185, 129, 0.15)' : 'var(--surface)',
+                        color: !taxIsSalaried ? '#10b981' : 'var(--text-muted)',
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Self-Employed / Freelancer
+                    </button>
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                    {taxIsSalaried ? 'Eligible for ₹75,000 Standard Deduction (New Regime) or ₹50,000 (Old Regime).' : 'Standard deduction not applicable for non-salaried business income.'}
+                  </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+                  <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Receipt size={15} color="#0ea5e9" />
+                    <span>Itemized Deductions (Applicable for Old Regime)</span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div>
+                      <TextInput
+                        label="Section 80C (PPF, EPF, ELSS Mutual Funds, Life Ins) [Max ₹1.5L]"
+                        type="number"
+                        value={tax80C}
+                        onChange={e => setTax80C(e.target.value)}
+                        placeholder="e.g. 150000"
+                      />
+                      <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                        {['0', '75000', '150000'].map(val => (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => setTax80C(val)}
+                            className="badge-pill badge-pill-neutral"
+                            style={{ cursor: 'pointer', border: '1px solid var(--border)', fontSize: '0.72rem' }}
+                          >
+                            ₹{Number(val) / 1000}k
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <TextInput
+                        label="Section 80D (Health Insurance for Self & Parents) [Max ₹75k]"
+                        type="number"
+                        value={tax80D}
+                        onChange={e => setTax80D(e.target.value)}
+                        placeholder="e.g. 25000"
+                      />
+                    </div>
+
+                    <div>
+                      <TextInput
+                        label="Section 80CCD(1B) NPS Exclusive Tier-1 [Max ₹50k]"
+                        type="number"
+                        value={tax80CCD}
+                        onChange={e => setTax80CCD(e.target.value)}
+                        placeholder="e.g. 50000"
+                      />
+                    </div>
+
+                    <div>
+                      <TextInput
+                        label="Section 24 Home Loan Interest (Self-Occupied) [Max ₹2L]"
+                        type="number"
+                        value={taxSec24}
+                        onChange={e => setTaxSec24(e.target.value)}
+                        placeholder="e.g. 150000"
+                      />
+                    </div>
+
+                    <div>
+                      <TextInput
+                        label="HRA Exemption / Rent Paid (Sec 10(13A)) (₹)"
+                        type="number"
+                        value={taxHra}
+                        onChange={e => setTaxHra(e.target.value)}
+                        placeholder="e.g. 120000"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Results & Optimization Column */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Winner Recommendation Banner */}
+              <div
+                className="data-card card-stagger"
+                style={{
+                  background: taxComparison.recommendedRegime === 'new'
+                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(14, 165, 233, 0.08) 100%)'
+                    : 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(16, 185, 129, 0.08) 100%)',
+                  border: taxComparison.recommendedRegime === 'new' ? '1px solid #10b981' : '1px solid #3b82f6',
+                  padding: '20px 24px',
+                  borderRadius: 14,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Award size={22} color={taxComparison.recommendedRegime === 'new' ? '#10b981' : '#3b82f6'} />
+                    <strong style={{ fontSize: '1.1rem', color: 'var(--text)' }}>
+                      {taxComparison.recommendedRegime === 'new' ? 'New Tax Regime Wins' : 'Old Tax Regime Wins'}
+                    </strong>
+                  </div>
+                  <span className={`badge-pill ${taxComparison.recommendedRegime === 'new' ? 'badge-pill-mint' : 'badge-pill-blue'}`} style={{ padding: '6px 14px', fontSize: '0.82rem', fontWeight: 800 }}>
+                    👑 Saves {money(taxComparison.taxSavings)} / year
+                  </span>
+                </div>
+
+                <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  {taxComparison.recommendedRegime === 'new'
+                    ? `Choosing the New Tax Regime reduces your tax liability by ${money(taxComparison.taxSavings)} annually (${money(Math.round(taxComparison.taxSavings / 12))}/mo) with lower slab rates and a ₹75,000 standard deduction.`
+                    : `Your total deductions (${money(taxComparison.oldRegime.totalDeductions)}) exceed the threshold, making the Old Regime more beneficial by ${money(taxComparison.taxSavings)} annually.`}
+                </p>
+              </div>
+
+              {/* Side-by-Side Comparison Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+                {/* New Regime Card */}
+                <div
+                  className="data-card"
+                  style={{
+                    border: taxComparison.recommendedRegime === 'new' ? '2px solid #10b981' : '1px solid var(--border)',
+                    background: 'var(--surface-strong)',
+                  }}
+                >
+                  <div className="data-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <strong>New Regime (Default)</strong>
+                    {taxComparison.recommendedRegime === 'new' && (
+                      <span className="badge-pill badge-pill-mint" style={{ fontSize: '0.72rem' }}>Recommended</span>
+                    )}
+                  </div>
+                  <div className="data-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Total Annual Tax:</span>
+                      <strong style={{ fontSize: '1.15rem', color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>
+                        {money(taxComparison.newRegime.totalTax)}
+                      </strong>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Monthly TDS Outflow:</span>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>
+                        {money(taxComparison.newRegime.monthlyTax)}/mo
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Take-Home Pay:</span>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0ea5e9' }}>
+                        {money(taxComparison.newRegime.takeHomeMonthly)}/mo
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Effective Tax Rate:</span>
+                      <span className="badge-pill badge-pill-neutral" style={{ fontSize: '0.75rem' }}>
+                        {taxComparison.newRegime.effectiveRate}%
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Std. Deduction:</span>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text)' }}>
+                        {money(taxComparison.newRegime.standardDeduction)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Old Regime Card */}
+                <div
+                  className="data-card"
+                  style={{
+                    border: taxComparison.recommendedRegime === 'old' ? '2px solid #3b82f6' : '1px solid var(--border)',
+                    background: 'var(--surface-strong)',
+                  }}
+                >
+                  <div className="data-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <strong>Old Regime (Itemized)</strong>
+                    {taxComparison.recommendedRegime === 'old' && (
+                      <span className="badge-pill badge-pill-blue" style={{ fontSize: '0.72rem' }}>Recommended</span>
+                    )}
+                  </div>
+                  <div className="data-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Total Annual Tax:</span>
+                      <strong style={{ fontSize: '1.15rem', color: '#3b82f6', fontVariantNumeric: 'tabular-nums' }}>
+                        {money(taxComparison.oldRegime.totalTax)}
+                      </strong>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Monthly TDS Outflow:</span>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>
+                        {money(taxComparison.oldRegime.monthlyTax)}/mo
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Take-Home Pay:</span>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0ea5e9' }}>
+                        {money(taxComparison.oldRegime.takeHomeMonthly)}/mo
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Effective Tax Rate:</span>
+                      <span className="badge-pill badge-pill-neutral" style={{ fontSize: '0.75rem' }}>
+                        {taxComparison.oldRegime.effectiveRate}%
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Deductions Claimed:</span>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text)' }}>
+                        {money(taxComparison.oldRegime.totalDeductions)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* AI Strategic Tax Recommendations */}
+              <div className="data-card" style={{ background: 'var(--surface-strong)' }}>
+                <div className="data-card-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Sparkles size={16} color="#10b981" />
+                  <strong>AI Copilot Tax Optimization Recommendations</strong>
+                </div>
+                <div className="data-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {taxComparison.recommendations.map((rec, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: 10,
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 4,
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text)' }}>
+                          {rec.title}
+                        </span>
+                        {rec.potentialSaving > 0 && (
+                          <span className="badge-pill badge-pill-mint" style={{ fontSize: '0.74rem' }}>
+                            Save up to {money(rec.potentialSaving)}
+                          </span>
+                        )}
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                        {rec.desc}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Capital Gains & Tax-Loss Harvesting Simulator */}
+              <div className="data-card" style={{ background: 'var(--surface-strong)' }}>
+                <div className="data-card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Flame size={16} color="#f59e0b" />
+                    <strong>Capital Gains & Tax-Loss Harvesting Simulator</strong>
+                  </div>
+                  <span className="badge-pill badge-pill-amber" style={{ fontSize: '0.72rem' }}>
+                    Budget 2024 (12.5% LTCG / 20% STCG)
+                  </span>
+                </div>
+                <div className="data-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <TextInput
+                      label="Realized Equity Capital Gain (₹)"
+                      type="number"
+                      value={simCapitalGain}
+                      onChange={e => setSimCapitalGain(e.target.value)}
+                      placeholder="e.g. 180000"
+                    />
+                    <TextInput
+                      label="Unrealized Loss to Harvest (₹)"
+                      type="number"
+                      value={simHarvestLoss}
+                      onChange={e => setSimHarvestLoss(e.target.value)}
+                      placeholder="e.g. 40000"
+                    />
+                  </div>
+
+                  <div style={{ padding: '12px 16px', borderRadius: 10, background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.86rem', color: 'var(--text)' }}>
+                        Tax Shield from Harvesting Losses
+                      </div>
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                        Offsetting capital losses against gains before March 31 locks tax credits.
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#f59e0b' }}>
+                        {money(taxLossHarvestSim.totalHarvestableTaxSaving)}
+                      </div>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Estimated Tax Saved</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Page>
   );

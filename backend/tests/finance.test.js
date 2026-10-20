@@ -164,3 +164,123 @@ test('runMonteCarloSimulation: generates statistical distributions adhering to f
   assert.equal(sim.yearlyPercentiles[5].year, 5);
 });
 
+const {
+  cleanMerchantTitle,
+  detectCategory,
+  stringSimilarity,
+  checkDuplicate,
+  parseCsvStatement,
+} = require('../utils/statementParser');
+
+const {
+  calculateNewRegime,
+  calculateOldRegime,
+  compareTaxRegimes,
+  analyzeTaxLossHarvesting,
+} = require('../utils/tax');
+
+test('cleanMerchantTitle: cleans banking codes and normalizes vendor names', () => {
+  assert.equal(cleanMerchantTitle('UPI/CR/981249/SWIGGY/BANGALORE'), 'Swiggy');
+  assert.equal(cleanMerchantTitle('POS 491024*STARBUCKS IND'), 'Starbucks');
+  assert.equal(cleanMerchantTitle('NEFT-AXIS-AMAZON PAY-RETAIL'), 'Amazon');
+  assert.equal(cleanMerchantTitle('BLINKIT GROCERIES IND'), 'Blinkit');
+});
+
+test('detectCategory: intelligently infers expense categories from transaction descriptions', () => {
+  assert.equal(detectCategory('Swiggy Dineout payment'), 'Food & Dining');
+  assert.equal(detectCategory('Zepto quick delivery'), 'Groceries');
+  assert.equal(detectCategory('Netflix recurring sub'), 'Entertainment');
+  assert.equal(detectCategory('Uber trip Mumbai airport'), 'Transportation');
+  assert.equal(detectCategory('Airtel broadband bill'), 'Utilities');
+  assert.equal(detectCategory('Apollo Pharmacy medicines'), 'Healthcare');
+});
+
+test('stringSimilarity: correctly scores token & bigram overlaps', () => {
+  assert.equal(stringSimilarity('Starbucks Coffee', 'Starbucks Coffee'), 1.0);
+  assert.ok(stringSimilarity('Swiggy Order', 'Swiggy') >= 0.7);
+  assert.equal(stringSimilarity('', 'Something'), 0);
+});
+
+test('checkDuplicate: flags transactions with matching amount and close dates', () => {
+  const existingTxns = [
+    { id: 'tx_1', title: 'Swiggy', amount: 450, type: 'expense', date: '2026-10-18' },
+    { id: 'tx_2', title: 'Salary', amount: 80000, type: 'income', date: '2026-10-01' },
+  ];
+
+  // Exact duplicate candidate within 1 day
+  const dupCandidate = { title: 'UPI SWIGGY', amount: 450, type: 'expense', date: '2026-10-19' };
+  const res1 = checkDuplicate(dupCandidate, existingTxns);
+  assert.equal(res1.isDuplicate, true);
+
+  // Different amount candidate
+  const nonDupCandidate = { title: 'Swiggy', amount: 950, type: 'expense', date: '2026-10-18' };
+  const res2 = checkDuplicate(nonDupCandidate, existingTxns);
+  assert.equal(res2.isDuplicate, false);
+});
+
+test('parseCsvStatement: extracts tabular records with auto column identification', () => {
+  const sampleCsv = `
+Bank Statement of Account
+Account Number: 1234567890
+Date,Narration,Withdrawal,Deposit,Balance
+2026-10-15,"UPI/CR/98124/SWIGGY",450.00,,45000.00
+2026-10-16,"SALARY INFOSYS LTD",,85000.00,130000.00
+2026-10-17,"NETFLIX.COM",649.00,,129351.00
+  `.trim();
+
+  const txns = parseCsvStatement(sampleCsv);
+  assert.equal(txns.length, 3);
+
+  // Row 1: Swiggy expense
+  assert.equal(txns[0].title, 'Swiggy');
+  assert.equal(txns[0].amount, 450);
+  assert.equal(txns[0].type, 'expense');
+  assert.equal(txns[0].category, 'Food & Dining');
+
+  // Row 2: Salary income
+  assert.equal(txns[1].title, 'Salary Credit');
+  assert.equal(txns[1].amount, 85000);
+  assert.equal(txns[1].type, 'income');
+  assert.equal(txns[1].category, 'Salary / Income');
+
+  // Row 3: Netflix expense
+  assert.equal(txns[2].title, 'Netflix');
+  assert.equal(txns[2].amount, 649);
+  assert.equal(txns[2].category, 'Entertainment');
+});
+
+test('calculateNewRegime: applies FY 2024-25 slabs and standard deduction', () => {
+  // Salaried person earning 7,50,000 gross
+  // Standard deduction = 75,000 -> Taxable = 6,75,000 (<= 7,00,000 -> 100% Section 87A rebate)
+  const taxFree = calculateNewRegime(750000, true);
+  assert.equal(taxFree.taxableIncome, 675000);
+  assert.equal(taxFree.totalTax, 0);
+
+  // Salaried person earning 15,00,000 gross
+  // Standard deduction 75,000 -> Taxable 14,25,000
+  // Slabs: 0-3L (0), 3-7L (20k), 7-10L (30k), 10-12L (30k), 12-14.25L (20% of 2.25L = 45k) -> 1,25,000 + 4% cess (5k) = 1,30,000
+  const higherEarner = calculateNewRegime(1500000, true);
+  assert.equal(higherEarner.taxableIncome, 1425000);
+  assert.equal(higherEarner.totalTax, 130000);
+});
+
+test('compareTaxRegimes: gives correct regime winner and tax savings', () => {
+  // For ₹12,00,000 gross with ₹2,50,000 in deductions (80C + 80D + standard)
+  const comparison = compareTaxRegimes(1200000, { sec80C: 150000, sec80D: 25000, homeLoanSec24: 0 });
+  assert.ok(['new', 'old'].includes(comparison.recommendedRegime));
+  assert.ok(comparison.taxSavings >= 0);
+});
+
+test('analyzeTaxLossHarvesting: finds loss harvesting opportunities', () => {
+  const investments = [
+    { name: 'Nifty 50 Index', invested_amount: 100000, current_value: 125000 },
+    { name: 'Tech ETF', invested_amount: 50000, current_value: 38000 }, // 12,000 unrealized loss
+  ];
+
+  const analysis = analyzeTaxLossHarvesting(investments);
+  assert.equal(analysis.unrealizedLosses, 12000);
+  assert.equal(analysis.harvestingOpportunities.length, 1);
+  assert.equal(analysis.harvestingOpportunities[0].unrealizedLoss, 12000);
+  assert.equal(analysis.totalHarvestableTaxSaving, 2400); // 20% of 12,000
+});
+

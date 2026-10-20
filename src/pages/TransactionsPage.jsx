@@ -12,6 +12,12 @@ import {
   WalletCards,
   X,
   Download,
+  Upload,
+  FileSpreadsheet,
+  AlertTriangle,
+  CheckSquare,
+  Square,
+  CheckCircle2,
 } from 'lucide-react';
 import { accountAPI, categoryAPI, txnAPI } from '../services/api';
 import {
@@ -33,6 +39,7 @@ import { dateShort, money } from '../lib/format';
 import { generateFinancialStatement } from '../lib/pdfReport';
 import { scanReceiptFile } from '../lib/receiptOcr';
 import { queueOfflineTransaction, flushOfflineQueue, getPendingOfflineTransactions } from '../lib/offlineSync';
+import { parseBankStatement } from '../lib/bankStatementParser';
 
 const blankForm = () => ({
   type: 'expense',
@@ -65,6 +72,14 @@ export default function TransactionsPage() {
   const [toDate, setToDate] = useState('');
   const searchTimer = useRef(null);
   const fileInputRef = useRef(null);
+
+  // Bank Statement Import State
+  const importFileRef = useRef(null);
+  const [importModal, setImportModal] = useState(false);
+  const [importFileName, setImportFileName] = useState('');
+  const [importedTxns, setImportedTxns] = useState([]);
+  const [importAccountId, setImportAccountId] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
     categoryAPI.getAll().then(({ data }) => setCategories(data.data || [])).catch(() => {});
@@ -178,13 +193,112 @@ export default function TransactionsPage() {
     }
   }
 
+  function triggerStatementImport() {
+    importFileRef.current?.click();
+  }
+
+  async function handleStatementFileSelected(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const toastId = toast.loading(`Parsing bank statement: ${file.name}...`, { icon: '📄' });
+    try {
+      const text = await file.text();
+      const parsed = parseBankStatement(text, file.name, txns);
+      if (!parsed.length) {
+        toast.error('No valid transactions found in the file. Ensure CSV, OFX, or QIF format.', { id: toastId });
+        return;
+      }
+
+      setImportFileName(file.name);
+      setImportedTxns(parsed);
+      setImportAccountId(accounts[0] ? String(accounts[0].id) : '');
+      setImportModal(true);
+      const dupCount = parsed.filter(t => t.isDuplicate).length;
+      toast.success(
+        `Parsed ${parsed.length} records!${dupCount > 0 ? ` (${dupCount} duplicate(s) flagged)` : ''}`,
+        { id: toastId }
+      );
+    } catch {
+      toast.error('Failed to parse bank statement. Please verify file format.', { id: toastId });
+    } finally {
+      if (importFileRef.current) importFileRef.current.value = '';
+    }
+  }
+
+  function toggleImportItem(index) {
+    setImportedTxns(prev => prev.map((item, idx) => idx === index ? { ...item, selected: !item.selected } : item));
+  }
+
+  function setAllImportItems(mode) {
+    setImportedTxns(prev => prev.map(item => {
+      if (mode === 'all') return { ...item, selected: true };
+      if (mode === 'none') return { ...item, selected: false };
+      if (mode === 'non-duplicates') return { ...item, selected: !item.isDuplicate };
+      return item;
+    }));
+  }
+
+  async function handleCommitBatchImport() {
+    const selected = importedTxns.filter(t => t.selected);
+    if (!selected.length) {
+      toast.error('Please select at least one transaction to import');
+      return;
+    }
+    if (!importAccountId) {
+      toast.error('Please select a target account for imported records');
+      return;
+    }
+
+    setIsImporting(true);
+    const toastId = toast.loading(`Importing ${selected.length} transaction(s)...`);
+    let successCount = 0;
+
+    for (const item of selected) {
+      const matchedCat = categories.find(c =>
+        c.name.toLowerCase() === (item.category || '').toLowerCase() ||
+        c.name.toLowerCase().includes((item.category || '').toLowerCase())
+      ) || categories[0];
+
+      const payload = {
+        type: item.type,
+        title: item.title || item.rawNarration || 'Bank Transaction',
+        amount: Number(item.amount),
+        category_id: matchedCat ? String(matchedCat.id) : '',
+        account_id: String(importAccountId),
+        date: item.date,
+        note: `Imported via Statement (${importFileName})${item.rawNarration ? ` • ${item.rawNarration}` : ''}`,
+      };
+
+      const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+      if (isOffline) {
+        await queueOfflineTransaction(payload);
+        successCount++;
+      } else {
+        try {
+          await txnAPI.create(payload);
+          successCount++;
+        } catch {
+          await queueOfflineTransaction(payload);
+          successCount++;
+        }
+      }
+    }
+
+    setIsImporting(false);
+    setImportModal(false);
+    setImportedTxns([]);
+    toast.success(`Successfully imported ${successCount} transactions!`, { id: toastId });
+    loadTxns(1);
+  }
+
   useEffect(() => {
     const handleOnline = async () => {
       try {
         const res = await flushOfflineQueue(payload => txnAPI.create(payload));
         if (res.synced > 0) {
           toast.success(`Synced ${res.synced} offline transaction(s) with cloud!`);
-          fetchTxns();
+          loadTxns(1);
         }
       } catch {
         // Retry on next online cycle
@@ -196,7 +310,7 @@ export default function TransactionsPage() {
     handleOnline();
 
     return () => window.removeEventListener('online', handleOnline);
-  }, [fetchTxns]);
+  }, []);
 
   async function handleSave() {
     if (!form.amount) {
@@ -280,7 +394,7 @@ export default function TransactionsPage() {
         title="Transactions"
         subtitle={`${total} reconciled records in your financial journal.`}
         action={
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <Button
               variant="secondary"
               onClick={() => {
@@ -294,6 +408,9 @@ export default function TransactionsPage() {
               }}
             >
               <Download size={15} /> PDF Statement
+            </Button>
+            <Button variant="soft" onClick={triggerStatementImport}>
+              <Upload size={15} /> Import Statement
             </Button>
             <Button variant="soft" onClick={triggerReceiptUpload} disabled={isScanning}>
               <Camera size={16} /> {isScanning ? 'Processing OCR...' : 'Scan Receipt'}
@@ -312,6 +429,14 @@ export default function TransactionsPage() {
         capture="environment"
         style={{ display: 'none' }}
         onChange={handleReceiptFileSelected}
+      />
+
+      <input
+        type="file"
+        ref={importFileRef}
+        accept=".csv,.ofx,.qif,text/csv,text/plain"
+        style={{ display: 'none' }}
+        onChange={handleStatementFileSelected}
       />
 
       <div className="metric-grid">
@@ -667,6 +792,141 @@ export default function TransactionsPage() {
           <Button className="ui-button-full" onClick={handleSave} style={{ background: '#10b981', color: 'white', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
             {editTxn ? 'Save Changes' : 'Record Transaction'}
           </Button>
+        </BottomSheet>
+      )}
+
+      {/* Statement Import Reconciler Modal */}
+      {importModal && (
+        <BottomSheet title={`Reconcile Bank Statement: ${importFileName}`} onClose={() => !isImporting && setImportModal(false)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Account Selector & Summary Statistics */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, background: 'var(--surface-strong)', padding: 14, borderRadius: 12, border: '1px solid var(--border)' }}>
+              <div>
+                <label style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6, display: 'block' }}>
+                  Target Destination Account
+                </label>
+                <select
+                  className="input"
+                  value={importAccountId}
+                  onChange={e => setImportAccountId(e.target.value)}
+                  style={{ width: '100%', background: 'var(--surface)', color: 'var(--text)' }}
+                >
+                  {accounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>{acc.name} ({money(acc.balance || 0)})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <div className="badge-pill badge-pill-mint" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
+                  <CheckCircle2 size={14} /> Total: {importedTxns.length} records
+                </div>
+                {importedTxns.filter(t => t.isDuplicate).length > 0 && (
+                  <div className="badge-pill badge-pill-amber" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
+                    <AlertTriangle size={14} /> {importedTxns.filter(t => t.isDuplicate).length} duplicates flagged
+                  </div>
+                )}
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#10b981' }}>
+                  Selected to import: {importedTxns.filter(t => t.selected).length}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Selection Toolbar */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                Review parsed records before importing:
+              </span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <Button variant="secondary" onClick={() => setAllImportItems('all')} style={{ padding: '4px 10px', fontSize: '0.78rem' }}>
+                  Select All
+                </Button>
+                <Button variant="secondary" onClick={() => setAllImportItems('non-duplicates')} style={{ padding: '4px 10px', fontSize: '0.78rem' }}>
+                  Skip Duplicates
+                </Button>
+                <Button variant="secondary" onClick={() => setAllImportItems('none')} style={{ padding: '4px 10px', fontSize: '0.78rem' }}>
+                  Deselect All
+                </Button>
+              </div>
+            </div>
+
+            {/* Scrollable Records Preview */}
+            <div style={{ maxHeight: 380, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4 }}>
+              {importedTxns.map((item, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => toggleImportItem(idx)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 6,
+                    padding: '10px 14px',
+                    borderRadius: 10,
+                    border: item.isDuplicate ? '1px solid rgba(245, 158, 11, 0.4)' : item.selected ? '1px solid #10b981' : '1px solid var(--border)',
+                    background: item.selected ? 'rgba(16, 185, 129, 0.05)' : 'var(--surface)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+                      <input
+                        type="checkbox"
+                        checked={item.selected}
+                        onChange={() => toggleImportItem(idx)}
+                        onClick={e => e.stopPropagation()}
+                        style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#10b981' }}
+                      />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {item.title}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          {item.date} • {item.category} {item.rawNarration && item.rawNarration !== item.title ? `(${item.rawNarration.slice(0, 30)}...)` : ''}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.95rem', color: item.type === 'income' ? '#10b981' : 'var(--text)' }}>
+                        {item.type === 'income' ? '+' : '-'}{money(item.amount)}
+                      </div>
+                      <span className={`badge-pill ${item.type === 'income' ? 'badge-pill-mint' : 'badge-pill-neutral'}`} style={{ fontSize: '0.68rem', padding: '2px 6px' }}>
+                        {item.type.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {item.isDuplicate && (
+                    <div style={{ fontSize: '0.74rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', borderRadius: 6, background: 'rgba(245, 158, 11, 0.1)' }}>
+                      <AlertTriangle size={12} />
+                      <span>{item.duplicateInfo?.reason || 'Potential duplicate with existing transaction'}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Footer Buttons */}
+            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+              <Button
+                variant="secondary"
+                onClick={() => setImportModal(false)}
+                disabled={isImporting}
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleCommitBatchImport}
+                disabled={isImporting || importedTxns.filter(t => t.selected).length === 0}
+                style={{ flex: 2, background: '#10b981', color: 'white' }}
+              >
+                {isImporting ? 'Importing Transactions...' : `Confirm & Import (${importedTxns.filter(t => t.selected).length} Records)`}
+              </Button>
+            </div>
+          </div>
         </BottomSheet>
       )}
     </Page>
