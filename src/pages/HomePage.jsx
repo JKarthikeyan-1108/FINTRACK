@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   Zap,
   Download,
+  Compass,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { dashAPI, budgetAPI, goalAPI } from '../services/api';
@@ -680,6 +681,44 @@ export default function HomePage() {
                   No investment holdings added yet. Track mutual funds, stocks, gold, and PPF.
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Explore & Suggest Discovery Card */}
+          <div
+            className="data-card card-stagger"
+            style={{
+              background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(2, 132, 199, 0.04))',
+              borderColor: 'rgba(37, 99, 235, 0.22)',
+              cursor: 'pointer',
+            }}
+            onClick={() => navigate('/explore')}
+          >
+            <div className="data-card-body" style={{ padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Compass size={18} />
+                </div>
+                <div>
+                  <strong style={{ fontSize: '0.95rem', color: 'var(--text)', display: 'block' }}>
+                    Explore & Suggest
+                  </strong>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    Indian Investment & Protection Hub
+                  </span>
+                </div>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.45, marginBottom: 12 }}>
+                Discover verified products from zero: Gold & Silver (incl. Aura Gold), SIP, Stocks, IPOs, LIC, and Health Protection.
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#2563eb' }}>
+                  Start Discovery &rarr;
+                </span>
+                <span className="badge-pill badge-pill-blue" style={{ fontSize: '0.68rem' }}>
+                  12 Categories
+                </span>
+              </div>
             </div>
           </div>
         </div>

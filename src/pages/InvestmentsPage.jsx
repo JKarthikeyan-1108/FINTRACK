@@ -32,7 +32,9 @@ import {
   CheckCircle2,
   ArrowRight,
   ShieldAlert,
+  Compass,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { investAPI, dashAPI } from '../services/api';
 import { calculatePortfolioRebalance, MODEL_PORTFOLIOS, ASSET_CLASS_META } from '../lib/portfolioRebalance';
 import {
@@ -109,6 +111,7 @@ function useCountUp(target, duration = 900) {
 }
 
 export default function InvestmentsPage() {
+  const navigate = useNavigate();
   const [myInvests, setMyInvests] = useState([]);
   const [openCat, setOpenCat] = useState(null);
   const [tab, setTab] = useState('suggestions');
@@ -172,12 +175,17 @@ export default function InvestmentsPage() {
     <Page>
       <PageHeader
         eyebrow="Wealth & Assets"
-        title="Investments"
+        title="My Investments"
         subtitle="Track asset allocation, user-entered valuations, and long-term capital compounding."
         action={
-          <Button variant="primary" onClick={() => setModal(true)}>
-            <Plus size={16} /> Add Asset
-          </Button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Button variant="soft" onClick={() => navigate('/explore')}>
+              <Compass size={16} /> Explore & Suggest
+            </Button>
+            <Button variant="primary" onClick={() => setModal(true)}>
+              <Plus size={16} /> Add Asset
+            </Button>
+          </div>
         }
       />
 

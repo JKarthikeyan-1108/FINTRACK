@@ -20,16 +20,18 @@ import {
   RefreshCw,
   Sparkles,
   Users,
+  Compass,
 } from 'lucide-react';
 
 const ITEMS = [
   { id: 'home', label: 'Dashboard Overview', category: 'Navigation', icon: Home, path: '/home' },
+  { id: 'explore', label: 'Explore & Suggest (Investment & Protection Discovery)', category: 'Navigation', icon: Compass, path: '/explore' },
   { id: 'analytics', label: 'Cashflow Analytics & Trends', category: 'Navigation', icon: BarChart3, path: '/analytics' },
   { id: 'transactions', label: 'Transactions Ledger', category: 'Navigation', icon: ReceiptText, path: '/transactions' },
   { id: 'budgets', label: 'Budget Envelopes', category: 'Navigation', icon: ChartPie, path: '/budgets' },
   { id: 'subscriptions', label: 'Recurring Subscriptions', category: 'Navigation', icon: Repeat2, path: '/subscriptions' },
   { id: 'split', label: 'Split & Groups (Shared Expenses)', category: 'Navigation', icon: Users, path: '/split' },
-  { id: 'investments', label: 'Investment Portfolio', category: 'Navigation', icon: TrendingUp, path: '/investments' },
+  { id: 'investments', label: 'My Investment Portfolio & Rebalancing', category: 'Navigation', icon: TrendingUp, path: '/investments' },
   { id: 'goals', label: 'Savings Goals', category: 'Navigation', icon: Flag, path: '/goals' },
   { id: 'loans', label: 'Loans & EMI Amortization', category: 'Navigation', icon: Landmark, path: '/loans' },
   { id: 'calculators', label: 'Financial Engines & Calculators', category: 'Navigation', icon: Calculator, path: '/calculators' },

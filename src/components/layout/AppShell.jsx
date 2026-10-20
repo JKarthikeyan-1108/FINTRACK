@@ -15,6 +15,7 @@ import {
   Calculator,
   ChartPie,
   ChevronRight,
+  Compass,
   Flag,
   Home,
   Landmark,
@@ -52,7 +53,8 @@ const NAV_SECTIONS = [
   {
     title: 'Wealth & Assets',
     items: [
-      { path: '/investments', label: 'Investments', Icon: TrendingUp },
+      { path: '/explore', label: 'Explore & Suggest', Icon: Compass },
+      { path: '/investments', label: 'My Investments', Icon: TrendingUp },
       { path: '/goals', label: 'Savings Goals', Icon: Flag },
       { path: '/loans', label: 'Loans & EMI', Icon: Landmark },
       { path: '/calculators', label: 'Calculators', Icon: Calculator },
@@ -76,10 +78,11 @@ const PRIMARY_NAV = [
 ];
 
 const MORE_NAV = [
+  { path: '/explore', Icon: Compass, label: 'Explore & Suggest', sub: 'Verified Indian investments & protection' },
+  { path: '/investments', Icon: TrendingUp, label: 'My Investments', sub: 'Actual portfolio & rebalancing' },
   { path: '/split', Icon: Users, label: 'Split & Groups', sub: 'Splitwise-grade bill split & debts' },
   { path: '/analytics', Icon: BarChart3, label: 'Analytics', sub: 'Deep insights & reports' },
   { path: '/calculators', Icon: Calculator, label: 'Calculators', sub: 'EMI, SIP, ROI & budget tools' },
-  { path: '/investments', Icon: TrendingUp, label: 'Investments', sub: 'Portfolio and plans' },
   { path: '/goals', Icon: Flag, label: 'Goals', sub: 'Savings targets' },
   { path: '/loans', Icon: Landmark, label: 'Loans & EMI', sub: 'Debt tracker' },
   { path: '/categories', Icon: Tag, label: 'Categories', sub: 'Manage spending tags' },
