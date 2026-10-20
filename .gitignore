@@ -39,6 +39,9 @@ serviceAccountKey.json
 *-firebase-adminsdk-*.json
 .vercel
 .env*
-*.apk
+android/app/build/
 android/local.properties
 android/.gradle
+*.apk
+!apk/
+!apk/*.apk
