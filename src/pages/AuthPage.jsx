@@ -16,7 +16,8 @@ import {
   Target, 
   TrendingUp,
   WalletCards,
-  Fingerprint
+  Fingerprint,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './AuthPage.css';
@@ -33,7 +34,7 @@ const GoogleSVG = () => (
 import { setupRecaptcha } from '../firebase/authService';
 
 export default function AuthPage() {
-  const { googleLogin, emailLogin, emailRegister, forgotPassword, isAuthenticated, phoneLogin, verifyOtp: verifyPhoneOtp } = useAuth();
+  const { googleLogin, emailLogin, emailRegister, forgotPassword, isAuthenticated, phoneLogin, verifyOtp: verifyPhoneOtp, demoLogin } = useAuth();
   const navigate = useNavigate();
   
   const [authView, setAuthView] = useState('login'); // 'login' | 'register' | 'forgot' | 'verify' | 'reset' | 'success'
@@ -542,6 +543,26 @@ export default function AuthPage() {
               <button type="button" className="auth-google-btn" onClick={() => setAuthView('phone')} disabled={loading} style={{ marginTop: '0.75rem', background: '#f8fafc' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
                 Continue with Phone
+              </button>
+              
+              <button
+                type="button"
+                className="auth-google-btn"
+                onClick={() => {
+                  demoLogin();
+                  toast.success('Welcome to FinTrack Demo Mode!');
+                  navigate('/home', { replace: true });
+                }}
+                disabled={loading}
+                style={{
+                  marginTop: '0.75rem',
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(14, 165, 233, 0.1) 100%)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  color: 'var(--text)',
+                  fontWeight: 700,
+                }}
+              >
+                <Sparkles size={18} color="#10b981" /> Explore Demo Account (Instant Access)
               </button>
               
               {authView === 'register' && (

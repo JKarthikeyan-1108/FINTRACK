@@ -121,6 +121,23 @@ export function AuthProvider({ children }) {
     await firebaseSignOut();
   };
 
+  const demoLogin = () => {
+    const demoUser = {
+      uid: 'demo_user_123',
+      email: 'demo@fintrack.app',
+      name: 'Karthik (Demo Pro)',
+      currency: 'INR',
+      date_format: 'en-IN',
+      emailVerified: true,
+    };
+    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+    const payload = btoa(JSON.stringify({ uid: demoUser.uid, email: demoUser.email, exp: Math.floor(Date.now() / 1000) + 86400 * 7 }));
+    const mockToken = `${header}.${payload}.signature`;
+    setToken(mockToken);
+    setUser(demoUser);
+    setMoneyFormat({ currency: 'INR', locale: 'en-IN' });
+  };
+
   const refreshToken = useCallback(async () => {
     try {
       if (auth?.currentUser) {
@@ -174,6 +191,7 @@ export function AuthProvider({ children }) {
         deleteAccount,
         updateProfile,
         logout,
+        demoLogin,
       }}
     >
       {children}
