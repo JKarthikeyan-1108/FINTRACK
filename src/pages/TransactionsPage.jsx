@@ -622,7 +622,7 @@ export default function TransactionsPage() {
                             </button>
                             <button
                               onClick={event => { event.stopPropagation(); handleDelete(txn.id); }}
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', borderRadius: 6, padding: '3px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid var(--border-danger, rgba(180, 35, 24, 0.25))', background: 'var(--bg-danger-subtle, rgba(180, 35, 24, 0.08))', color: 'var(--status-negative)', borderRadius: 6, padding: '3px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
                             >
                               <Trash2 size={11} /> Delete
                             </button>
@@ -687,7 +687,7 @@ export default function TransactionsPage() {
               Transaction Amount
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: '1.6rem', fontWeight: 800, color: form.type === 'income' ? '#10b981' : 'var(--text-muted)' }}>
+              <span style={{ fontSize: '1.6rem', fontWeight: 800, color: form.type === 'income' ? 'var(--status-positive)' : 'var(--text-muted)' }}>
                 {form.type === 'income' ? '+₹' : '₹'}
               </span>
               <input 
@@ -789,7 +789,7 @@ export default function TransactionsPage() {
             />
           </div>
 
-          <Button className="ui-button-full" onClick={handleSave} style={{ background: '#10b981', color: 'white', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
+          <Button variant="primary" className="ui-button-full" onClick={handleSave} style={{ padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
             {editTxn ? 'Save Changes' : 'Record Transaction'}
           </Button>
         </BottomSheet>
@@ -826,7 +826,7 @@ export default function TransactionsPage() {
                     <AlertTriangle size={14} /> {importedTxns.filter(t => t.isDuplicate).length} duplicates flagged
                   </div>
                 )}
-                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#10b981' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--status-positive)' }}>
                   Selected to import: {importedTxns.filter(t => t.selected).length}
                 </div>
               </div>
@@ -862,8 +862,8 @@ export default function TransactionsPage() {
                     gap: 6,
                     padding: '10px 14px',
                     borderRadius: 10,
-                    border: item.isDuplicate ? '1px solid rgba(245, 158, 11, 0.4)' : item.selected ? '1px solid #10b981' : '1px solid var(--border)',
-                    background: item.selected ? 'rgba(16, 185, 129, 0.05)' : 'var(--surface)',
+                    border: item.isDuplicate ? '1px solid rgba(180, 83, 9, 0.4)' : item.selected ? '1px solid var(--border-focus)' : '1px solid var(--border)',
+                    background: item.selected ? 'var(--brand-soft)' : 'var(--surface)',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                   }}
@@ -875,7 +875,7 @@ export default function TransactionsPage() {
                         checked={item.selected}
                         onChange={() => toggleImportItem(idx)}
                         onClick={e => e.stopPropagation()}
-                        style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#10b981' }}
+                        style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--brand-primary)' }}
                       />
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -888,7 +888,7 @@ export default function TransactionsPage() {
                     </div>
 
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: 800, fontSize: '0.95rem', color: item.type === 'income' ? '#10b981' : 'var(--text)' }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.95rem', color: item.type === 'income' ? 'var(--status-positive)' : 'var(--text)' }}>
                         {item.type === 'income' ? '+' : '-'}{money(item.amount)}
                       </div>
                       <span className={`badge-pill ${item.type === 'income' ? 'badge-pill-mint' : 'badge-pill-neutral'}`} style={{ fontSize: '0.68rem', padding: '2px 6px' }}>
@@ -898,7 +898,7 @@ export default function TransactionsPage() {
                   </div>
 
                   {item.isDuplicate && (
-                    <div style={{ fontSize: '0.74rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', borderRadius: 6, background: 'rgba(245, 158, 11, 0.1)' }}>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--status-warning)', display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', borderRadius: 6, background: 'var(--amber-subtle, rgba(180, 83, 9, 0.1))' }}>
                       <AlertTriangle size={12} />
                       <span>{item.duplicateInfo?.reason || 'Potential duplicate with existing transaction'}</span>
                     </div>
@@ -921,7 +921,7 @@ export default function TransactionsPage() {
                 variant="primary"
                 onClick={handleCommitBatchImport}
                 disabled={isImporting || importedTxns.filter(t => t.selected).length === 0}
-                style={{ flex: 2, background: '#10b981', color: 'white' }}
+                style={{ flex: 2 }}
               >
                 {isImporting ? 'Importing Transactions...' : `Confirm & Import (${importedTxns.filter(t => t.selected).length} Records)`}
               </Button>

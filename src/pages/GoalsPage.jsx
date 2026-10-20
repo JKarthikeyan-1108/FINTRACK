@@ -165,7 +165,7 @@ export default function GoalsPage() {
               </div>
               <div>
                 <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Completion Ratio</span>
-                <div style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: 2, color: '#10b981' }}>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: 2, color: 'var(--status-positive)' }}>
                   {((achieved / (goals.length || 1)) * 100).toFixed(0)}% Completed
                 </div>
               </div>
@@ -227,7 +227,7 @@ export default function GoalsPage() {
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: done ? '#10b981' : 'var(--text-muted)' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: done ? 'var(--status-positive)' : 'var(--text-muted)' }}>
                         {done ? 'Target reached' : `${money(Math.max(0, target - saved))} needed`}
                       </span>
                     </div>
@@ -349,7 +349,7 @@ export default function GoalsPage() {
             <span>Allocating automated monthly transfers helps you achieve goals 3x faster without budget strain.</span>
           </div>
 
-          <Button className="ui-button-full" onClick={addGoal} style={{ background: '#10b981', color: 'white', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
+          <Button variant="primary" className="ui-button-full" onClick={addGoal} style={{ padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
             Activate Savings Goal
           </Button>
         </BottomSheet>
@@ -376,7 +376,7 @@ export default function GoalsPage() {
               Deposit Amount
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: '1.6rem', fontWeight: 800, color: '#10b981' }}>+₹</span>
+              <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--status-positive)' }}>+₹</span>
               <input 
                 type="number"
                 step="any"
@@ -415,7 +415,7 @@ export default function GoalsPage() {
             ))}
           </div>
 
-          <Button className="ui-button-full" onClick={deposit} style={{ background: '#10b981', color: 'white', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
+          <Button variant="primary" className="ui-button-full" onClick={deposit} style={{ padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
             Confirm Deposit
           </Button>
         </BottomSheet>

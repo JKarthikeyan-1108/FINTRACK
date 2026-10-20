@@ -269,7 +269,7 @@ export default function LoansPage() {
                 <div className="data-card-body" style={{ padding: '16px 18px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
                     <div>
-                      <div style={{ fontSize: '1.35rem', fontWeight: 800, color: done ? '#10b981' : 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+                      <div style={{ fontSize: '1.35rem', fontWeight: 800, color: done ? 'var(--status-positive)' : 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
                         {money(loan.remaining)}
                       </div>
                       <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
@@ -293,14 +293,14 @@ export default function LoansPage() {
                       {!done && (
                         <button
                           onClick={() => setPayModal(loan)}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: '1px solid rgba(16, 185, 129, 0.3)', background: 'rgba(16, 185, 129, 0.08)', color: '#10b981', borderRadius: 6, padding: '4px 10px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: '1px solid var(--border-mint, rgba(21, 128, 61, 0.3))', background: 'var(--mint-subtle, rgba(21, 128, 61, 0.08))', color: 'var(--status-positive)', borderRadius: 6, padding: '4px 10px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
                         >
                           <WalletCards size={12} /> Pay EMI
                         </button>
                       )}
                       <button
                         onClick={() => deleteLoan(loan.id)}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', borderRadius: 6, padding: '4px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid var(--border-danger, rgba(180, 35, 24, 0.25))', background: 'var(--bg-danger-subtle, rgba(180, 35, 24, 0.08))', color: 'var(--status-negative)', borderRadius: 6, padding: '4px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
                       >
                         <Trash2 size={12} />
                       </button>
@@ -396,7 +396,7 @@ export default function LoansPage() {
               />
             </div>
             {emiPreview > 0 && !form.emi_amount && (
-              <small style={{ color: '#10b981', marginTop: 4, display: 'block', fontWeight: 600 }}>
+              <small style={{ color: 'var(--status-positive)', marginTop: 4, display: 'block', fontWeight: 600 }}>
                 Computed EMI: {money(Math.round(emiPreview))}/month
               </small>
             )}
@@ -429,7 +429,7 @@ export default function LoansPage() {
             />
           </div>
 
-          <Button className="ui-button-full" onClick={addLoan} style={{ background: '#10b981', color: 'white', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700, marginTop: 8 }}>
+          <Button variant="primary" className="ui-button-full" onClick={addLoan} style={{ padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700, marginTop: 8 }}>
             Add Loan Facility
           </Button>
         </BottomSheet>
@@ -448,7 +448,7 @@ export default function LoansPage() {
               </div>
             </div>
           </div>
-          <Button className="ui-button-full" onClick={() => payEMI(payModal)} style={{ background: '#10b981', color: 'white', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
+          <Button variant="primary" className="ui-button-full" onClick={() => payEMI(payModal)} style={{ padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
             Confirm EMI Paid
           </Button>
         </BottomSheet>

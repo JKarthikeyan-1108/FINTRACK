@@ -367,9 +367,9 @@ export default function SplitExpensesPage() {
                 gap: 8,
                 padding: '10px 18px',
                 borderRadius: 12,
-                border: active ? '2px solid #10b981' : '1px solid var(--border)',
-                background: active ? 'rgba(16, 185, 129, 0.12)' : 'var(--surface-strong)',
-                color: active ? '#10b981' : 'var(--text)',
+                border: active ? '2px solid var(--border-focus)' : '1px solid var(--border)',
+                background: active ? 'var(--brand-soft)' : 'var(--surface-strong)',
+                color: active ? 'var(--brand-primary)' : 'var(--text)',
                 fontWeight: active ? 800 : 600,
                 fontSize: '0.88rem',
                 cursor: 'pointer',
@@ -460,7 +460,7 @@ export default function SplitExpensesPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {debtResult.simplifiedDebts.length === 0 ? (
             <Card style={{ padding: '40px 20px', textAlign: 'center' }}>
-              <CheckCircle2 size={42} color="#10b981" style={{ margin: '0 auto 12px' }} />
+              <CheckCircle2 size={42} color="var(--status-positive)" style={{ margin: '0 auto 12px' }} />
               <h3 style={{ margin: '0 0 6px 0', fontSize: '1.2rem', color: 'var(--text)' }}>
                 All Settled Up!
               </h3>
@@ -518,7 +518,7 @@ export default function SplitExpensesPage() {
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <strong style={{ fontSize: '1.25rem', fontWeight: 900, color: involvesMe ? (iOwe ? '#f43f5e' : '#10b981') : 'var(--text)' }}>
+                    <strong style={{ fontSize: '1.25rem', fontWeight: 900, color: involvesMe ? (iOwe ? 'var(--status-negative)' : 'var(--status-positive)') : 'var(--text)' }}>
                       {money(debt.amount)}
                     </strong>
                     <Button variant="primary" onClick={() => openSettleModal(debt)} style={{ padding: '8px 14px', fontSize: '0.82rem' }}>
@@ -572,10 +572,10 @@ export default function SplitExpensesPage() {
                         width: 40,
                         height: 40,
                         borderRadius: 10,
-                        background: 'rgba(16, 185, 129, 0.12)',
+                        background: 'var(--brand-soft)',
                         display: 'grid',
                         placeItems: 'center',
-                        color: '#10b981',
+                        color: 'var(--brand-primary)',
                       }}
                     >
                       <Receipt size={20} />
@@ -596,7 +596,7 @@ export default function SplitExpensesPage() {
                       <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text)' }}>
                         {money(exp.amount)}
                       </div>
-                      <div style={{ fontSize: '0.76rem', color: isPayerMe ? '#10b981' : '#f43f5e', fontWeight: 600 }}>
+                      <div style={{ fontSize: '0.76rem', color: isPayerMe ? 'var(--status-positive)' : 'var(--status-negative)', fontWeight: 600 }}>
                         {isPayerMe ? `You lent ${money(exp.amount - (mySplit?.amount || 0))}` : `Your share: ${money(mySplit?.amount || 0)}`}
                       </div>
                     </div>
@@ -640,12 +640,12 @@ export default function SplitExpensesPage() {
                       width: 44,
                       height: 44,
                       borderRadius: '50%',
-                      background: m.id === 'm1' ? 'rgba(16, 185, 129, 0.15)' : 'var(--surface-strong)',
+                      background: m.id === 'm1' ? 'var(--brand-soft)' : 'var(--surface-strong)',
                       border: '1px solid var(--border)',
                       display: 'grid',
                       placeItems: 'center',
                       fontWeight: 800,
-                      color: m.id === 'm1' ? '#10b981' : 'var(--text)',
+                      color: m.id === 'm1' ? 'var(--brand-primary)' : 'var(--text)',
                     }}
                   >
                     {m.name.slice(0, 2).toUpperCase()}
@@ -661,7 +661,7 @@ export default function SplitExpensesPage() {
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: net > 0 ? '#10b981' : net < 0 ? '#f43f5e' : 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: net > 0 ? 'var(--status-positive)' : net < 0 ? 'var(--status-negative)' : 'var(--text-muted)' }}>
                     {net > 0 ? `+${money(net)}` : net < 0 ? `-${money(Math.abs(net))}` : '₹0'}
                   </div>
                   <span className={`badge-pill ${net > 0 ? 'badge-pill-mint' : net < 0 ? 'badge-pill-coral' : 'badge-pill-neutral'}`} style={{ fontSize: '0.7rem' }}>
@@ -727,7 +727,7 @@ export default function SplitExpensesPage() {
                             checked ? prev.filter(id => id !== m.id) : [...prev, m.id]
                           );
                         }}
-                        style={{ width: 18, height: 18, accentColor: '#10b981', cursor: 'pointer' }}
+                        style={{ width: 18, height: 18, accentColor: 'var(--brand-primary)', cursor: 'pointer' }}
                       />
                     </label>
                   );
@@ -742,7 +742,7 @@ export default function SplitExpensesPage() {
               onChange={e => setExpDate(e.target.value)}
             />
 
-            <Button variant="primary" onClick={handleSaveExpense} style={{ marginTop: 8, background: '#10b981', color: 'white' }}>
+            <Button variant="primary" onClick={handleSaveExpense} style={{ marginTop: 8 }}>
               Save Shared Expense
             </Button>
           </div>
@@ -774,8 +774,8 @@ export default function SplitExpensesPage() {
                       width: 40,
                       height: 40,
                       borderRadius: 8,
-                      border: newGroupEmoji === em ? '2px solid #10b981' : '1px solid var(--border)',
-                      background: newGroupEmoji === em ? 'rgba(16, 185, 129, 0.15)' : 'var(--surface)',
+                      border: newGroupEmoji === em ? '2px solid var(--border-focus)' : '1px solid var(--border)',
+                      background: newGroupEmoji === em ? 'var(--brand-soft)' : 'var(--surface)',
                       fontSize: '1.25rem',
                       cursor: 'pointer',
                     }}
@@ -813,7 +813,7 @@ export default function SplitExpensesPage() {
               </div>
             </div>
 
-            <Button variant="primary" onClick={handleCreateGroup} style={{ marginTop: 8, background: '#10b981', color: 'white' }}>
+            <Button variant="primary" onClick={handleCreateGroup} style={{ marginTop: 8 }}>
               Create Group
             </Button>
           </div>
@@ -829,7 +829,7 @@ export default function SplitExpensesPage() {
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Payer:</span>
                 <strong style={{ fontSize: '0.92rem', color: 'var(--text)', display: 'block' }}>{settleModal.fromName}</strong>
               </div>
-              <ArrowRight size={18} color="#10b981" />
+              <ArrowRight size={18} color="var(--brand-primary)" />
               <div style={{ textAlign: 'right' }}>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Receiver:</span>
                 <strong style={{ fontSize: '0.92rem', color: 'var(--text)', display: 'block' }}>{settleModal.toName}</strong>
@@ -850,7 +850,7 @@ export default function SplitExpensesPage() {
                     type="checkbox"
                     checked={settleSyncPersonal}
                     onChange={e => setSettleSyncPersonal(e.target.checked)}
-                    style={{ accentColor: '#10b981', width: 16, height: 16 }}
+                    style={{ accentColor: 'var(--brand-primary)', width: 16, height: 16 }}
                   />
                   <span>Sync to Personal Transaction Ledger</span>
                 </label>
@@ -874,7 +874,7 @@ export default function SplitExpensesPage() {
               </div>
             )}
 
-            <Button variant="primary" onClick={handleConfirmSettle} style={{ marginTop: 8, background: '#10b981', color: 'white' }}>
+            <Button variant="primary" onClick={handleConfirmSettle} style={{ marginTop: 8 }}>
               Confirm Settle-Up Payment
             </Button>
           </div>

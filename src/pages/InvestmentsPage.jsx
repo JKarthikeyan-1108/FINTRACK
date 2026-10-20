@@ -255,7 +255,7 @@ export default function InvestmentsPage() {
             </div>
             <div>
               <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Unrealized Gain</span>
-              <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: 2, color: totalGain >= 0 ? '#10b981' : '#f43f5e' }}>
+              <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: 2, color: totalGain >= 0 ? 'var(--status-positive)' : 'var(--status-negative)' }}>
                 {totalGain >= 0 ? '+' : ''}{money(totalGain)}
               </div>
             </div>
@@ -394,7 +394,7 @@ export default function InvestmentsPage() {
                       <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                         Allocation Alignment Index
                       </div>
-                      <div style={{ fontSize: '1.8rem', fontWeight: 900, color: rebalanceData.rebalanceIndex >= 80 ? '#10b981' : '#f59e0b', marginTop: 4 }}>
+                      <div style={{ fontSize: '1.8rem', fontWeight: 900, color: rebalanceData.rebalanceIndex >= 80 ? 'var(--status-positive)' : 'var(--status-warning)', marginTop: 4 }}>
                         {rebalanceData.rebalanceIndex} / 100
                       </div>
                       <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
@@ -485,7 +485,7 @@ export default function InvestmentsPage() {
               <div className="data-card card-stagger">
                 <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
                   <div className="data-card-title">
-                    <CheckCircle2 size={18} color="#10b981" />
+                    <CheckCircle2 size={18} color="var(--status-positive)" />
                     <span>Recommended Execution Trades</span>
                   </div>
                   <span className="badge-pill badge-pill-mint">{rebalanceData.rebalanceActions.length} Actions</span>
@@ -493,7 +493,7 @@ export default function InvestmentsPage() {
                 <div className="data-card-body" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {rebalanceData.rebalanceActions.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
-                      <CheckCircle2 size={36} color="#10b981" style={{ margin: '0 auto 8px', opacity: 0.8 }} />
+                      <CheckCircle2 size={36} color="var(--status-positive)" style={{ margin: '0 auto 8px', opacity: 0.8 }} />
                       <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text)' }}>Portfolio is Perfectly Balanced</div>
                       <div style={{ fontSize: '0.78rem', marginTop: 4 }}>All asset classes are within acceptable variance tolerances of the {MODEL_PORTFOLIOS[selectedModel].name} model.</div>
                     </div>
@@ -507,8 +507,8 @@ export default function InvestmentsPage() {
                           justifyContent: 'space-between',
                           padding: '12px 16px',
                           borderRadius: 10,
-                          background: action.action === 'TRIM' ? 'rgba(239, 68, 68, 0.06)' : 'rgba(16, 185, 129, 0.06)',
-                          border: action.action === 'TRIM' ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(16, 185, 129, 0.25)',
+                          background: action.action === 'TRIM' ? 'var(--bg-danger-subtle, rgba(180, 35, 24, 0.06))' : 'var(--mint-subtle, rgba(21, 128, 61, 0.06))',
+                          border: action.action === 'TRIM' ? '1px solid var(--border-danger, rgba(180, 35, 24, 0.25))' : '1px solid var(--border-mint, rgba(21, 128, 61, 0.25))',
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

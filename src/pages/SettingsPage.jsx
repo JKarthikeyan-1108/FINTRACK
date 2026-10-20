@@ -462,7 +462,7 @@ export default function SettingsPage() {
               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 Default Currency
               </div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#10b981', marginTop: 2 }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--brand-primary)', marginTop: 2 }}>
                 {user?.currency || 'INR'} ({CURRENCIES.find(c => c.code === (user?.currency || 'INR'))?.symbol || '₹'})
               </div>
             </div>
@@ -489,7 +489,7 @@ export default function SettingsPage() {
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: 14,
-            background: tokenStatus === 'critical' ? 'rgba(244, 63, 94, 0.08)' : tokenStatus === 'warning' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(16, 185, 129, 0.06)',
+            background: tokenStatus === 'critical' ? 'var(--bg-danger-subtle, rgba(180, 35, 24, 0.08))' : tokenStatus === 'warning' ? 'var(--amber-subtle, rgba(180, 83, 9, 0.08))' : 'var(--mint-subtle, rgba(21, 128, 61, 0.06))',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -498,7 +498,7 @@ export default function SettingsPage() {
                 width: 42,
                 height: 42,
                 borderRadius: 12,
-                background: tokenStatus === 'critical' ? '#f43f5e' : tokenStatus === 'warning' ? '#f59e0b' : '#10b981',
+                background: tokenStatus === 'critical' ? 'var(--status-negative)' : tokenStatus === 'warning' ? 'var(--status-warning)' : 'var(--status-positive)',
                 color: '#ffffff',
                 display: 'grid',
                 placeItems: 'center',
@@ -541,8 +541,8 @@ export default function SettingsPage() {
                 gap: 6,
                 padding: '8px 14px',
                 borderRadius: 8,
-                background: '#10b981',
-                color: '#ffffff',
+                background: 'var(--btn-primary-bg, var(--brand-primary))',
+                color: 'var(--btn-primary-color, #ffffff)',
                 border: 'none',
                 fontWeight: 700,
                 fontSize: '0.8rem',
@@ -566,13 +566,13 @@ export default function SettingsPage() {
           <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
-                <Wallet size={17} color="#10b981" /> Accounts & Wallets
+                <Wallet size={17} color="var(--brand-primary)" /> Accounts & Wallets
               </div>
               <button
                 type="button"
                 onClick={openCreateAccount}
                 className="data-card-action"
-                style={{ color: '#10b981' }}
+                style={{ color: 'var(--brand-primary)' }}
               >
                 <Plus size={15} /> Add Account
               </button>
@@ -670,7 +670,7 @@ export default function SettingsPage() {
                     <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                       Consolidated Balance
                     </span>
-                    <span style={{ fontSize: '1.15rem', fontWeight: 900, color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--status-positive)', fontVariantNumeric: 'tabular-nums' }}>
                       {money(totalBalance)}
                     </span>
                   </div>
@@ -736,7 +736,7 @@ export default function SettingsPage() {
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <Download size={15} color="#10b981" /> CSV for Excel
+                  <Download size={15} color="var(--brand-primary)" /> CSV for Excel
                 </button>
 
                 <button
@@ -1275,7 +1275,7 @@ function Toggle({ on, onToggle }) {
         height: 26,
         borderRadius: 999,
         border: '1px solid var(--border)',
-        background: on ? '#10b981' : 'var(--surface-strong)',
+        background: on ? 'var(--btn-primary-bg, var(--brand-primary))' : 'var(--surface-strong)',
         cursor: 'pointer',
         position: 'relative',
         padding: 0,

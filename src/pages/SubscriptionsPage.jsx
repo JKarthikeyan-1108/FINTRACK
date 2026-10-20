@@ -240,13 +240,13 @@ export default function SubscriptionsPage() {
                 </div>
                 <div>
                   <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Paused Cost Avoidance</span>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: 2, color: '#10b981' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: 2, color: 'var(--status-positive)' }}>
                     {money(Math.round(paused.reduce((s, sub) => s + monthlyEquivalent(sub), 0)))}/mo
                   </div>
                 </div>
                 <div>
                   <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Due in 7 Days</span>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: 2, color: upcoming > 0 ? '#f59e0b' : 'var(--text)' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: 2, color: upcoming > 0 ? 'var(--status-warning)' : 'var(--text)' }}>
                     {money(dueIn7DaysTotal)}
                   </div>
                 </div>
@@ -274,8 +274,8 @@ export default function SubscriptionsPage() {
                     fontWeight: 700,
                     cursor: 'pointer',
                     border: 'none',
-                    background: viewMode === tab.id ? '#10b981' : 'transparent',
-                    color: viewMode === tab.id ? '#ffffff' : 'var(--text-muted)',
+                    background: viewMode === tab.id ? 'var(--btn-primary-bg, var(--brand-primary))' : 'transparent',
+                    color: viewMode === tab.id ? 'var(--btn-primary-color, #ffffff)' : 'var(--text-muted)',
                     transition: 'all 0.15s ease',
                   }}
                 >
@@ -333,8 +333,8 @@ export default function SubscriptionsPage() {
                         minHeight: 52,
                         padding: 6,
                         borderRadius: 10,
-                        border: isSelected ? '2px solid #10b981' : isToday ? '1px solid #0ea5e9' : '1px solid var(--border-subtle)',
-                        background: isSelected ? 'rgba(16, 185, 129, 0.12)' : isToday ? 'rgba(14, 165, 233, 0.08)' : 'var(--surface)',
+                        border: isSelected ? '2px solid var(--border-focus)' : isToday ? '1px solid var(--status-info)' : '1px solid var(--border-subtle)',
+                        background: isSelected ? 'var(--brand-soft)' : isToday ? 'rgba(37, 99, 235, 0.08)' : 'var(--surface)',
                         cursor: 'pointer',
                         display: 'flex',
                         flexDirection: 'column',
@@ -342,7 +342,7 @@ export default function SubscriptionsPage() {
                         justifyContent: 'space-between',
                       }}
                     >
-                      <span style={{ fontSize: '0.76rem', fontWeight: isToday || isSelected ? 800 : 600, color: isToday ? '#0ea5e9' : 'var(--text)' }}>
+                      <span style={{ fontSize: '0.76rem', fontWeight: isToday || isSelected ? 800 : 600, color: isToday ? 'var(--status-info)' : 'var(--text)' }}>
                         {day}
                       </span>
                       {bills.length > 0 && (
@@ -354,7 +354,7 @@ export default function SubscriptionsPage() {
                                 width: 7,
                                 height: 7,
                                 borderRadius: '50%',
-                                background: cancelledIds.includes(b.id) ? '#ef4444' : '#10b981',
+                                background: cancelledIds.includes(b.id) ? 'var(--status-negative)' : 'var(--status-positive)',
                               }}
                               title={`${b.name}: ${money(b.amount)}`}
                             />
@@ -372,7 +372,7 @@ export default function SubscriptionsPage() {
           <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
-                <CalendarClock size={18} color="#10b981" />
+                <CalendarClock size={18} color="var(--brand-primary)" />
                 <span>Day {selectedCalendarDay} Bill Outflow</span>
               </div>
               <span className="badge-pill badge-pill-mint">{selectedDayBills.length} Bills</span>
@@ -380,7 +380,7 @@ export default function SubscriptionsPage() {
             <div className="data-card-body" style={{ padding: 18 }}>
               {selectedDayBills.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-                  <CheckCircle2 size={32} color="#10b981" style={{ margin: '0 auto 10px', opacity: 0.8 }} />
+                  <CheckCircle2 size={32} color="var(--status-positive)" style={{ margin: '0 auto 10px', opacity: 0.8 }} />
                   <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text)' }}>No bills due on Day {selectedCalendarDay}</div>
                   <div style={{ fontSize: '0.78rem', marginTop: 4 }}>Select any highlighted date on the calendar to inspect due services.</div>
                 </div>
@@ -388,7 +388,7 @@ export default function SubscriptionsPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div style={{ background: 'var(--surface-strong)', padding: 12, borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)' }}>Total Outflow for Day {selectedCalendarDay}</span>
-                    <strong style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ef4444' }}>{money(selectedDayTotal)}</strong>
+                    <strong style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--status-negative)' }}>{money(selectedDayTotal)}</strong>
                   </div>
                   {selectedDayBills.map(sub => (
                     <div key={sub.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10 }}>
@@ -603,7 +603,7 @@ export default function SubscriptionsPage() {
             />
           </div>
 
-          <Button className="ui-button-full" onClick={addSub} style={{ background: '#10b981', color: 'white', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
+          <Button variant="primary" className="ui-button-full" onClick={addSub} style={{ padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
             Add Subscription
           </Button>
         </BottomSheet>
@@ -668,9 +668,9 @@ function SubscriptionCard({ sub, paused, isFlagged, onToggleFlag, onToggle, onDe
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 3,
-                border: isFlagged ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border)',
-                background: isFlagged ? 'rgba(239, 68, 68, 0.12)' : 'var(--surface-strong)',
-                color: isFlagged ? '#ef4444' : 'var(--text-muted)',
+                border: isFlagged ? '1px solid var(--border-danger, rgba(180, 35, 24, 0.4))' : '1px solid var(--border)',
+                background: isFlagged ? 'var(--bg-danger-subtle, rgba(180, 35, 24, 0.12))' : 'var(--surface-strong)',
+                color: isFlagged ? 'var(--status-negative)' : 'var(--text-muted)',
                 borderRadius: 6,
                 padding: '4px 8px',
                 fontSize: '0.74rem',
@@ -684,7 +684,7 @@ function SubscriptionCard({ sub, paused, isFlagged, onToggleFlag, onToggle, onDe
           </div>
           <button
             onClick={() => onDelete(sub.id)}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', borderRadius: 6, padding: '4px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid var(--border-danger, rgba(180, 35, 24, 0.25))', background: 'var(--bg-danger-subtle, rgba(180, 35, 24, 0.08))', color: 'var(--status-negative)', borderRadius: 6, padding: '4px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
           >
             <Trash2 size={11} /> Delete
           </button>

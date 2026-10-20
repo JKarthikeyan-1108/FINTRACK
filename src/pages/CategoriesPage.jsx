@@ -163,13 +163,13 @@ export default function CategoriesPage() {
             </div>
             <div>
               <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Income Sources</span>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: 2, color: '#10b981' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: 2, color: 'var(--status-positive)' }}>
                 {counts.income}
               </div>
             </div>
             <div>
               <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Expense Envelopes</span>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: 2, color: '#f43f5e' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: 2, color: 'var(--status-negative)' }}>
                 {counts.expense}
               </div>
             </div>
@@ -323,7 +323,7 @@ export default function CategoriesPage() {
             </div>
           </div>
 
-          <Button className="ui-button-full" onClick={handleSave}>
+          <Button variant="primary" className="ui-button-full" onClick={handleSave}>
             <Tag size={18} /> {editCat ? 'Save changes' : 'Create category'}
           </Button>
         </BottomSheet>

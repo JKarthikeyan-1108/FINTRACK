@@ -318,7 +318,7 @@ export default function HomePage() {
       {/* Quick Action Pills */}
       <div className="quick-actions-bar">
         <button type="button" className="quick-action-pill card-stagger" onClick={() => navigate('/transactions')}>
-          <span className="quick-action-pill-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>+</span>
+          <span className="quick-action-pill-icon" style={{ background: 'var(--brand-soft)', color: 'var(--brand-primary)' }}>+</span>
           <span>Add Transaction</span>
         </button>
         <button type="button" className="quick-action-pill card-stagger" onClick={() => navigate('/budgets')}>
@@ -338,7 +338,7 @@ export default function HomePage() {
           <span>Loans & EMI</span>
         </button>
         <button type="button" className="quick-action-pill card-stagger" onClick={() => navigate('/calculators')}>
-          <span className="quick-action-pill-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>₹</span>
+          <span className="quick-action-pill-icon" style={{ background: 'var(--brand-soft)', color: 'var(--brand-primary)' }}>₹</span>
           <span>Calculators Suite</span>
         </button>
       </div>
@@ -371,7 +371,7 @@ export default function HomePage() {
                   flexShrink: 0,
                 }}
               >
-                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: health.score >= 80 ? '#10b981' : health.score >= 60 ? '#0ea5e9' : '#f59e0b', lineHeight: 1 }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: health.score >= 80 ? 'var(--status-positive)' : health.score >= 60 ? 'var(--status-info)' : 'var(--status-warning)', lineHeight: 1 }}>
                   {health.score}
                 </div>
                 <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: 2 }}>
@@ -380,7 +380,7 @@ export default function HomePage() {
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <ShieldCheck size={16} color="#10b981" />
+                  <ShieldCheck size={16} color="var(--status-positive)" />
                   <strong style={{ fontSize: '0.96rem', color: 'var(--text)' }}>FinTrack Health Index</strong>
                   <span className={`badge-pill ${health.badgeClass}`} style={{ fontSize: '0.7rem' }}>{health.tier}</span>
                 </div>
@@ -393,7 +393,7 @@ export default function HomePage() {
             {/* Velocity / Run-rate Indicator */}
             <div style={{ flex: 1, minWidth: 280, borderLeft: '1px solid var(--border-subtle)', paddingLeft: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                <Zap size={14} color={health.velocity.tone === 'pink' ? '#f43f5e' : health.velocity.tone === 'amber' ? '#f59e0b' : '#10b981'} />
+                <Zap size={14} color={health.velocity.tone === 'pink' ? 'var(--status-negative)' : health.velocity.tone === 'amber' ? 'var(--status-warning)' : 'var(--status-positive)'} />
                 <span style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text)' }}>
                   {health.velocity.title}
                 </span>
@@ -429,7 +429,7 @@ export default function HomePage() {
           <div className="data-card card-stagger">
             <div className="data-card-header">
               <div className="data-card-title">
-                <TrendingUp size={18} style={{ color: '#10b981' }} />
+                <TrendingUp size={18} style={{ color: 'var(--status-positive)' }} />
                 <span>Cash Flow Trends</span>
               </div>
               <button type="button" className="data-card-action" onClick={() => navigate('/analytics')}>
@@ -459,8 +459,8 @@ export default function HomePage() {
                 recent.slice(0, 6).map(txn => (
                   <div key={txn.id} className="modern-row">
                     <div className="modern-row-avatar" style={{
-                      background: txn.type === 'income' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(244, 63, 94, 0.12)',
-                      color: txn.type === 'income' ? '#10b981' : '#f43f5e',
+                      background: txn.type === 'income' ? 'var(--mint-subtle, rgba(21, 128, 61, 0.12))' : 'var(--bg-danger-subtle, rgba(180, 35, 24, 0.12))',
+                      color: txn.type === 'income' ? 'var(--status-positive)' : 'var(--status-negative)',
                     }}>
                       {txn.type === 'income' ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
                     </div>
@@ -655,7 +655,7 @@ export default function HomePage() {
           <div className="data-card">
             <div className="data-card-header">
               <div className="data-card-title">
-                <TrendingUp size={18} style={{ color: '#10b981' }} />
+                <TrendingUp size={18} style={{ color: 'var(--status-positive)' }} />
                 <span>Portfolio Snapshot</span>
               </div>
               <button type="button" className="data-card-action" onClick={() => navigate('/investments')}>

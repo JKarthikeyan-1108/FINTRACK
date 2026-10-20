@@ -203,9 +203,9 @@ export default function CalculatorsPage() {
                 gap: 7,
                 padding: '8px 16px',
                 borderRadius: 10,
-                border: active ? '1px solid #10b981' : '1px solid transparent',
-                background: active ? '#10b981' : 'transparent',
-                color: active ? '#ffffff' : 'var(--text-muted)',
+                border: active ? '1px solid var(--border-focus)' : '1px solid transparent',
+                background: active ? 'var(--btn-primary-bg, var(--brand-primary))' : 'transparent',
+                color: active ? 'var(--btn-primary-color, #ffffff)' : 'var(--text-muted)',
                 fontWeight: active ? 700 : 600,
                 fontSize: '0.84rem',
                 cursor: 'pointer',
@@ -222,7 +222,7 @@ export default function CalculatorsPage() {
 
       {/* Subtitle description for the active calculator */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-        <Info size={14} color="#10b981" />
+        <Info size={14} color="var(--brand-primary)" />
         <span>{activeTabMeta.desc}</span>
       </div>
 
@@ -234,7 +234,7 @@ export default function CalculatorsPage() {
           <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
-                <Landmark size={17} color="#10b981" /> Loan Parameters
+                <Landmark size={17} color="var(--brand-primary)" /> Loan Parameters
               </div>
               <span className="badge-pill badge-pill-neutral">Fixed Rate</span>
             </div>
@@ -316,7 +316,7 @@ export default function CalculatorsPage() {
           <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">
-                <CheckCircle2 size={17} color="#10b981" /> Amortization Summary
+                <CheckCircle2 size={17} color="var(--status-positive)" /> Amortization Summary
               </div>
               <span className="badge-pill badge-pill-mint">{emiMonths} Months</span>
             </div>
@@ -325,7 +325,7 @@ export default function CalculatorsPage() {
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Equated Monthly Installment (EMI)
                 </div>
-                <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#10b981', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', marginTop: 4 }}>
+                <div style={{ fontSize: '2.4rem', fontWeight: 900, color: 'var(--status-positive)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', marginTop: 4 }}>
                   {money(emiVal)}
                 </div>
                 <div style={{ fontSize: '0.82rem', color: 'var(--text-soft)', marginTop: 2 }}>
@@ -336,11 +336,11 @@ export default function CalculatorsPage() {
               {/* Progress split bar */}
               <div style={{ marginBottom: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', fontWeight: 600, marginBottom: 6 }}>
-                  <span style={{ color: '#10b981' }}>Principal: {Math.round(emiPrincipalRatio)}%</span>
-                  <span style={{ color: '#f43f5e' }}>Interest: {Math.round(100 - emiPrincipalRatio)}%</span>
+                  <span style={{ color: 'var(--status-positive)' }}>Principal: {Math.round(emiPrincipalRatio)}%</span>
+                  <span style={{ color: 'var(--status-negative)' }}>Interest: {Math.round(100 - emiPrincipalRatio)}%</span>
                 </div>
-                <div style={{ height: 8, borderRadius: 999, background: 'rgba(244, 63, 94, 0.25)', overflow: 'hidden', display: 'flex' }}>
-                  <div style={{ width: `${emiPrincipalRatio}%`, background: '#10b981', transition: 'width 0.3s' }} />
+                <div style={{ height: 8, borderRadius: 999, background: 'var(--bg-danger-subtle, rgba(180, 35, 24, 0.25))', overflow: 'hidden', display: 'flex' }}>
+                  <div style={{ width: `${emiPrincipalRatio}%`, background: 'var(--status-positive)', transition: 'width 0.3s' }} />
                 </div>
               </div>
 
