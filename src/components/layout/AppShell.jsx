@@ -103,7 +103,6 @@ export default function AppShell() {
   const [navProgress, setNavProgress] = useState(false);
   const [themePref, setThemePref] = useState(getStoredThemePreference);
   const [effectiveTheme, setEffectiveTheme] = useState(() => resolveEffectiveTheme(themePref));
-  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
 
   useEffect(() => {
     const effective = applyTheme(themePref);
@@ -124,7 +123,6 @@ export default function AppShell() {
     triggerHaptic('selection');
     document.documentElement.classList.add('theme-transitioning');
     setThemePref(pref);
-    setThemeMenuOpen(false);
     setTimeout(() => {
       document.documentElement.classList.remove('theme-transitioning');
     }, 300);
@@ -286,95 +284,13 @@ export default function AppShell() {
 
             <button
               type="button"
-              className="header-btn header-btn-primary desktop-only"
-              onClick={() => navTo('/transactions')}
+              onClick={toggleTheme}
+              className="icon-btn"
+              title={`Switch to ${effectiveTheme === 'dark' ? 'Light' : 'Dark'} Mode`}
+              aria-label="Toggle theme mode"
             >
-              <span>+ New Transaction</span>
+              {effectiveTheme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
-
-            <div className="theme-toggle-dropdown-wrapper" style={{ position: 'relative' }}>
-              <button
-                type="button"
-                onClick={() => setThemeMenuOpen(prev => !prev)}
-                className="icon-btn"
-                title={`Theme: ${themePref === 'system' ? `System (${effectiveTheme})` : themePref === 'dark' ? 'Dark' : 'Light'}`}
-                aria-label="Select theme mode (Light, Dark, System)"
-                aria-haspopup="true"
-                aria-expanded={themeMenuOpen}
-              >
-                {themePref === 'system' ? (
-                  <Laptop size={18} />
-                ) : effectiveTheme === 'dark' ? (
-                  <Moon size={18} />
-                ) : (
-                  <Sun size={18} />
-                )}
-              </button>
-
-              {themeMenuOpen && (
-                <>
-                  <div
-                    style={{ position: 'fixed', inset: 0, zIndex: 110 }}
-                    onClick={() => setThemeMenuOpen(false)}
-                  />
-                  <div
-                    className="theme-dropdown-menu"
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 8px)',
-                      right: 0,
-                      background: 'var(--bg-surface)',
-                      border: '1px solid var(--border-default)',
-                      borderRadius: 12,
-                      boxShadow: 'var(--shadow-card)',
-                      padding: 6,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 4,
-                      minWidth: 150,
-                      zIndex: 115,
-                    }}
-                    role="menu"
-                  >
-                    {[
-                      { key: 'light', label: 'Light', Icon: Sun },
-                      { key: 'dark', label: 'Dark', Icon: Moon },
-                      { key: 'system', label: 'System', Icon: Laptop },
-                    ].map(({ key, label, Icon }) => {
-                      const isSelected = themePref === key;
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          role="menuitem"
-                          onClick={() => handleSelectTheme(key)}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            padding: '8px 10px',
-                            borderRadius: 8,
-                            border: 'none',
-                            background: isSelected ? 'var(--brand-soft)' : 'transparent',
-                            color: isSelected ? 'var(--brand-primary)' : 'var(--text-primary)',
-                            fontWeight: isSelected ? 700 : 500,
-                            fontSize: '0.82rem',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            width: '100%',
-                            transition: 'background 0.15s ease',
-                          }}
-                        >
-                          <Icon size={15} color={isSelected ? 'var(--brand-primary)' : 'var(--text-secondary)'} />
-                          <span style={{ flex: 1 }}>{label}</span>
-                          {isSelected && <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>✓</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
 
             {pinEnabled && (
               <button
