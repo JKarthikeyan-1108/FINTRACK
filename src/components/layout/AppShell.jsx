@@ -29,6 +29,7 @@ import {
   ShieldCheck,
   Tag,
   TrendingUp,
+  Users,
 } from 'lucide-react';
 
 const NAV_SECTIONS = [
@@ -45,6 +46,7 @@ const NAV_SECTIONS = [
       { path: '/transactions', label: 'Transactions', Icon: ReceiptText },
       { path: '/budgets', label: 'Budgets', Icon: ChartPie },
       { path: '/subscriptions', label: 'Subscriptions', Icon: Repeat2 },
+      { path: '/split', label: 'Split & Groups', Icon: Users },
     ],
   },
   {
@@ -74,6 +76,7 @@ const PRIMARY_NAV = [
 ];
 
 const MORE_NAV = [
+  { path: '/split', Icon: Users, label: 'Split & Groups', sub: 'Splitwise-grade bill split & debts' },
   { path: '/analytics', Icon: BarChart3, label: 'Analytics', sub: 'Deep insights & reports' },
   { path: '/calculators', Icon: Calculator, label: 'Calculators', sub: 'EMI, SIP, ROI & budget tools' },
   { path: '/investments', Icon: TrendingUp, label: 'Investments', sub: 'Portfolio and plans' },

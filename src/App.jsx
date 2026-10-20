@@ -15,6 +15,7 @@ import CategoriesPage from './pages/CategoriesPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import JWTInspector from './pages/JWTInspector';
 import CalculatorsPage from './pages/CalculatorsPage';
+import SplitExpensesPage from './pages/SplitExpensesPage';
 
 function Protected({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -62,6 +63,7 @@ export default function App() {
         <Route path="investments" element={<InvestmentsPage />} />
         <Route path="loans" element={<LoansPage />} />
         <Route path="subscriptions" element={<SubscriptionsPage />} />
+        <Route path="split" element={<SplitExpensesPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="settings" element={<SettingsPage />} />
@@ -77,6 +79,12 @@ export default function App() {
       </Route>
       <Route path="/budgets" element={<Protected><AppShell /></Protected>}>
         <Route index element={<BudgetsPage />} />
+      </Route>
+      <Route path="/subscriptions" element={<Protected><AppShell /></Protected>}>
+        <Route index element={<SubscriptionsPage />} />
+      </Route>
+      <Route path="/split" element={<Protected><AppShell /></Protected>}>
+        <Route index element={<SplitExpensesPage />} />
       </Route>
       <Route path="/goals" element={<Protected><AppShell /></Protected>}>
         <Route index element={<GoalsPage />} />

@@ -284,3 +284,101 @@ test('analyzeTaxLossHarvesting: finds loss harvesting opportunities', () => {
   assert.equal(analysis.totalHarvestableTaxSaving, 2400); // 20% of 12,000
 });
 
+const {
+  calculateSplits,
+  simplifyDebts,
+} = require('../utils/debtSimplification');
+
+test('calculateSplits: distributes equal amounts with penny-rounding reconciliation', () => {
+  const members = [{ id: 'm1' }, { id: 'm2' }, { id: 'm3' }];
+  const splits = calculateSplits(100, 'equal', members);
+  assert.equal(splits.length, 3);
+  const sum = Math.round(splits.reduce((acc, s) => acc + s.amount, 0) * 100) / 100;
+  assert.equal(sum, 100);
+  assert.equal(splits[0].amount, 33.34);
+  assert.equal(splits[1].amount, 33.33);
+  assert.equal(splits[2].amount, 33.33);
+});
+
+test('calculateSplits: percentage splits computes exact proportions', () => {
+  const members = [{ id: 'm1' }, { id: 'm2' }, { id: 'm3' }];
+  const splits = calculateSplits(1000, 'percentage', members, { m1: 50, m2: 30, m3: 20 });
+  assert.equal(splits[0].amount, 500);
+  assert.equal(splits[1].amount, 300);
+  assert.equal(splits[2].amount, 200);
+});
+
+test('simplifyDebts: resolves multi-person shared expenses to minimum cash flows', () => {
+  const members = [
+    { id: 'm1', name: 'Alice' },
+    { id: 'm2', name: 'Bob' },
+    { id: 'm3', name: 'Charlie' },
+  ];
+
+  // Alice pays 300 for dinner split equally (100 each)
+  // Bob pays 150 for cab split equally (50 each)
+  const expenses = [
+    { id: 'e1', amount: 300, paidBy: 'm1', splitType: 'equal' },
+    { id: 'e2', amount: 150, paidBy: 'm2', splitType: 'equal' },
+  ];
+
+  const result = simplifyDebts(members, expenses, [], 'm1');
+
+  // Balances:
+  // Alice: +300 - 100 - 50 = +150
+  // Bob: +150 - 100 - 50 = 0
+  // Charlie: 0 - 100 - 50 = -150
+  assert.equal(result.balances.m1, 150);
+  assert.equal(result.balances.m2, 0);
+  assert.equal(result.balances.m3, -150);
+  assert.equal(result.myNetBalance, 150);
+  assert.equal(result.totalGroupSpend, 450);
+
+  // Simplified Debts: exactly 1 transaction: Charlie owes Alice 150
+  assert.equal(result.simplifiedDebts.length, 1);
+  assert.equal(result.simplifiedDebts[0].from, 'm3');
+  assert.equal(result.simplifiedDebts[0].to, 'm1');
+  assert.equal(result.simplifiedDebts[0].amount, 150);
+});
+
+test('simplifyDebts: eliminates circular debts completely', () => {
+  const members = [
+    { id: 'm1', name: 'A' },
+    { id: 'm2', name: 'B' },
+    { id: 'm3', name: 'C' },
+  ];
+
+  // A pays 100 for B
+  // B pays 100 for C
+  // C pays 100 for A
+  const expenses = [
+    { id: 'e1', amount: 100, paidBy: 'm1', splits: [{ memberId: 'm2', amount: 100 }] },
+    { id: 'e2', amount: 100, paidBy: 'm2', splits: [{ memberId: 'm3', amount: 100 }] },
+    { id: 'e3', amount: 100, paidBy: 'm3', splits: [{ memberId: 'm1', amount: 100 }] },
+  ];
+
+  const result = simplifyDebts(members, expenses, []);
+  assert.equal(result.balances.m1, 0);
+  assert.equal(result.balances.m2, 0);
+  assert.equal(result.balances.m3, 0);
+  assert.equal(result.simplifiedDebts.length, 0); // Completely settled out
+});
+
+test('simplifyDebts: handles settle-up repayments correctly', () => {
+  const members = [
+    { id: 'm1', name: 'A' },
+    { id: 'm2', name: 'B' },
+  ];
+
+  // A pays 200 for both (B owes 100)
+  const expenses = [{ id: 'e1', amount: 200, paidBy: 'm1', splitType: 'equal' }];
+  // B settles up 100 to A
+  const settlements = [{ id: 's1', fromMemberId: 'm2', toMemberId: 'm1', amount: 100 }];
+
+  const result = simplifyDebts(members, expenses, settlements);
+  assert.equal(result.balances.m1, 0);
+  assert.equal(result.balances.m2, 0);
+  assert.equal(result.simplifiedDebts.length, 0);
+});
+
+
