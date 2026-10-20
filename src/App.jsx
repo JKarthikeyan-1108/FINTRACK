@@ -17,19 +17,13 @@ import JWTInspector from './pages/JWTInspector';
 import CalculatorsPage from './pages/CalculatorsPage';
 import SplitExpensesPage from './pages/SplitExpensesPage';
 import ExploreInvestmentsPage from './pages/ExploreInvestmentsPage';
+import LoadingScreen from './components/ui/LoadingScreen';
 
 function Protected({ children }) {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div style={{ display: 'grid', placeItems: 'center', minHeight: '100dvh', background: 'var(--bg, #090d16)' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div className="spinner" style={{ margin: '0 auto 16px' }} />
-          <div style={{ fontSize: 13, color: 'var(--text-muted, #94a3b8)', fontWeight: 800 }}>Loading FinTrack…</div>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return isAuthenticated ? children : <Navigate to="/login" replace />;
@@ -38,14 +32,7 @@ function Protected({ children }) {
 function PublicOnly({ children }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) {
-    return (
-      <div style={{ display: 'grid', placeItems: 'center', minHeight: '100dvh', background: 'var(--bg, #090d16)' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div className="spinner" style={{ margin: '0 auto 16px' }} />
-          <div style={{ fontSize: 13, color: 'var(--text-muted, #94a3b8)', fontWeight: 800 }}>Loading FinTrack…</div>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
   return isAuthenticated ? <Navigate to="/home" replace /> : children;
 }

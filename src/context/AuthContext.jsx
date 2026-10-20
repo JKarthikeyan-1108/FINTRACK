@@ -18,13 +18,75 @@ function parseJWT(token) {
 const WARN_SECS = 300;
 const CRITICAL_SECS = 60;
 
+const AUTH_STORAGE_KEY = 'fintrack_auth_session';
+
+function getStoredAuthSession() {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    const session = JSON.parse(raw);
+    if (session?.token && session?.user) {
+      const payload = parseJWT(session.token);
+      if (payload?.exp && payload.exp > Math.floor(Date.now() / 1000)) {
+        return session;
+      }
+    }
+  } catch {}
+  return null;
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [tokenPayload, setTokenPayload] = useState(null);
+  const initialSession = getStoredAuthSession();
+  const [user, setUser] = useState(() => initialSession?.user || null);
+  const [token, setToken] = useState(() => initialSession?.token || null);
+  const [tokenPayload, setTokenPayload] = useState(() => initialSession?.token ? parseJWT(initialSession.token) : null);
   const [secsLeft, setSecsLeft] = useState(3600);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const timerRef = useRef(null);
+
+  const commitSession = (tokenVal, userVal) => {
+    setToken(tokenVal);
+    setUser(userVal);
+    if (tokenVal && userVal) {
+      try {
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ token: tokenVal, user: userVal }));
+      } catch {}
+      if (userVal.currency) {
+        setMoneyFormat({ currency: userVal.currency, locale: userVal.date_format || 'en-IN' });
+      }
+    } else {
+      try {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+      } catch {}
+    }
+  };
+
+  const handleAuthSuccess = async (firebaseUser, customName) => {
+    if (!firebaseUser) return null;
+    const idToken = await firebaseUser.getIdToken();
+    const nextUser = {
+      uid: firebaseUser.uid,
+      email: firebaseUser.email,
+      name: customName || firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+      avatar_url: firebaseUser.photoURL,
+      phone: firebaseUser.phoneNumber,
+      emailVerified: firebaseUser.emailVerified,
+      currency: 'INR',
+      date_format: 'en-IN',
+    };
+    commitSession(idToken, nextUser);
+
+    try {
+      const { data } = await authAPI.me();
+      if (data && data.user) {
+        const merged = { ...nextUser, ...data.user, emailVerified: firebaseUser.emailVerified };
+        commitSession(idToken, merged);
+      }
+    } catch {
+      // Profile initialized on first API call
+    }
+    return nextUser;
+  };
 
   useEffect(() => {
     setTokenPayload(token ? parseJWT(token) : null);
@@ -52,32 +114,15 @@ export function AuthProvider({ children }) {
     const unsubscribe = onFirebaseIdToken(async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          const idToken = await firebaseUser.getIdToken();
-          setToken(idToken);
-          const nextUser = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            name: firebaseUser.displayName,
-            avatar_url: firebaseUser.photoURL,
-            phone: firebaseUser.phoneNumber,
-            emailVerified: firebaseUser.emailVerified,
-          };
-          setUser(nextUser);
-
-          try {
-            const { data } = await authAPI.me();
-            if (data && data.user) {
-              const merged = { ...nextUser, ...data.user, emailVerified: firebaseUser.emailVerified };
-              setUser(merged);
-              setMoneyFormat({ currency: merged.currency, locale: merged.date_format });
-            }
-          } catch { /* profile is created on first authenticated API call */ }
+          await handleAuthSuccess(firebaseUser);
         } catch (e) {
           console.error('Error fetching token:', e);
         }
       } else {
-        setToken(null);
-        setUser(null);
+        // If not in demo mode (JWT token without Firebase user), clear
+        if (!localStorage.getItem(AUTH_STORAGE_KEY)?.includes('demo_user')) {
+          // Firebase actively reports signed out
+        }
       }
       setLoading(false);
     });
@@ -85,15 +130,33 @@ export function AuthProvider({ children }) {
   }, []);
 
   const googleLogin = async () => {
-    await firebaseGoogleSignIn();
+    setLoading(true);
+    try {
+      const fbUser = await firebaseGoogleSignIn();
+      return await handleAuthSuccess(fbUser);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const emailLogin = async (email, password) => {
-    await firebaseEmailSignIn(email, password);
+    setLoading(true);
+    try {
+      const fbUser = await firebaseEmailSignIn(email, password);
+      return await handleAuthSuccess(fbUser);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const emailRegister = async (name, email, password) => {
-    await firebaseEmailSignUp(name, email, password);
+    setLoading(true);
+    try {
+      const fbUser = await firebaseEmailSignUp(name, email, password);
+      return await handleAuthSuccess(fbUser, name);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const forgotPassword = async (email) => {
@@ -106,7 +169,7 @@ export function AuthProvider({ children }) {
 
   const deleteAccount = async () => {
     await authAPI.deleteAccount();
-    await firebaseSignOut();
+    await logout();
   };
 
   const phoneLogin = async (phoneNumber) => {
@@ -118,24 +181,27 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await firebaseSignOut();
+    commitSession(null, null);
+    await firebaseSignOut().catch(() => {});
   };
 
-  const demoLogin = () => {
+  const demoLogin = (profileKey = 'karthik') => {
+    const isKarthik = profileKey === 'karthik';
     const demoUser = {
-      uid: 'demo_user_123',
-      email: 'demo@fintrack.app',
-      name: 'Karthik (Demo Pro)',
+      uid: isKarthik ? 'demo_user_123' : `demo_user_${Date.now()}`,
+      email: isKarthik ? 'karthik@fintrack.app' : 'investor@fintrack.app',
+      name: isKarthik ? 'Karthik (Demo Pro)' : 'Arjun Sharma',
+      avatar_url: null,
       currency: 'INR',
       date_format: 'en-IN',
       emailVerified: true,
+      role: 'pro',
     };
     const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-    const payload = btoa(JSON.stringify({ uid: demoUser.uid, email: demoUser.email, exp: Math.floor(Date.now() / 1000) + 86400 * 7 }));
+    const payload = btoa(JSON.stringify({ uid: demoUser.uid, email: demoUser.email, exp: Math.floor(Date.now() / 1000) + 86400 * 14 }));
     const mockToken = `${header}.${payload}.signature`;
-    setToken(mockToken);
-    setUser(demoUser);
-    setMoneyFormat({ currency: 'INR', locale: 'en-IN' });
+    commitSession(mockToken, demoUser);
+    return demoUser;
   };
 
   const refreshToken = useCallback(async () => {

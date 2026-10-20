@@ -399,15 +399,35 @@ export default function AppShell() {
             </button>
 
             {user && (
-              <div
-                className="user-profile desktop-only"
-                style={{ cursor: 'pointer' }}
-                onClick={() => navTo('/settings')}
-                title="Account Settings"
-              >
-                <div className="user-dot">{(user.name || user.email || 'U')[0].toUpperCase()}</div>
-                <span className="user-name">{user.name?.split(' ')[0] || 'User'}</span>
-              </div>
+              <>
+                <div
+                  className="user-profile desktop-only"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navTo('/settings')}
+                  title="Account Settings"
+                >
+                  <div className="user-dot">{(user.name || user.email || 'U')[0].toUpperCase()}</div>
+                  <span className="user-name">{user.name?.split(' ')[0] || 'User'}</span>
+                </div>
+                <button
+                  type="button"
+                  className="icon-btn mobile-only"
+                  style={{
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #702632, #A83F55)',
+                    color: '#ffffff',
+                    fontWeight: 800,
+                    fontSize: '0.82rem',
+                    border: 'none',
+                    boxShadow: '0 2px 8px rgba(112, 38, 50, 0.25)',
+                  }}
+                  onClick={() => navTo('/settings')}
+                  title="Account Settings"
+                  aria-label="User Profile"
+                >
+                  {(user.name || user.email || 'U')[0].toUpperCase()}
+                </button>
+              </>
             )}
           </div>
         </header>
@@ -437,6 +457,64 @@ export default function AppShell() {
                   ✕
                 </button>
               </div>
+
+              {user && (
+                <div
+                  className="more-popover-profile"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '10px 12px',
+                    margin: '4px 4px 10px',
+                    borderRadius: 14,
+                    background: 'var(--brand-soft)',
+                    border: '1px solid var(--border)',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => navTo('/settings')}
+                  title="Manage Profile & Settings"
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #702632, #A83F55)',
+                      color: '#ffffff',
+                      display: 'grid',
+                      placeItems: 'center',
+                      fontWeight: 800,
+                      fontSize: '0.9rem',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {(user.name || user.email || 'U')[0].toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {user.name || user.email?.split('@')[0] || 'FinTrack User'}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {user.email || 'Active Account'}
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 800,
+                      padding: '3px 8px',
+                      borderRadius: 999,
+                      background: '#15803D',
+                      color: '#ffffff',
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    PRO
+                  </span>
+                </div>
+              )}
               <div className="more-popover-list">
                 {MORE_NAV.map(({ path, Icon, label, sub }) => (
                   <button key={path} className={isActive(path) ? 'active' : ''} onClick={() => navTo(path)}>

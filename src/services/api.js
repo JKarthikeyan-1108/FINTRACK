@@ -9,13 +9,27 @@ const api = axios.create({
   headers:         { 'Content-Type': 'application/json' },
 });
 
-// ── Auth token injection (Firebase ID token) ────────────
+// ── Auth token injection (Firebase ID token or active session) ────────────
 api.interceptors.request.use(async config => {
-  if (auth) {
-    await auth.authStateReady();
-    // getIdToken() returns the cached token and transparently refreshes it when it's near expiry
-    const token = await auth.currentUser?.getIdToken();
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+  let token = null;
+  if (auth?.currentUser) {
+    try {
+      token = await auth.currentUser.getIdToken();
+    } catch {
+      // Fallback to cached session
+    }
+  }
+  if (!token) {
+    try {
+      const saved = localStorage.getItem('fintrack_auth_session');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.token) token = parsed.token;
+      }
+    } catch {}
+  }
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
