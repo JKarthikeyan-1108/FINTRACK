@@ -34,7 +34,7 @@ import {
   ShieldAlert,
   Compass,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { investAPI, dashAPI } from '../services/api';
 import { calculatePortfolioRebalance, MODEL_PORTFOLIOS, ASSET_CLASS_META } from '../lib/portfolioRebalance';
 import {
@@ -112,6 +112,7 @@ function useCountUp(target, duration = 900) {
 
 export default function InvestmentsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [myInvests, setMyInvests] = useState([]);
   const [openCat, setOpenCat] = useState(null);
   const [tab, setTab] = useState('suggestions');
@@ -127,6 +128,36 @@ export default function InvestmentsPage() {
     investAPI.getAll().then(({ data }) => setMyInvests(data.data || [])).catch(() => {});
     dashAPI.overview().then(({ data }) => setDash(data)).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (location.state?.prefillProduct) {
+      const p = location.state.prefillProduct;
+      const catMap = {
+        'gold-silver': 'gold',
+        'stocks': 'stocks',
+        'ipos': 'stocks',
+        'mutual-funds': 'mutual_fund',
+        'lic-life-insurance': 'insurance',
+        'health-insurance': 'insurance',
+        'fixed-deposits': 'fixed_income',
+        'government-securities': 'fixed_income',
+        'etfs-reits-invits': 'real_estate',
+        'retirement-pension': 'fixed_income',
+        'emergency-savings': 'fixed_income',
+        'other-investments': 'fixed_income',
+      };
+      setForm({
+        name: p.name || '',
+        category: catMap[p.categoryId] || 'mutual_fund',
+        invested_amount: '',
+        current_value: '',
+        sip_amount: p.type?.toLowerCase().includes('sip') ? '1000' : '',
+        notes: `Researched via FinTrack Explore & Suggest. Provider: ${p.entityName || ''}. Type: ${p.type || ''}.`,
+      });
+      setModal(true);
+      toast.success(`Pre-filled "${p.name}". Enter your deployed capital to track!`, { icon: '💼' });
+    }
+  }, [location.state]);
 
   const rebalanceData = useMemo(() => {
     return calculatePortfolioRebalance({

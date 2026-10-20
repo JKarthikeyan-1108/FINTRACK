@@ -114,7 +114,7 @@ export default function DiscoveryWatchlistDrawer({
                       className="drawer-portfolio-btn"
                       onClick={() => {
                         onClose();
-                        navigate('/investments');
+                        navigate('/investments', { state: { prefillProduct: item } });
                       }}
                     >
                       <span>Add to My Portfolio</span>

@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Filter,
+  Scale,
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -26,6 +27,7 @@ import InvestmentCategoryCard from '../components/investments/InvestmentCategory
 import CategoryDetailModal from '../components/investments/CategoryDetailModal';
 import PersonalizedPlanModal from '../components/investments/PersonalizedPlanModal';
 import DiscoveryWatchlistDrawer from '../components/investments/DiscoveryWatchlistDrawer';
+import ProductCompareModal from '../components/investments/ProductCompareModal';
 import { InvestmentHeroIllustration } from '../components/investments/CategoryIllustrations';
 import { triggerHaptic } from '../lib/haptics';
 
@@ -39,6 +41,8 @@ export default function ExploreInvestmentsPage() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [isWatchlistOpen, setIsWatchlistOpen] = useState(false);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
+  const [compareInitialIds, setCompareInitialIds] = useState(undefined);
 
   // Watchlist stored in localStorage (strictly separate from real portfolio holdings)
   const [watchlist, setWatchlist] = useState(() => {
@@ -160,6 +164,21 @@ export default function ExploreInvestmentsPage() {
             {watchlist.length > 0 && (
               <span className="watchlist-count-badge">{watchlist.length}</span>
             )}
+          </button>
+
+          {/* Product Compare Button */}
+          <button
+            type="button"
+            className="explore-compare-cta-btn"
+            onClick={() => {
+              triggerHaptic('selection');
+              setCompareInitialIds(undefined);
+              setIsCompareOpen(true);
+            }}
+            title="Side-by-Side Product Comparator"
+          >
+            <Scale size={18} />
+            <span>Compare Products</span>
           </button>
 
           {/* Personalized Plan CTA */}
@@ -390,6 +409,21 @@ export default function ExploreInvestmentsPage() {
         onClose={handleCloseCategory}
         onWatchlistChange={setWatchlist}
         isWatchedFn={isWatched}
+        onOpenCompare={ids => {
+          setSelectedCategory(null);
+          setCompareInitialIds(ids);
+          setIsCompareOpen(true);
+        }}
+      />
+
+      {/* Product Compare Modal */}
+      <ProductCompareModal
+        isOpen={isCompareOpen}
+        onClose={() => setIsCompareOpen(false)}
+        initialProductIds={compareInitialIds}
+        onAddToPortfolio={prod => {
+          navigate('/investments', { state: { prefillProduct: prod } });
+        }}
       />
 
       {/* Interactive Personalized Investment Plan Modal */}

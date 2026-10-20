@@ -17,12 +17,20 @@ import {
   ArrowRight,
   TrendingUp,
   Tag,
+  Scale,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { CATEGORY_ILLUSTRATION_MAP } from './CategoryIllustrations';
 import { triggerHaptic } from '../../lib/haptics';
 
-export default function CategoryDetailModal({ category, isOpen, onClose, onWatchlistChange, isWatchedFn }) {
+export default function CategoryDetailModal({
+  category,
+  isOpen,
+  onClose,
+  onWatchlistChange,
+  isWatchedFn,
+  onOpenCompare,
+}) {
   if (!isOpen || !category) return null;
 
   const IllustrationComponent = CATEGORY_ILLUSTRATION_MAP[category.id];
@@ -137,8 +145,20 @@ export default function CategoryDetailModal({ category, isOpen, onClose, onWatch
           {/* Products Breakdown Section */}
           <div className="cat-products-section">
             <div className="section-header-row">
-              <h3>Verified Instruments & Product Comparators ({category.products?.length || 0})</h3>
-              <small className="text-muted">Direct Official Destinations Only</small>
+              <div>
+                <h3>Verified Instruments & Product Comparators ({category.products?.length || 0})</h3>
+                <small className="text-muted">Direct Official Destinations Only</small>
+              </div>
+              {category.products?.length >= 2 && onOpenCompare && (
+                <button
+                  type="button"
+                  className="cat-compare-trigger-btn"
+                  onClick={() => onOpenCompare(category.products.map(p => p.id))}
+                >
+                  <Scale size={15} />
+                  <span>Compare Side-by-Side</span>
+                </button>
+              )}
             </div>
 
             <div className="products-stack-list">
