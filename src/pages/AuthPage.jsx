@@ -556,18 +556,19 @@ export default function AuthPage() {
                 disabled={loading}
                 style={{
                   marginTop: '0.75rem',
-                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(14, 165, 233, 0.1) 100%)',
-                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
                   color: 'var(--text)',
                   fontWeight: 700,
+                  boxShadow: 'var(--shadow-sm)',
                 }}
               >
-                <Sparkles size={18} color="#10b981" /> Explore Demo Account (Instant Access)
+                <Sparkles size={18} color="var(--mint)" /> Explore Demo Account (Instant Access)
               </button>
               
               {authView === 'register' && (
-                 <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: '#64748b' }}>
-                   Already have an account? <button type="button" onClick={() => setAuthView('login')} style={{ color: '#2563eb', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Sign In</button>
+                 <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                   Already have an account? <button type="button" onClick={() => setAuthView('login')} style={{ color: 'var(--text)', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Sign In</button>
                  </div>
               )}
             </>

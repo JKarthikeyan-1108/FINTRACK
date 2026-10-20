@@ -164,8 +164,8 @@ export default function AIChatbot() {
               width: 32,
               height: 32,
               borderRadius: 8,
-              background: 'linear-gradient(135deg, #10b981, #059669)',
-              color: '#ffffff',
+              background: 'var(--text)',
+              color: 'var(--bg)',
               display: 'grid',
               placeItems: 'center',
             }}
@@ -300,8 +300,8 @@ export default function AIChatbot() {
           type="submit"
           disabled={isLoading || !input.trim()}
           style={{
-            background: isLoading || !input.trim() ? 'var(--surface-strong)' : '#10b981',
-            color: isLoading || !input.trim() ? 'var(--text-muted)' : '#ffffff',
+            background: isLoading || !input.trim() ? 'var(--surface-strong)' : 'var(--text)',
+            color: isLoading || !input.trim() ? 'var(--text-muted)' : 'var(--bg)',
             border: '1px solid var(--border)',
             width: '38px',
             height: '38px',

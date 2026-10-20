@@ -340,7 +340,7 @@ export default function HomePage() {
         className="data-card card-stagger"
         style={{
           marginBottom: 20,
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, rgba(14, 165, 233, 0.04) 50%, rgba(139, 92, 246, 0.04) 100%)',
+          background: 'var(--surface)',
           border: '1px solid var(--border)',
         }}
       >
@@ -688,15 +688,15 @@ export default function HomePage() {
           <div
             className="data-card card-stagger"
             style={{
-              background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(2, 132, 199, 0.04))',
-              borderColor: 'rgba(37, 99, 235, 0.22)',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
               cursor: 'pointer',
             }}
             onClick={() => navigate('/explore')}
           >
             <div className="data-card-body" style={{ padding: '16px 20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--text)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Compass size={18} />
                 </div>
                 <div>

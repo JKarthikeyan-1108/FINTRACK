@@ -675,8 +675,8 @@ export default function CalculatorsPage() {
               {/* Hero: Median Outcome */}
               <div
                 style={{
-                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(14, 165, 233, 0.08) 100%)',
-                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  background: 'var(--surface-strong)',
+                  border: '1px solid var(--border)',
                   padding: '18px',
                   borderRadius: 12,
                 }}
@@ -687,7 +687,7 @@ export default function CalculatorsPage() {
                   </span>
                   <span className="badge-pill badge-pill-mint">Most Likely</span>
                 </div>
-                <div style={{ fontSize: '2.1rem', fontWeight: 900, color: '#10b981', marginTop: 6, fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontSize: '2.1rem', fontWeight: 900, color: 'var(--mint)', marginTop: 6, fontVariantNumeric: 'tabular-nums' }}>
                   {money(mc.medianFinal)}
                 </div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>
@@ -1336,17 +1336,16 @@ export default function CalculatorsPage() {
               <div
                 className="data-card card-stagger"
                 style={{
-                  background: taxComparison.recommendedRegime === 'new'
-                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(14, 165, 233, 0.08) 100%)'
-                    : 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(16, 185, 129, 0.08) 100%)',
-                  border: taxComparison.recommendedRegime === 'new' ? '1px solid #10b981' : '1px solid #3b82f6',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
                   padding: '20px 24px',
                   borderRadius: 14,
+                  boxShadow: 'var(--shadow-sm)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Award size={22} color={taxComparison.recommendedRegime === 'new' ? '#10b981' : '#3b82f6'} />
+                    <Award size={22} color={taxComparison.recommendedRegime === 'new' ? 'var(--mint)' : 'var(--blue)'} />
                     <strong style={{ fontSize: '1.1rem', color: 'var(--text)' }}>
                       {taxComparison.recommendedRegime === 'new' ? 'New Tax Regime Wins' : 'Old Tax Regime Wins'}
                     </strong>

@@ -363,13 +363,14 @@ export default function SettingsPage() {
                   width: 64,
                   height: 64,
                   borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #10b981 0%, #0ea5e9 100%)',
-                  color: '#ffffff',
+                  background: 'var(--surface-strong)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
                   display: 'grid',
                   placeItems: 'center',
                   fontSize: '1.6rem',
                   fontWeight: 900,
-                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)',
+                  boxShadow: 'var(--shadow-sm)',
                   flexShrink: 0,
                 }}
               >
