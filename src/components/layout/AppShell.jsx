@@ -9,6 +9,7 @@ import NetworkStatusBanner from '../NetworkStatusBanner';
 import PWAInstallPrompt from '../PWAInstallPrompt';
 import SecurityLockModal from '../SecurityLockModal';
 import { triggerHaptic } from '../../lib/haptics';
+import FinTrackLogo from '../ui/FinTrackLogo';
 import {
   Award,
   Bell,
@@ -194,14 +195,11 @@ export default function AppShell() {
         <aside className="desktop-sidebar" aria-label="Main Navigation">
           <div className="sidebar-header">
             <div className="sidebar-brand-link" onClick={() => navTo('/home')}>
-              <div className="sidebar-brand-icon">
-                <TrendingUp size={20} strokeWidth={2.5} />
-              </div>
+              <FinTrackLogo size={32} />
               <div>
                 <span className="sidebar-brand-title">FinTrack</span>
               </div>
             </div>
-            <span className="sidebar-brand-badge">v14 PRO</span>
           </div>
 
           <nav className="sidebar-nav">
@@ -357,29 +355,11 @@ export default function AppShell() {
     <div className="mobile-shell">
       {/* 56px Compact Mobile Top App Bar */}
       <header className="mobile-app-bar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => navTo('/home')}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: 'var(--brand-primary)',
-              color: '#ffffff',
-              display: 'grid',
-              placeItems: 'center',
-              boxShadow: 'var(--shadow-card)',
-            }}
-          >
-            <TrendingUp size={18} strokeWidth={2.5} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>
-              FinTrack
-            </span>
-            <span style={{ fontSize: '0.62rem', fontWeight: 800, padding: '1px 6px', borderRadius: 999, background: 'var(--brand-soft)', color: 'var(--brand-primary)' }}>
-              PRO
-            </span>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => navTo('/home')}>
+          <FinTrackLogo size={28} />
+          <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>
+            FinTrack
+          </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

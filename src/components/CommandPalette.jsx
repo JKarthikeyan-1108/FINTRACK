@@ -65,7 +65,14 @@ export default function CommandPalette({ isOpen, onClose, onToggleTheme, onRefre
       label: 'Record New Transaction',
       category: 'Quick Action',
       icon: Plus,
-      action: () => { onClose(); navigate('/transactions'); },
+      action: () => { onClose(); navigate('/transactions?action=new'); },
+    },
+    {
+      id: 'action-new-invest',
+      label: 'Record New Investment Allocation (SIP / Equity / Gold)',
+      category: 'Quick Action',
+      icon: TrendingUp,
+      action: () => { onClose(); navigate('/transactions?action=invest'); },
     },
     {
       id: 'action-theme',

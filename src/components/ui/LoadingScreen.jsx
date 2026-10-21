@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { TrendingUp, ShieldCheck, Sparkles, Lock } from 'lucide-react';
+import FinTrackLogo from './FinTrackLogo';
 
 const LOADING_STATUSES = [
   'Securing 256-bit encrypted ledger...',
@@ -323,8 +324,8 @@ export default function LoadingScreen({ message, fullScreen = true }) {
             <div className="ft-orbit-satellite" />
           </div>
           <div className="ft-orbit-ring-inner" />
-          <div className="ft-loader-emblem">
-            <TrendingUp size={28} strokeWidth={2.6} />
+          <div className="ft-loader-emblem" style={{ background: 'transparent', boxShadow: 'none' }}>
+            <FinTrackLogo size={44} glow />
           </div>
         </div>
 

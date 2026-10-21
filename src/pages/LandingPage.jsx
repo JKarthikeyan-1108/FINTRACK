@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import FinTrackLogo from '../components/ui/FinTrackLogo';
 import {
   ArrowRight,
   BarChart3,
@@ -51,10 +52,8 @@ export default function LandingPage() {
       <header className="landing-nav">
         <div className="landing-nav-inner">
           <div className="landing-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="landing-logo-icon">
-              <Wallet size={22} />
-            </div>
-            <span>FINTRACK</span>
+            <FinTrackLogo size={32} />
+            <span style={{ fontWeight: 900, letterSpacing: '-0.02em', fontSize: '1.25rem' }}>FinTrack</span>
           </div>
           <nav className="landing-nav-links">
             <a href="#features">Features</a>
@@ -271,8 +270,8 @@ export default function LandingPage() {
         <div className="landing-footer-inner">
           <div className="landing-footer-brand">
             <div className="landing-logo">
-              <div className="landing-logo-icon"><Wallet size={18} /></div>
-              <span>FINTRACK</span>
+              <FinTrackLogo size={28} />
+              <span style={{ fontWeight: 900, letterSpacing: '-0.02em', fontSize: '1.15rem' }}>FinTrack</span>
             </div>
             <p>The premium personal finance manager for the modern Indian household.</p>
           </div>

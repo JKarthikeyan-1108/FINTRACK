@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { setupRecaptcha } from '../firebase/authService';
+import FinTrackLogo from '../components/ui/FinTrackLogo';
 import './AuthPage.css';
 
 const GoogleSVG = () => (
@@ -196,13 +197,10 @@ export default function AuthPage() {
         <div className="auth-left-content">
           {/* Brand Emblem Header */}
           <div className="auth-brand-badge" onClick={() => navigate('/')}>
-            <div className="auth-brand-icon">
-              <TrendingUp size={22} strokeWidth={2.6} />
-            </div>
+            <FinTrackLogo size={36} />
             <div>
               <div className="auth-brand-name">FinTrack</div>
             </div>
-            <span className="auth-brand-pill">v14 PRO</span>
           </div>
 
           {/* Hero Typography */}
@@ -292,9 +290,7 @@ export default function AuthPage() {
           
           {/* Mobile Brand Header */}
           <div className="auth-mobile-brand">
-            <div className="auth-brand-icon">
-              <TrendingUp size={22} strokeWidth={2.6} />
-            </div>
+            <FinTrackLogo size={32} />
             <span className="brand-title">FinTrack</span>
           </div>
 

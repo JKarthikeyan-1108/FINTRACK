@@ -318,7 +318,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 3. 3-Button Quick Action Strip */}
+        {/* 3. 4-Button Quick Action Strip */}
         <div className="mobile-quick-actions-strip">
           <button
             type="button"
@@ -331,7 +331,21 @@ export default function HomePage() {
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--brand-soft)', color: 'var(--brand-primary)', display: 'grid', placeItems: 'center' }}>
               <Plus size={20} strokeWidth={2.5} />
             </div>
-            <span>Add Expense</span>
+            <span>Expense</span>
+          </button>
+
+          <button
+            type="button"
+            className="mobile-quick-action-btn"
+            onClick={() => {
+              triggerHaptic('selection');
+              navigate('/transactions?action=invest');
+            }}
+          >
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'grid', placeItems: 'center' }}>
+              <TrendingUp size={18} strokeWidth={2.5} />
+            </div>
+            <span>Invest</span>
           </button>
 
           <button
@@ -345,7 +359,7 @@ export default function HomePage() {
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(14, 165, 233, 0.12)', color: '#0284c7', display: 'grid', placeItems: 'center' }}>
               <ReceiptText size={18} />
             </div>
-            <span>Scan Receipt</span>
+            <span>Scan OCR</span>
           </button>
 
           <button

@@ -387,8 +387,8 @@ export default function SettingsPage() {
         title="Settings"
         subtitle="Manage your profile, connected accounts, security session, and platform configurations"
         action={
-          <span className="badge-pill badge-pill-mint" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
-            <Sparkles size={14} /> FinTrack PRO v14
+          <span className="badge-pill badge-pill-mint" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Sparkles size={14} /> FinTrack Sovereign
           </span>
         }
       />

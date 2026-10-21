@@ -1592,6 +1592,16 @@ button:active:not(:disabled) {
   color: #f43f5e;
   border-color: rgba(244, 63, 94, 0.2);
 }
+.modern-row-avatar-investment {
+  background: rgba(14, 165, 233, 0.12);
+  color: #0284c7;
+  border-color: rgba(14, 165, 233, 0.2);
+}
+[data-theme="dark"] .modern-row-avatar-investment {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.25);
+}
 .modern-row-info {
   flex: 1;
   min-width: 0;
@@ -1621,6 +1631,8 @@ button:active:not(:disabled) {
   white-space: nowrap;
 }
 .amount-positive { color: #10b981; }
+.amount-investment { color: #0284c7; }
+[data-theme="dark"] .amount-investment { color: #38bdf8; }
 .amount-negative { color: var(--text); }
 [data-theme="dark"] .amount-negative { color: #f8fafc; }
 
@@ -1852,8 +1864,8 @@ button:active:not(:disabled) {
 }
 .mobile-quick-actions-strip {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
   margin-bottom: 18px;
 }
 .mobile-quick-action-btn {
@@ -1862,14 +1874,15 @@ button:active:not(:disabled) {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 12px 8px;
+  padding: 10px 4px;
   border-radius: 14px;
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
+  white-space: nowrap;
   transition: transform 0.15s ease, background 0.15s ease;
 }
 .mobile-quick-action-btn:active {

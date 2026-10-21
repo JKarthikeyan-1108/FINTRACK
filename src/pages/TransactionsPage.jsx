@@ -46,6 +46,31 @@ import { scanReceiptFile } from '../lib/receiptOcr';
 import { queueOfflineTransaction, flushOfflineQueue, getPendingOfflineTransactions } from '../lib/offlineSync';
 import { parseBankStatement } from '../lib/bankStatementParser';
 
+const FALLBACK_CATEGORIES = [
+  // Income
+  { id: 'salary', name: 'Salary', type: 'income', icon: '💼', color: '#2db87d' },
+  { id: 'freelance', name: 'Freelance', type: 'income', icon: '💻', color: '#4a9eff' },
+  { id: 'business', name: 'Business', type: 'income', icon: '🏢', color: '#ef9f27' },
+  { id: 'dividends', name: 'Dividends & Yield', type: 'income', icon: '📈', color: '#10b981' },
+  // Expenses
+  { id: 'groceries', name: 'Groceries', type: 'expense', icon: '🛒', color: '#2db87d' },
+  { id: 'dining', name: 'Dining', type: 'expense', icon: '🍽️', color: '#e24b4a' },
+  { id: 'transport', name: 'Transport', type: 'expense', icon: '🚗', color: '#4a9eff' },
+  { id: 'shopping', name: 'Shopping', type: 'expense', icon: '🛍️', color: '#ef9f27' },
+  { id: 'entertainment', name: 'Entertainment', type: 'expense', icon: '🎬', color: '#9b59b6' },
+  { id: 'utilities', name: 'Utilities', type: 'expense', icon: '⚡', color: '#1abc9c' },
+  { id: 'health', name: 'Health', type: 'expense', icon: '❤️', color: '#e74c3c' },
+  { id: 'rent', name: 'Housing & Rent', type: 'expense', icon: '🏠', color: '#3b82f6' },
+  // Investments & Wealth
+  { id: 'mutual_fund', name: 'Mutual Fund & SIP', type: 'investment', icon: '💹', color: '#2db87d' },
+  { id: 'stocks', name: 'Stocks & Equities', type: 'investment', icon: '📈', color: '#0284c7' },
+  { id: 'gold', name: 'Gold & SGB', type: 'investment', icon: '🪙', color: '#f59e0b' },
+  { id: 'crypto', name: 'Crypto & Web3', type: 'investment', icon: '🪙', color: '#8b5cf6' },
+  { id: 'ppf', name: 'PPF & Fixed Income', type: 'investment', icon: '🏦', color: '#3b82f6' },
+  { id: 'nps', name: 'NPS & Retirement', type: 'investment', icon: '🌅', color: '#ec4899' },
+  { id: 'real_estate', name: 'Real Estate / Land', type: 'investment', icon: '🏢', color: '#10b981' },
+];
+
 const blankForm = () => ({
   type: 'expense',
   title: '',
@@ -72,7 +97,7 @@ export default function TransactionsPage() {
   const [editTxn, setEditTxn] = useState(null);
   const [numpadMode, setNumpadMode] = useState(isMobile);
   const [activeRow, setActiveRow] = useState(null);
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
   const [accounts, setAccounts] = useState([]);
   const [summary, setSummary] = useState({ income: 0, expenses: 0 });
   const [form, setForm] = useState(blankForm());
@@ -90,7 +115,11 @@ export default function TransactionsPage() {
   const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
-    categoryAPI.getAll().then(({ data }) => setCategories(data.data || [])).catch(() => {});
+    categoryAPI.getAll().then(({ data }) => {
+      if (data?.data && data.data.length > 0) {
+        setCategories(data.data);
+      }
+    }).catch(() => {});
     accountAPI.getAll()
       .then(({ data }) => {
         const list = data.data || [];
@@ -144,6 +173,11 @@ export default function TransactionsPage() {
     const action = searchParams.get('action');
     if (action === 'new') {
       openCreate();
+      searchParams.delete('action');
+      setSearchParams(searchParams, { replace: true });
+    } else if (action === 'invest') {
+      openCreate();
+      setForm(prev => ({ ...prev, type: 'investment' }));
       searchParams.delete('action');
       setSearchParams(searchParams, { replace: true });
     } else if (action === 'scan') {
@@ -415,7 +449,11 @@ export default function TransactionsPage() {
     return acc;
   }, {});
 
-  const filteredCats = categories.filter(category => category.type === form.type || category.type === 'investment');
+  const filteredCats = categories.filter(category => {
+    if (form.type === 'investment') return category.type === 'investment';
+    if (form.type === 'income') return category.type === 'income';
+    return category.type === 'expense';
+  });
   const net = summary.income - summary.expenses;
 
   return (
@@ -544,6 +582,7 @@ export default function TransactionsPage() {
                 { value: '', label: 'All Types' },
                 { value: 'income', label: 'Income' },
                 { value: 'expense', label: 'Expense' },
+                { value: 'investment', label: 'Investments 📈' },
               ]}
             />
 
@@ -631,12 +670,32 @@ export default function TransactionsPage() {
                     {txn.account_name || 'Main Account'}
                   </td>
                   <td>
-                    <span className={`badge-pill ${txn.type === 'income' ? 'badge-pill-mint' : 'badge-pill-pink'}`} style={{ textTransform: 'capitalize', fontSize: '0.72rem' }}>
-                      {txn.type}
+                    <span
+                      className={`badge-pill ${
+                        txn.type === 'income'
+                          ? 'badge-pill-mint'
+                          : txn.type === 'investment'
+                          ? 'badge-pill-blue'
+                          : 'badge-pill-pink'
+                      }`}
+                      style={{ textTransform: 'capitalize', fontSize: '0.72rem' }}
+                    >
+                      {txn.type === 'investment' ? 'Investment 📈' : txn.type}
                     </span>
                   </td>
-                  <td style={{ textAlign: 'right', fontWeight: 800, color: txn.type === 'income' ? 'var(--status-positive)' : 'var(--status-negative)' }}>
-                    {txn.type === 'income' ? '+' : '-'}{money(txn.amount)}
+                  <td
+                    style={{
+                      textAlign: 'right',
+                      fontWeight: 800,
+                      color:
+                        txn.type === 'income'
+                          ? 'var(--status-positive)'
+                          : txn.type === 'investment'
+                          ? '#0284c7'
+                          : 'var(--status-negative)',
+                    }}
+                  >
+                    {txn.type === 'income' ? '+' : txn.type === 'investment' ? '▲' : '-'}{money(txn.amount)}
                   </td>
                   <td style={{ textAlign: 'center' }}>
                     {txn.receipt_url ? (
@@ -719,8 +778,8 @@ export default function TransactionsPage() {
                       onClick={() => setActiveRow(activeRow === txn.id ? null : txn.id)}
                       style={{ cursor: 'pointer' }}
                     >
-                      <div className={`modern-row-avatar ${txn.type === 'income' ? 'modern-row-avatar-income' : 'modern-row-avatar-expense'}`}>
-                        {txn.type === 'income' ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
+                      <div className={`modern-row-avatar ${txn.type === 'income' ? 'modern-row-avatar-income' : txn.type === 'investment' ? 'modern-row-avatar-investment' : 'modern-row-avatar-expense'}`}>
+                        {txn.type === 'income' ? <ArrowUpRight size={18} /> : txn.type === 'investment' ? <TrendingUp size={18} /> : <ArrowDownRight size={18} />}
                       </div>
                       <div className="modern-row-info">
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -744,8 +803,8 @@ export default function TransactionsPage() {
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div className={`modern-row-amount ${txn.type === 'income' ? 'amount-positive' : 'amount-negative'}`}>
-                          {txn.type === 'income' ? '+' : '-'}{money(txn.amount)}
+                        <div className={`modern-row-amount ${txn.type === 'income' ? 'amount-positive' : txn.type === 'investment' ? 'amount-investment' : 'amount-negative'}`}>
+                          {txn.type === 'income' ? '+' : txn.type === 'investment' ? '▲' : '-'}{money(txn.amount)}
                         </div>
                         {activeRow === txn.id && (
                           <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 6 }}>
@@ -812,6 +871,7 @@ export default function TransactionsPage() {
               options={[
                 { value: 'expense', label: 'Expense' },
                 { value: 'income', label: 'Income' },
+                { value: 'investment', label: 'Investment 📈' },
               ]}
             />
 
