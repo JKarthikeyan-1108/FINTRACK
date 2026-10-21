@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import useFinTrackPlatform from '../hooks/useFinTrackPlatform';
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -53,6 +55,8 @@ const blankForm = () => ({
 });
 
 export default function TransactionsPage() {
+  const { isMobile, isDesktop } = useFinTrackPlatform();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [txns, setTxns] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -130,6 +134,20 @@ export default function TransactionsPage() {
     setForm({ ...blankForm(), account_id: accounts[0] ? String(accounts[0].id) : '' });
     setModal(true);
   }
+
+  // Handle URL actions (e.g. ?action=new or ?action=scan) triggered from docked bottom nav or quick strips
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'new') {
+      openCreate();
+      searchParams.delete('action');
+      setSearchParams(searchParams, { replace: true });
+    } else if (action === 'scan') {
+      triggerReceiptUpload();
+      searchParams.delete('action');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams]);
 
   function openEdit(txn) {
     setEditTxn(txn);
@@ -559,7 +577,111 @@ export default function TransactionsPage() {
           text={search || typeFilter || fromDate || toDate ? 'Try adjusting your search filters or date range.' : 'Record your first transaction to unlock deep spending analytics.'}
           action={!search && <Button onClick={openCreate}><Plus size={16} /> Add transaction</Button>}
         />
+      ) : isDesktop ? (
+        /* DESKTOP MASTER LEDGER TABLE (>= 1024px) */
+        <div key={`${typeFilter || 'all'}-${fromDate}-${toDate}-${search}`} className="master-ledger-table-wrap card-stagger">
+          <table className="master-ledger-table">
+            <thead>
+              <tr>
+                <th style={{ width: 120 }}>Date</th>
+                <th>Title / Merchant</th>
+                <th style={{ width: 140 }}>Category</th>
+                <th style={{ width: 140 }}>Account</th>
+                <th style={{ width: 110 }}>Type</th>
+                <th style={{ textAlign: 'right', width: 140 }}>Amount</th>
+                <th style={{ textAlign: 'center', width: 90 }}>Receipt</th>
+                <th style={{ textAlign: 'right', width: 150 }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {txns.map(txn => (
+                <tr key={txn.id}>
+                  <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                    {dateShort(txn.date)}
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 700, color: 'var(--text)' }}>
+                      {txn.title}
+                    </div>
+                    {txn.note && (
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-soft)', fontStyle: 'italic', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {txn.note}
+                      </div>
+                    )}
+                  </td>
+                  <td>
+                    <span className="badge-pill badge-pill-neutral" style={{ fontSize: '0.72rem' }}>
+                      {txn.category_name || 'General'}
+                    </span>
+                  </td>
+                  <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                    {txn.account_name || 'Main Account'}
+                  </td>
+                  <td>
+                    <span className={`badge-pill ${txn.type === 'income' ? 'badge-pill-mint' : 'badge-pill-pink'}`} style={{ textTransform: 'capitalize', fontSize: '0.72rem' }}>
+                      {txn.type}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'right', fontWeight: 800, color: txn.type === 'income' ? 'var(--status-positive)' : 'var(--status-negative)' }}>
+                    {txn.type === 'income' ? '+' : '-'}{money(txn.amount)}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    {txn.receipt_url ? (
+                      <a href={txn.receipt_url} target="_blank" rel="noreferrer" title="View attached receipt" style={{ color: 'var(--brand-primary)', textDecoration: 'none' }}>
+                        📸
+                      </a>
+                    ) : (
+                      <span style={{ color: 'var(--text-soft)', fontSize: '0.8rem' }}>—</span>
+                    )}
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                      <button
+                        onClick={() => openEdit(txn)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid var(--border)', background: 'var(--surface-strong)', color: 'var(--text)', borderRadius: 6, padding: '4px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                        title="Edit entry"
+                      >
+                        <Edit3 size={12} /> Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(txn.id)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid var(--border-danger, rgba(180, 35, 24, 0.25))', background: 'var(--bg-danger-subtle, rgba(180, 35, 24, 0.08))', color: 'var(--status-negative)', borderRadius: 6, padding: '4px 8px', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                        title="Delete entry"
+                      >
+                        <Trash2 size={12} /> Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="master-ledger-pagination">
+            <div>
+              Showing <strong>{txns.length}</strong> of <strong>{total}</strong> reconciled entries (Page {page} of {Math.max(1, Math.ceil(total / 25))})
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Button
+                variant="soft"
+                disabled={page <= 1 || loading}
+                onClick={() => loadTxns(page - 1, true)}
+                style={{ padding: '4px 12px', fontSize: '0.8rem', minHeight: 34 }}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="soft"
+                disabled={page * 25 >= total || loading}
+                onClick={() => loadTxns(page + 1, true)}
+                style={{ padding: '4px 12px', fontSize: '0.8rem', minHeight: 34 }}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </div>
       ) : (
+        /* MOBILE GROUPED DAILY FEED (< 1024px) */
         <div key={`${typeFilter || 'all'}-${fromDate}-${toDate}-${search}`} className="tab-transition-container" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {Object.entries(grouped).map(([date, items]) => {
             const dayTotal = items.reduce((sum, txn) => sum + (txn.type === 'income' ? Number(txn.amount) : -Number(txn.amount)), 0);
@@ -643,8 +765,6 @@ export default function TransactionsPage() {
           )}
         </div>
       )}
-
-      <FAB icon={<Plus size={22} />} label="Add transaction" onClick={openCreate} />
 
       {modal && (
         <BottomSheet title={editTxn ? 'Edit Transaction' : 'Record Transaction'} onClose={closeModal}>

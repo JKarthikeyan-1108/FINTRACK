@@ -25,6 +25,7 @@ import {
   Compass,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import useFinTrackPlatform from '../hooks/useFinTrackPlatform';
 import { dashAPI, budgetAPI, goalAPI } from '../services/api';
 import {
   Button,
@@ -70,6 +71,7 @@ function useCountUp(target, duration = 850) {
 }
 
 export default function HomePage() {
+  const { isMobile } = useFinTrackPlatform();
   const { user, tokenStatus, secsLeft, fmtCountdown, refreshToken } = useAuth();
   const navigate = useNavigate();
   const [overview, setOverview] = useState(null);
@@ -227,6 +229,257 @@ export default function HomePage() {
     );
   }
 
+  const today = new Date();
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const daysRemaining = Math.max(1, lastDay - today.getDate() + 1);
+  const totalBudgets = budgets.reduce((acc, b) => acc + Number(b.amount || 0), 0);
+  const totalSpent = Number(overview?.expenses || 0);
+  const remainingBudget = Math.max(0, totalBudgets - totalSpent);
+  const safeToSpendDaily = totalBudgets > 0 
+    ? Math.round(remainingBudget / daysRemaining) 
+    : Math.round(Math.max(0, Number(overview?.income || 0) - totalSpent) / daysRemaining);
+  const budgetPercent = totalBudgets > 0 ? Math.min(100, Math.round((totalSpent / totalBudgets) * 100)) : 0;
+
+  // MOBILE LAYOUT (< 1024px / Capacitor APK: Hero Card + Account Pills + Quick Action Strip + Grouped Feed)
+  if (isMobile) {
+    return (
+      <Page>
+        {/* Mobile Header Greeting */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+            {greeting()}, {user?.name?.split(' ')[0] || 'User'}
+          </div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text)', marginTop: 2, letterSpacing: '-0.02em' }}>
+            Daily Command
+          </h1>
+        </div>
+
+        {/* 1. Safe-to-Spend Daily Allowance Hero Card */}
+        <div className="mobile-safe-spend-hero">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+            <div>
+              <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--brand-primary)' }}>
+                Safe-to-Spend Today
+              </span>
+              <div style={{ fontSize: '2.1rem', fontWeight: 900, color: 'var(--text)', lineHeight: 1.1, marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
+                {money(safeToSpendDaily)}
+              </div>
+            </div>
+            <span className="badge-pill badge-pill-mint" style={{ fontSize: '0.72rem', padding: '4px 10px', fontWeight: 800 }}>
+              {daysRemaining}d left
+            </span>
+          </div>
+          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginBottom: 12 }}>
+            {totalBudgets > 0
+              ? `${money(remainingBudget)} unspent of ${money(totalBudgets)} monthly target`
+              : `${money(overview?.net_worth || 0)} current liquid net worth`}
+          </div>
+          <ProgressBar value={budgetPercent} tone={budgetPercent > 90 ? 'pink' : budgetPercent > 70 ? 'amber' : 'mint'} />
+        </div>
+
+        {/* 2. Horizontal Swipeable Account Pills */}
+        {accounts.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, padding: '0 2px' }}>
+              <span style={{ fontSize: '0.76rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+                Accounts & Liquidity
+              </span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--brand-primary)', fontWeight: 700 }}>
+                Net: {money(netWorth)}
+              </span>
+            </div>
+            <div className="mobile-accounts-scroll">
+              {accounts.map(acc => (
+                <div key={acc.id} className="mobile-account-pill">
+                  <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {acc.name}
+                  </div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text)', marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
+                    {money(acc.balance)}
+                  </div>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-soft)', marginTop: 2, textTransform: 'capitalize' }}>
+                    {acc.type || 'Account'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 3. 3-Button Quick Action Strip */}
+        <div className="mobile-quick-actions-strip">
+          <button
+            type="button"
+            className="mobile-quick-action-btn"
+            onClick={() => navigate('/transactions?action=new')}
+          >
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--brand-soft)', color: 'var(--brand-primary)', display: 'grid', placeItems: 'center' }}>
+              <Plus size={20} strokeWidth={2.5} />
+            </div>
+            <span>Add Expense</span>
+          </button>
+
+          <button
+            type="button"
+            className="mobile-quick-action-btn"
+            onClick={() => navigate('/transactions?action=scan')}
+          >
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(14, 165, 233, 0.12)', color: '#0284c7', display: 'grid', placeItems: 'center' }}>
+              <ReceiptText size={18} />
+            </div>
+            <span>Scan Receipt</span>
+          </button>
+
+          <button
+            type="button"
+            className="mobile-quick-action-btn"
+            onClick={() => navigate('/split')}
+          >
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(139, 92, 246, 0.12)', color: '#8b5cf6', display: 'grid', placeItems: 'center' }}>
+              <Compass size={18} />
+            </div>
+            <span>Split Bill</span>
+          </button>
+        </div>
+
+        {/* 4. Compact Financial Health Pill */}
+        <div className="data-card" style={{ marginBottom: 16 }}>
+          <div className="data-card-body" style={{ padding: '14px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  background: 'var(--surface-strong)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontWeight: 900,
+                  fontSize: '1rem',
+                  color: health.score >= 80 ? 'var(--status-positive)' : 'var(--status-warning)',
+                }}>
+                  {health.score}
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text)' }}>
+                    FinTrack Health Index
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    {health.tier} • Runway: {health.breakdown.liquidity.months} mo
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate('/analytics')}
+                style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--brand-primary)', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Insights &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 5. Mobile Recent Transactions Feed (2-Line Cards) */}
+        <div className="data-card" style={{ marginBottom: 16 }}>
+          <div className="data-card-header" style={{ padding: '12px 16px' }}>
+            <div className="data-card-title">
+              <ReceiptText size={16} color="var(--brand-primary)" />
+              <span style={{ fontSize: '0.86rem' }}>Recent Ledger Feed</span>
+            </div>
+            <button
+              type="button"
+              className="data-card-action"
+              onClick={() => navigate('/transactions')}
+              style={{ fontSize: '0.76rem' }}
+            >
+              All ({recent.length}) &rarr;
+            </button>
+          </div>
+          <div className="data-card-body" style={{ padding: '4px 14px 12px' }}>
+            {recent.length > 0 ? (
+              recent.slice(0, 5).map(txn => (
+                <div
+                  key={txn.id}
+                  className="modern-row"
+                  onClick={() => navigate('/transactions')}
+                  style={{ padding: '10px 0', cursor: 'pointer' }}
+                >
+                  <div className="modern-row-avatar" style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: txn.type === 'income' ? 'rgba(21, 128, 61, 0.12)' : 'rgba(180, 35, 24, 0.12)',
+                    color: txn.type === 'income' ? 'var(--status-positive)' : 'var(--status-negative)',
+                  }}>
+                    {txn.type === 'income' ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
+                  </div>
+                  <div className="modern-row-info">
+                    <div className="modern-row-title" style={{ fontSize: '0.84rem' }}>{txn.title}</div>
+                    <div className="modern-row-meta" style={{ fontSize: '0.7rem' }}>
+                      <span>{dateShort(txn.date)}</span>
+                      <span>•</span>
+                      <span>{txn.category_name || 'General'}</span>
+                    </div>
+                  </div>
+                  <div className={`modern-row-amount ${txn.type === 'income' ? 'amount-positive' : 'amount-negative'}`} style={{ fontSize: '0.88rem' }}>
+                    {txn.type === 'income' ? '+' : '-'}{money(txn.amount)}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                No recent entries. Tap + to record your first transaction.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 6. Active Budgets Progress */}
+        {budgets.length > 0 && (
+          <div className="data-card">
+            <div className="data-card-header" style={{ padding: '12px 16px' }}>
+              <div className="data-card-title">
+                <ChartPie size={16} color="var(--brand-primary)" />
+                <span style={{ fontSize: '0.86rem' }}>Active Budget Ceilings</span>
+              </div>
+              <button
+                type="button"
+                className="data-card-action"
+                onClick={() => navigate('/budgets')}
+                style={{ fontSize: '0.76rem' }}
+              >
+                Manage &rarr;
+              </button>
+            </div>
+            <div className="data-card-body" style={{ padding: '12px 16px' }}>
+              {budgets.slice(0, 3).map(b => {
+                const spent = Number(b.spent || b.spent_amount || 0);
+                const limit = Number(b.amount || 1);
+                const pct = Math.min(100, Math.round((spent / limit) * 100));
+                const isOver = spent > limit;
+                return (
+                  <div key={b.id} style={{ marginBottom: 14 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)' }}>
+                        {b.emoji || '🏷️'} {b.name}
+                      </span>
+                      <span style={{ fontSize: '0.76rem', color: isOver ? '#ef4444' : 'var(--text-muted)', fontWeight: 700 }}>
+                        {money(spent)} / {money(limit)}
+                      </span>
+                    </div>
+                    <ProgressBar value={pct} tone={isOver ? 'pink' : pct > 80 ? 'amber' : 'mint'} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </Page>
+    );
+  }
+
+  // DESKTOP LAYOUT (>= 1024px: 4-Column KPI row + Cashflow Trends Area Chart + 2-Column Responsive Dashboard)
   return (
     <Page>
       <PageHeader

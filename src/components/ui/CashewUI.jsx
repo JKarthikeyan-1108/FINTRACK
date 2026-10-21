@@ -74,12 +74,8 @@ export function IconButton({ icon, label, variant = 'soft', className = '', ...p
   );
 }
 
-export function FAB({ icon, label, ...props }) {
-  return (
-    <button className="fab" aria-label={label} title={label} {...props}>
-      {icon}
-    </button>
-  );
+export function FAB() {
+  return null;
 }
 
 export function ProgressBar({ value = 0, tone = 'mint', markerLabel }) {
