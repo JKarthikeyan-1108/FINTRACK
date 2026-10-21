@@ -35,11 +35,14 @@ import {
   Moon,
   Laptop,
   Palette,
+  Volume2,
+  Zap,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSecurity } from '../context/SecurityContext';
 import { getStoredThemePreference, applyTheme } from '../lib/theme';
 import { accountAPI, txnAPI } from '../services/api';
+import haptics, { triggerHaptic } from '../utils/haptics';
 import {
   BottomSheet,
   Button,
@@ -94,8 +97,29 @@ export default function SettingsPage() {
   function handleThemeChange(newPref) {
     setThemePref(newPref);
     applyTheme(newPref);
+    triggerHaptic('selection');
     toast.success(`Theme switched to ${newPref.charAt(0).toUpperCase() + newPref.slice(1)} Mode`);
   }
+
+  // Cashew Haptics & Feedback Preferences
+  const [hapticsOn, setHapticsOn] = useState(() => haptics.isHapticsEnabled());
+  const [audioClicksOn, setAudioClicksOn] = useState(() => haptics.isAudioClicksEnabled());
+
+  const handleToggleHaptics = () => {
+    const newVal = !hapticsOn;
+    setHapticsOn(newVal);
+    haptics.setHapticsEnabled(newVal);
+    if (newVal) haptics.notificationSuccess();
+    toast.success(newVal ? 'Tactile haptics enabled' : 'Haptics disabled');
+  };
+
+  const handleToggleAudioClicks = () => {
+    const newVal = !audioClicksOn;
+    setAudioClicksOn(newVal);
+    haptics.setAudioClicksEnabled(newVal);
+    if (newVal) haptics.tick();
+    toast.success(newVal ? 'Desktop mechanical audio clicks enabled' : 'Desktop audio clicks disabled');
+  };
 
   // Preferences (visual-only toggles)
   const [toggles, setToggles] = useState({ notifications: true, cloudSync: true });
@@ -854,7 +878,111 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* App Security & Privacy Vault */}
+          {/* Cashew-Grade Haptics & Tactile Experience */}
+          <div className="data-card card-stagger">
+            <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
+              <div className="data-card-title">
+                <Zap size={17} color="var(--brand-primary)" /> Haptics &amp; Tactile Feedback
+              </div>
+              <span className={`badge-pill ${hapticsOn ? 'badge-pill-mint' : 'badge-pill-neutral'}`}>
+                {hapticsOn ? 'Haptics Active' : 'Disabled'}
+              </span>
+            </div>
+            <div className="data-card-body" style={{ padding: '8px 20px 16px' }}>
+              {/* Row 1: Tactile Haptics */}
+              <div className="modern-row" style={{ padding: '14px 0', borderBottom: '1px solid var(--border-default)' }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    background: hapticsOn ? 'var(--brand-soft)' : 'var(--surface-strong)',
+                    border: '1px solid var(--border-default)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    color: hapticsOn ? 'var(--brand-primary)' : 'var(--text-muted)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Smartphone size={18} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
+                  <strong style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>Touch &amp; Numpad Haptics</strong>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                    Tactile vibration on numpad keypresses, category selections, and saves
+                  </div>
+                </div>
+                <Toggle on={hapticsOn} onToggle={handleToggleHaptics} />
+              </div>
+
+              {/* Row 2: Desktop Mechanical Audio Clicks */}
+              <div className="modern-row" style={{ padding: '14px 0', borderBottom: '1px solid var(--border-default)' }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    background: audioClicksOn ? 'var(--brand-soft)' : 'var(--surface-strong)',
+                    border: '1px solid var(--border-default)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    color: audioClicksOn ? 'var(--brand-primary)' : 'var(--text-muted)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Volume2 size={18} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
+                  <strong style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>Desktop Mechanical Clicks</strong>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                    Synthetic tactile audio micro-pulses for desktop web numpad and button clicks
+                  </div>
+                </div>
+                <Toggle on={audioClicksOn} onToggle={handleToggleAudioClicks} />
+              </div>
+
+              {/* Row 3: Interactive Haptic Test Strip */}
+              <div style={{ paddingTop: 14 }}>
+                <div style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                  Test Tactile Pulses
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => haptics.tick()}
+                    className="ui-button"
+                    style={{ padding: '8px 4px', fontSize: '0.75rem', fontWeight: 650, borderRadius: 8 }}
+                  >
+                    Key Tick
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => haptics.impactLight()}
+                    className="ui-button"
+                    style={{ padding: '8px 4px', fontSize: '0.75rem', fontWeight: 650, borderRadius: 8 }}
+                  >
+                    Light Tap
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => haptics.impactMedium()}
+                    className="ui-button"
+                    style={{ padding: '8px 4px', fontSize: '0.75rem', fontWeight: 650, borderRadius: 8 }}
+                  >
+                    Medium
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => haptics.notificationSuccess()}
+                    className="ui-button"
+                    style={{ padding: '8px 4px', fontSize: '0.75rem', fontWeight: 700, borderRadius: 8, background: 'var(--brand-soft)', color: 'var(--brand-primary)', borderColor: 'var(--brand-primary)' }}
+                  >
+                    Success 🎉
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
           <div className="data-card card-stagger">
             <div className="data-card-header" style={{ background: 'var(--surface-strong)' }}>
               <div className="data-card-title">

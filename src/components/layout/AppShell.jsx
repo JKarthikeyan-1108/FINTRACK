@@ -590,7 +590,10 @@ export default function AppShell() {
         <button
           type="button"
           className={`docked-nav-slot ${moreOpen || moreActive ? 'active' : ''}`}
-          onClick={() => setMoreOpen(prev => !prev)}
+          onClick={() => {
+            triggerHaptic('selection');
+            setMoreOpen(prev => !prev);
+          }}
           aria-expanded={moreOpen}
           aria-label="More Modules"
         >

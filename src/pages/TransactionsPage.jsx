@@ -36,7 +36,10 @@ import {
   VisualCategorySelect,
   VisualAccountSelect,
   TextInput,
+  AnimatePresence,
 } from '../components/ui/CashewUI';
+import CashewNumpad from '../components/ui/CashewNumpad';
+import { triggerHaptic } from '../lib/haptics';
 import { dateShort, money } from '../lib/format';
 import { generateFinancialStatement } from '../lib/pdfReport';
 import { scanReceiptFile } from '../lib/receiptOcr';
@@ -67,6 +70,7 @@ export default function TransactionsPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [modal, setModal] = useState(false);
   const [editTxn, setEditTxn] = useState(null);
+  const [numpadMode, setNumpadMode] = useState(isMobile);
   const [activeRow, setActiveRow] = useState(null);
   const [categories, setCategories] = useState([]);
   const [accounts, setAccounts] = useState([]);
@@ -331,11 +335,13 @@ export default function TransactionsPage() {
   }, []);
 
   async function handleSave() {
-    if (!form.amount) {
-      toast.error('Amount is required');
+    if (!form.amount || Number(form.amount) <= 0) {
+      triggerHaptic('warning');
+      toast.error('Valid amount is required');
       return;
     }
     if (!form.account_id) {
+      triggerHaptic('warning');
       toast.error('Select an account');
       return;
     }
@@ -353,6 +359,7 @@ export default function TransactionsPage() {
       await queueOfflineTransaction(payload);
       setTxns(prev => [{ ...payload, id: `offline_${Date.now()}`, is_offline: true }, ...prev]);
       setTotal(prev => prev + 1);
+      triggerHaptic('success');
       toast('Saved offline! Will sync automatically when connection restores.', { icon: '💾' });
       closeModal();
       return;
@@ -362,11 +369,13 @@ export default function TransactionsPage() {
       if (editTxn) {
         const { data } = await txnAPI.update(editTxn.id, payload);
         setTxns(prev => prev.map(txn => txn.id === editTxn.id ? data.data : txn));
+        triggerHaptic('success');
         toast.success('Transaction updated');
       } else {
         const { data } = await txnAPI.create(payload);
         setTxns(prev => [data.data, ...prev]);
         setTotal(prev => prev + 1);
+        triggerHaptic('success');
         toast.success('Transaction added');
       }
       closeModal();
@@ -375,10 +384,12 @@ export default function TransactionsPage() {
         await queueOfflineTransaction(payload);
         setTxns(prev => [{ ...payload, id: `offline_${Date.now()}`, is_offline: true }, ...prev]);
         setTotal(prev => prev + 1);
+        triggerHaptic('success');
         toast('Connection unavailable. Saved offline to sync later.', { icon: '💾' });
         closeModal();
         return;
       }
+      triggerHaptic('warning');
       toast.error(error.response?.data?.error || 'Failed to save transaction');
     }
   }
@@ -389,8 +400,10 @@ export default function TransactionsPage() {
       setTxns(prev => prev.filter(txn => txn.id !== id));
       setTotal(prev => Math.max(0, prev - 1));
       setActiveRow(null);
+      triggerHaptic('heavy');
       toast.success('Transaction deleted');
     } catch {
+      triggerHaptic('warning');
       toast.error('Failed to delete transaction');
     }
   }
@@ -766,154 +779,203 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      {modal && (
-        <BottomSheet title={editTxn ? 'Edit Transaction' : 'Record Transaction'} onClose={closeModal}>
-          <SegmentedControl
-            value={form.type}
-            onChange={value => setForm(prev => ({ ...prev, type: value, category_id: '' }))}
-            options={[
-              { value: 'expense', label: 'Expense' },
-              { value: 'income', label: 'Income' },
-            ]}
-          />
-
-          <div style={{ height: 18 }} />
-
-          {form.receiptUrl && (
-            <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, padding: 10, background: 'var(--surface-strong)', border: '1px solid var(--border)', borderRadius: 12 }}>
-              <img src={form.receiptUrl} alt="Receipt preview" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border-subtle)' }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span className="badge-pill badge-pill-mint" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>OCR Verified</span>
-                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Camera Scan</span>
-                </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text)', fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', marginTop: 2 }}>
-                  {form.title} • {money(form.amount)}
-                </div>
-              </div>
+      <AnimatePresence>
+        {modal && (
+          <BottomSheet title={editTxn ? 'Edit Transaction' : 'Record Transaction'} onClose={closeModal}>
+            {/* Cashew Input Mode Toggle (Tactile Numpad vs Standard Input) */}
+            <div className="numpad-mode-toggle">
               <button
                 type="button"
-                onClick={() => setForm(prev => ({ ...prev, receiptUrl: null }))}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}
-                title="Remove attached receipt"
+                className={`numpad-toggle-btn ${numpadMode ? 'active' : ''}`}
+                onClick={() => {
+                  triggerHaptic('selection');
+                  setNumpadMode(true);
+                }}
               >
-                <X size={16} />
+                <span>📱 Tactile Numpad</span>
+              </button>
+              <button
+                type="button"
+                className={`numpad-toggle-btn ${!numpadMode ? 'active' : ''}`}
+                onClick={() => {
+                  triggerHaptic('selection');
+                  setNumpadMode(false);
+                }}
+              >
+                <span>⌨️ Standard Keypad</span>
               </button>
             </div>
-          )}
-          
-          <div className="field" style={{ marginBottom: 18, background: 'var(--surface-strong)', padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)' }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Transaction Amount
-            </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: '1.6rem', fontWeight: 800, color: form.type === 'income' ? 'var(--status-positive)' : 'var(--text-muted)' }}>
-                {form.type === 'income' ? '+₹' : '₹'}
-              </span>
-              <input 
-                type="number"
-                step="any"
-                className="input"
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  padding: 0,
-                  fontSize: '1.85rem',
-                  fontWeight: 800,
-                  color: 'var(--text)',
-                  boxShadow: 'none',
-                  fontVariantNumeric: 'tabular-nums',
-                  height: 'auto',
-                  minHeight: 'auto',
-                }}
-                placeholder="0.00"
-                value={form.amount}
-                onChange={event => setForm(prev => ({ ...prev, amount: event.target.value }))}
-                autoFocus
-              />
-            </div>
-          </div>
 
-          <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Title / Merchant
-            </label>
-            <input 
-              type="text"
-              className="input"
-              placeholder="E.g., Grocery store, salary, flight ticket"
-              value={form.title}
-              onChange={event => setForm(prev => ({ ...prev, title: event.target.value }))}
+            <SegmentedControl
+              value={form.type}
+              onChange={value => setForm(prev => ({ ...prev, type: value, category_id: '' }))}
+              options={[
+                { value: 'expense', label: 'Expense' },
+                { value: 'income', label: 'Income' },
+              ]}
             />
-          </div>
 
-          <div className="field" style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Category
-              </label>
-            </div>
-            <VisualCategorySelect 
-              categories={filteredCats.length ? filteredCats.slice(0, 8) : [{ id: '', name: 'General', icon: '📦' }]} 
-              value={form.category_id} 
-              onChange={val => setForm(prev => ({ ...prev, category_id: val }))} 
-              label=""
-            />
-          </div>
+            <div style={{ height: 14 }} />
 
-          <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Account
-            </label>
-            <div style={{ position: 'relative' }}>
-              <select 
-                className="input" 
-                style={{ appearance: 'none', background: 'var(--surface)', color: 'var(--text)', fontWeight: 500 }}
-                value={form.account_id}
-                onChange={event => setForm(prev => ({ ...prev, account_id: event.target.value }))}
-              >
-                <option value="" disabled>Select Account</option>
-                {accounts.map(acc => (
-                  <option key={acc.id} value={acc.id}>{acc.name} ({money(acc.balance || 0)})</option>
-                ))}
-              </select>
-              <div style={{ position: 'absolute', right: 14, top: 15, pointerEvents: 'none', color: 'var(--text-muted)' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            {form.receiptUrl && (
+              <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, padding: 10, background: 'var(--surface-strong)', border: '1px solid var(--border)', borderRadius: 12 }}>
+                <img src={form.receiptUrl} alt="Receipt preview" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border-subtle)' }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span className="badge-pill badge-pill-mint" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>OCR Verified</span>
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Camera Scan</span>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text)', fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', marginTop: 2 }}>
+                    {form.title} • {money(form.amount)}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, receiptUrl: null }))}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}
+                  title="Remove attached receipt"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+            
+            {/* Cashew Amount Card Display */}
+            <div className="field" style={{ marginBottom: 16, background: 'var(--surface-strong)', padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <label style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Transaction Amount
+                </label>
+                <span style={{ fontSize: '0.72rem', color: form.type === 'income' ? 'var(--status-positive)' : 'var(--brand-primary)', fontWeight: 700 }}>
+                  {form.type === 'income' ? 'Income Inflow' : 'Expense Outflow'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: '1.6rem', fontWeight: 800, color: form.type === 'income' ? 'var(--status-positive)' : 'var(--text-muted)' }}>
+                  {form.type === 'income' ? '+₹' : '₹'}
+                </span>
+                {!numpadMode ? (
+                  <input 
+                    type="number"
+                    step="any"
+                    className="input"
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      padding: 0,
+                      fontSize: '1.85rem',
+                      fontWeight: 800,
+                      color: 'var(--text)',
+                      boxShadow: 'none',
+                      fontVariantNumeric: 'tabular-nums',
+                      height: 'auto',
+                      minHeight: 'auto',
+                    }}
+                    placeholder="0.00"
+                    value={form.amount}
+                    onChange={event => setForm(prev => ({ ...prev, amount: event.target.value }))}
+                    autoFocus
+                  />
+                ) : (
+                  <span style={{ fontSize: '2rem', fontWeight: 800, color: form.amount ? 'var(--text)' : 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                    {form.amount || '0.00'}
+                  </span>
+                )}
               </div>
             </div>
-          </div>
 
-          <div className="field" style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Date
-            </label>
-            <input 
-              type="date"
-              className="input"
-              style={{ color: 'var(--text)', fontWeight: 500 }}
-              value={form.date}
-              onChange={event => setForm(prev => ({ ...prev, date: event.target.value }))}
-            />
-          </div>
+            {/* If in Numpad mode, render the Cashew Tactile Keypad */}
+            {numpadMode && (
+              <CashewNumpad
+                value={form.amount}
+                onChange={amt => setForm(prev => ({ ...prev, amount: amt }))}
+              />
+            )}
 
-          <div className="field" style={{ marginBottom: 22 }}>
-            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Notes (Optional)
-            </label>
-            <input 
-              type="text"
-              className="input"
-              placeholder="Tag or memo for reconciliation"
-              value={form.note}
-              onChange={event => setForm(prev => ({ ...prev, note: event.target.value }))}
-            />
-          </div>
+            <div className="field" style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Title / Merchant
+              </label>
+              <input 
+                type="text"
+                className="input"
+                placeholder="E.g., Grocery store, salary, flight ticket"
+                value={form.title}
+                onChange={event => setForm(prev => ({ ...prev, title: event.target.value }))}
+              />
+            </div>
 
-          <Button variant="primary" className="ui-button-full" onClick={handleSave} style={{ padding: '12px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700 }}>
-            {editTxn ? 'Save Changes' : 'Record Transaction'}
-          </Button>
-        </BottomSheet>
-      )}
+            <div className="field" style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Category
+                </label>
+              </div>
+              <VisualCategorySelect 
+                categories={filteredCats.length ? filteredCats.slice(0, 8) : [{ id: '', name: 'General', icon: '📦' }]} 
+                value={form.category_id} 
+                onChange={val => setForm(prev => ({ ...prev, category_id: val }))} 
+                label=""
+              />
+            </div>
+
+            <div className="field" style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Account
+              </label>
+              <div style={{ position: 'relative' }}>
+                <select 
+                  className="input" 
+                  style={{ appearance: 'none', background: 'var(--surface)', color: 'var(--text)', fontWeight: 500 }}
+                  value={form.account_id}
+                  onChange={event => {
+                    triggerHaptic('tick');
+                    setForm(prev => ({ ...prev, account_id: event.target.value }));
+                  }}
+                >
+                  <option value="" disabled>Select Account</option>
+                  {accounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>{acc.name} ({money(acc.balance || 0)})</option>
+                  ))}
+                </select>
+                <div style={{ position: 'absolute', right: 14, top: 15, pointerEvents: 'none', color: 'var(--text-muted)' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div className="field" style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Date
+              </label>
+              <input 
+                type="date"
+                className="input"
+                style={{ color: 'var(--text)', fontWeight: 500 }}
+                value={form.date}
+                onChange={event => setForm(prev => ({ ...prev, date: event.target.value }))}
+              />
+            </div>
+
+            <div className="field" style={{ marginBottom: 22 }}>
+              <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Notes (Optional)
+              </label>
+              <input 
+                type="text"
+                className="input"
+                placeholder="Tag or memo for reconciliation"
+                value={form.note}
+                onChange={event => setForm(prev => ({ ...prev, note: event.target.value }))}
+              />
+            </div>
+
+            <Button variant="primary" className="ui-button-full" onClick={handleSave} style={{ padding: '12px', borderRadius: '10px', fontSize: '0.98rem', fontWeight: 750 }}>
+              {editTxn ? 'Save Changes' : 'Record Transaction'}
+            </Button>
+          </BottomSheet>
+        )}
+      </AnimatePresence>
 
       {/* Statement Import Reconciler Modal */}
       {importModal && (

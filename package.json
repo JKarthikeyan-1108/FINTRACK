@@ -19,6 +19,7 @@
     "@capacitor/android": "^8.5.3",
     "@capacitor/cli": "^8.5.3",
     "@capacitor/core": "^8.5.3",
+    "@capacitor/haptics": "^8.0.2",
     "axios": "^1.7.2",
     "chart.js": "^4.4.3",
     "cors": "^2.8.5",

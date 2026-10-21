@@ -41,6 +41,7 @@ import {
 import { dateLong, dateShort, money } from '../lib/format';
 import { calculateHealthScore } from '../lib/healthScore';
 import { generateFinancialStatement } from '../lib/pdfReport';
+import { triggerHaptic } from '../lib/haptics';
 
 Chart.register(...registerables);
 
@@ -108,6 +109,7 @@ export default function HomePage() {
 
   const handleDownloadStatement = () => {
     try {
+      triggerHaptic('light');
       generateFinancialStatement({
         user,
         periodLabel: `${new Date().toLocaleString('default', { month: 'long', year: 'numeric' })} Statement`,
@@ -116,8 +118,10 @@ export default function HomePage() {
         transactions: overview?.recent_transactions || [],
         budgets,
       });
+      triggerHaptic('success');
       toast.success('Generated financial statement');
     } catch {
+      triggerHaptic('warning');
       toast.error('Failed to generate statement');
     }
   };
@@ -290,7 +294,15 @@ export default function HomePage() {
             </div>
             <div className="mobile-accounts-scroll">
               {accounts.map(acc => (
-                <div key={acc.id} className="mobile-account-pill">
+                <div
+                  key={acc.id}
+                  className="mobile-account-pill"
+                  onClick={() => {
+                    triggerHaptic('light');
+                    navigate('/accounts');
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {acc.name}
                   </div>
@@ -311,7 +323,10 @@ export default function HomePage() {
           <button
             type="button"
             className="mobile-quick-action-btn"
-            onClick={() => navigate('/transactions?action=new')}
+            onClick={() => {
+              triggerHaptic('selection');
+              navigate('/transactions?action=new');
+            }}
           >
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--brand-soft)', color: 'var(--brand-primary)', display: 'grid', placeItems: 'center' }}>
               <Plus size={20} strokeWidth={2.5} />
@@ -322,7 +337,10 @@ export default function HomePage() {
           <button
             type="button"
             className="mobile-quick-action-btn"
-            onClick={() => navigate('/transactions?action=scan')}
+            onClick={() => {
+              triggerHaptic('selection');
+              navigate('/transactions?action=scan');
+            }}
           >
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(14, 165, 233, 0.12)', color: '#0284c7', display: 'grid', placeItems: 'center' }}>
               <ReceiptText size={18} />
@@ -333,7 +351,10 @@ export default function HomePage() {
           <button
             type="button"
             className="mobile-quick-action-btn"
-            onClick={() => navigate('/split')}
+            onClick={() => {
+              triggerHaptic('selection');
+              navigate('/split');
+            }}
           >
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(139, 92, 246, 0.12)', color: '#8b5cf6', display: 'grid', placeItems: 'center' }}>
               <Compass size={18} />
@@ -371,7 +392,10 @@ export default function HomePage() {
               </div>
               <button
                 type="button"
-                onClick={() => navigate('/analytics')}
+                onClick={() => {
+                  triggerHaptic('selection');
+                  navigate('/analytics');
+                }}
                 style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--brand-primary)', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 Insights &rarr;
@@ -390,7 +414,10 @@ export default function HomePage() {
             <button
               type="button"
               className="data-card-action"
-              onClick={() => navigate('/transactions')}
+              onClick={() => {
+                triggerHaptic('selection');
+                navigate('/transactions');
+              }}
               style={{ fontSize: '0.76rem' }}
             >
               All ({recent.length}) &rarr;
@@ -402,7 +429,10 @@ export default function HomePage() {
                 <div
                   key={txn.id}
                   className="modern-row"
-                  onClick={() => navigate('/transactions')}
+                  onClick={() => {
+                    triggerHaptic('light');
+                    navigate('/transactions');
+                  }}
                   style={{ padding: '10px 0', cursor: 'pointer' }}
                 >
                   <div className="modern-row-avatar" style={{

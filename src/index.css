@@ -6032,5 +6032,117 @@ button:active:not(:disabled) {
   color: var(--blue);
 }
 
+/* ── Cashew-Grade Tactile Numpad & Motion Physics ── */
+.cashew-numpad {
+  margin: 12px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
+.cashew-numpad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
 
+.numpad-key {
+  height: 52px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 1.35rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.numpad-key:active {
+  transform: scale(0.92);
+  background: var(--brand-soft);
+  border-color: var(--brand-primary);
+}
+
+.numpad-key-action {
+  color: var(--text-muted);
+}
+.numpad-key-action:active {
+  color: var(--brand-primary);
+}
+
+.numpad-submit-btn {
+  height: 48px;
+  border-radius: 12px;
+  background: var(--brand-primary);
+  color: #FFFFFF;
+  border: none;
+  font-size: 1rem;
+  font-weight: 750;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(112, 38, 50, 0.35);
+  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+}
+
+.numpad-submit-btn:active {
+  transform: scale(0.96);
+  box-shadow: 0 2px 8px rgba(112, 38, 50, 0.4);
+}
+
+/* Cashew Touch Scale & Motion Physics across all interactive components */
+.ui-button,
+.btn-primary,
+.docked-nav-slot,
+.docked-center-action-btn,
+.visual-selector-btn,
+.chip,
+.quick-action-btn {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.ui-button:active,
+.btn-primary:active,
+.visual-selector-btn:active,
+.quick-action-btn:active {
+  transform: scale(0.96);
+}
+
+/* Interactive Numpad Mode Toggle */
+.numpad-mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.numpad-toggle-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+.numpad-toggle-btn.active {
+  background: var(--brand-soft);
+  color: var(--brand-primary);
+  border-color: var(--brand-primary);
+  font-weight: 700;
+}

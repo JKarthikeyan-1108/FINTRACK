@@ -1,25 +1,46 @@
-// src/lib/haptics.js — Mobile tactile haptic feedback for Web & Capacitor
+/**
+ * src/lib/haptics.js
+ * Backward-compatible bridge to the Cashew-Grade Haptics Engine in src/utils/haptics.js
+ */
+import haptics, {
+  tick,
+  selection,
+  impactLight,
+  impactMedium,
+  impactHeavy,
+  notificationSuccess,
+  notificationWarning,
+} from '../utils/haptics';
+
 export function triggerHaptic(type = 'light') {
-  if (typeof navigator === 'undefined' || !navigator.vibrate) return;
-  try {
-    switch (type) {
-      case 'selection':
-      case 'light':
-        navigator.vibrate(12);
-        break;
-      case 'medium':
-        navigator.vibrate(22);
-        break;
-      case 'success':
-        navigator.vibrate([15, 40, 25]);
-        break;
-      case 'warning':
-        navigator.vibrate([30, 60, 30]);
-        break;
-      default:
-        navigator.vibrate(15);
-    }
-  } catch {
-    // Ignore environments that restrict vibration permissions
+  switch (type) {
+    case 'tick':
+      return tick();
+    case 'selection':
+      return selection();
+    case 'medium':
+      return impactMedium();
+    case 'heavy':
+      return impactHeavy();
+    case 'success':
+      return notificationSuccess();
+    case 'warning':
+    case 'error':
+      return notificationWarning();
+    case 'light':
+    default:
+      return impactLight();
   }
 }
+
+export {
+  tick,
+  selection,
+  impactLight,
+  impactMedium,
+  impactHeavy,
+  notificationSuccess,
+  notificationWarning,
+};
+
+export default haptics;

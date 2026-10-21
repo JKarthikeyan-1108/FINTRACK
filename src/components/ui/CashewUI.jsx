@@ -1,4 +1,7 @@
+import { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { triggerHaptic } from '../../lib/haptics';
 
 export function Page({ children, className = '' }) {
   return <main className={`app-page ${className}`}>{children}</main>;
@@ -58,17 +61,33 @@ export function MetricCard({ label, value, helper, tone = 'mint', icon, trend, t
   );
 }
 
-export function Button({ children, variant = 'primary', className = '', ...props }) {
+export function Button({ children, variant = 'primary', className = '', onClick, ...props }) {
   return (
-    <button className={`ui-button ui-button-${variant} ${className}`} {...props}>
+    <button
+      className={`ui-button ui-button-${variant} ${className}`}
+      onClick={(e) => {
+        triggerHaptic(variant === 'primary' ? 'medium' : 'light');
+        onClick?.(e);
+      }}
+      {...props}
+    >
       {children}
     </button>
   );
 }
 
-export function IconButton({ icon, label, variant = 'soft', className = '', ...props }) {
+export function IconButton({ icon, label, variant = 'soft', className = '', onClick, ...props }) {
   return (
-    <button className={`icon-button icon-button-${variant} ${className}`} aria-label={label} title={label} {...props}>
+    <button
+      className={`icon-button icon-button-${variant} ${className}`}
+      aria-label={label}
+      title={label}
+      onClick={(e) => {
+        triggerHaptic('light');
+        onClick?.(e);
+      }}
+      {...props}
+    >
       {icon}
     </button>
   );
@@ -118,7 +137,10 @@ export function SegmentedControl({ options, value, onChange }) {
           key={option.value}
           type="button"
           className={value === option.value ? 'active' : ''}
-          onClick={() => onChange(option.value)}
+          onClick={() => {
+            triggerHaptic('selection');
+            onChange(option.value);
+          }}
         >
           {option.icon}
           <span>{option.label}</span>
@@ -137,11 +159,19 @@ export function TextInput({ label, className = '', ...props }) {
   );
 }
 
-export function SelectInput({ label, children, className = '', ...props }) {
+export function SelectInput({ label, children, className = '', onChange, ...props }) {
   return (
     <label className={`field ${className}`}>
       <span>{label}</span>
-      <select {...props}>{children}</select>
+      <select
+        onChange={(e) => {
+          triggerHaptic('tick');
+          onChange?.(e);
+        }}
+        {...props}
+      >
+        {children}
+      </select>
     </label>
   );
 }
@@ -149,14 +179,17 @@ export function SelectInput({ label, children, className = '', ...props }) {
 export function VisualCategorySelect({ categories, value, onChange, label = "Category" }) {
   return (
     <div className="field">
-      <span>{label}</span>
+      {label && <span>{label}</span>}
       <div className="visual-selector-grid">
         {categories.map(cat => (
           <button 
             key={cat.id} 
             type="button" 
             className={`visual-selector-btn ${value === String(cat.id) ? 'active' : ''}`}
-            onClick={() => onChange(String(cat.id))}
+            onClick={() => {
+              triggerHaptic('tick');
+              onChange(String(cat.id));
+            }}
           >
             <span className="visual-icon">{cat.icon || '📦'}</span>
             <span className="visual-label">{cat.name}</span>
@@ -170,14 +203,17 @@ export function VisualCategorySelect({ categories, value, onChange, label = "Cat
 export function VisualAccountSelect({ accounts, value, onChange, label = "Account" }) {
   return (
     <div className="field">
-      <span>{label}</span>
+      {label && <span>{label}</span>}
       <div className="visual-selector-grid">
         {accounts.map(acc => (
           <button 
             key={acc.id} 
             type="button" 
             className={`visual-selector-btn ${value === String(acc.id) ? 'active' : ''}`}
-            onClick={() => onChange(String(acc.id))}
+            onClick={() => {
+              triggerHaptic('tick');
+              onChange(String(acc.id));
+            }}
           >
             <span className="visual-icon" style={{ color: acc.color || '#4a9eff' }}>💳</span>
             <span className="visual-label">{acc.name}</span>
@@ -188,18 +224,55 @@ export function VisualAccountSelect({ accounts, value, onChange, label = "Accoun
   );
 }
 
+/**
+ * Cashew-Grade Gesture BottomSheet
+ * Smooth Framer Motion spring physics with drag-to-dismiss and tactile feedback
+ */
 export function BottomSheet({ title, onClose, children }) {
+  useEffect(() => {
+    triggerHaptic('light');
+  }, []);
+
+  const handleClose = () => {
+    triggerHaptic('selection');
+    onClose?.();
+  };
+
   return (
-    <div className="sheet-overlay" onClick={event => event.target === event.currentTarget && onClose()}>
-      <section className="bottom-sheet" role="dialog" aria-modal="true" aria-label={title}>
+    <motion.div
+      className="sheet-overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      onClick={event => event.target === event.currentTarget && handleClose()}
+    >
+      <motion.section
+        className="bottom-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        initial={{ y: '100%', opacity: 0.95 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: '100%', opacity: 0.95 }}
+        transition={{ type: 'spring', damping: 30, stiffness: 360, mass: 0.75 }}
+        drag="y"
+        dragConstraints={{ top: 0 }}
+        dragElastic={0.2}
+        onDragEnd={(e, { offset, velocity }) => {
+          if (offset.y > 100 || velocity.y > 500) {
+            handleClose();
+          }
+        }}
+      >
         <div className="sheet-handle" />
         <div className="sheet-header">
           <h2>{title}</h2>
-          <IconButton icon={<X size={18} />} label="Close" onClick={onClose} />
+          <IconButton icon={<X size={18} />} label="Close" onClick={handleClose} />
         </div>
         {children}
-      </section>
-    </div>
+      </motion.section>
+    </motion.div>
   );
 }
 
@@ -214,6 +287,20 @@ export function EmptyState({ icon, title, text, action }) {
   );
 }
 
-export function Chip({ children, tone = 'neutral' }) {
-  return <span className={`chip chip-${tone}`}>{children}</span>;
+export function Chip({ children, tone = 'neutral', onClick }) {
+  return (
+    <span
+      className={`chip chip-${tone}`}
+      onClick={(e) => {
+        if (onClick) {
+          triggerHaptic('selection');
+          onClick(e);
+        }
+      }}
+    >
+      {children}
+    </span>
+  );
 }
+
+export { AnimatePresence };
