@@ -28,6 +28,7 @@ import {
   TextInput,
 } from '../components/ui/CashewUI';
 import { dateShort, money } from '../lib/format';
+import { triggerHaptic } from '../lib/haptics';
 import { calculateSplits, simplifyDebts, toMoney } from '../lib/debtSimplification';
 import { accountAPI, txnAPI } from '../services/api';
 
@@ -225,10 +226,12 @@ export default function SplitExpensesPage() {
     }));
 
     setExpenseModal(false);
+    triggerHaptic('success');
     toast.success(`Recorded shared expense: ${expTitle} (${money(expAmount)})`);
   }
 
   function handleDeleteExpense(expId) {
+    triggerHaptic('heavy');
     setGroups(prev => prev.map(g => {
       if (g.id === activeGroup.id) {
         return { ...g, expenses: g.expenses.filter(e => e.id !== expId) };
@@ -240,6 +243,7 @@ export default function SplitExpensesPage() {
 
   function handleCreateGroup() {
     if (!newGroupName.trim()) {
+      triggerHaptic('warning');
       toast.error('Group name is required');
       return;
     }
@@ -268,17 +272,22 @@ export default function SplitExpensesPage() {
     setGroupModal(false);
     setNewGroupName('');
     setNewMemberInputs(['', '']);
+    triggerHaptic('success');
     toast.success(`Created group "${newGroupName}"!`);
   }
 
   function openSettleModal(debt) {
+    triggerHaptic('selection');
     setSettleModal(debt);
     setSettleAmount(String(debt.amount));
     setSettleSyncPersonal(true);
   }
 
   async function handleConfirmSettle() {
-    if (!settleModal || !settleAmount || Number(settleAmount) <= 0) return;
+    if (!settleModal || !settleAmount || Number(settleAmount) <= 0) {
+      triggerHaptic('warning');
+      return;
+    }
 
     const amt = Number(settleAmount);
     const newSettlement = {
@@ -323,6 +332,7 @@ export default function SplitExpensesPage() {
     }
 
     setSettleModal(null);
+    triggerHaptic('success');
     toast.success(`Settled ${money(amt)} between ${settleModal.fromName} and ${settleModal.toName}!`);
   }
 

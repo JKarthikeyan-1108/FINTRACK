@@ -32,6 +32,7 @@ import {
   VisualCategorySelect,
 } from '../components/ui/CashewUI';
 import { dateShort, daysUntil, money } from '../lib/format';
+import { triggerHaptic } from '../lib/haptics';
 
 const PERIODS = ['monthly', 'yearly', 'weekly'];
 const SUB_CATEGORIES = [
@@ -93,6 +94,7 @@ export default function SubscriptionsPage() {
   }, []);
 
   function toggleCancellationFlag(id) {
+    triggerHaptic('selection');
     setCancelledIds(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
       localStorage.setItem('fintrack_cancelled_subs', JSON.stringify(next));
@@ -107,6 +109,7 @@ export default function SubscriptionsPage() {
 
   async function addSub() {
     if (!form.name || !form.amount || !form.next_due) {
+      triggerHaptic('warning');
       toast.error('Name, amount, and due date are required');
       return;
     }
@@ -117,27 +120,33 @@ export default function SubscriptionsPage() {
       setMonthly(prev => prev + monthlyEquivalent(form));
       setModal(false);
       setForm(blankForm());
+      triggerHaptic('success');
       toast.success('Subscription added');
     } catch (error) {
+      triggerHaptic('warning');
       toast.error(error.response?.data?.error || 'Failed to add subscription');
     }
   }
 
   async function toggleActive(sub) {
     try {
+      triggerHaptic('selection');
       const { data } = await subAPI.update(sub.id, { ...sub, is_active: !sub.is_active });
       setSubs(prev => prev.map(item => item.id === sub.id ? data.data : item));
     } catch {
+      triggerHaptic('warning');
       toast.error('Failed to update subscription');
     }
   }
 
   async function deleteSub(id) {
     try {
+      triggerHaptic('heavy');
       await subAPI.remove(id);
       setSubs(prev => prev.filter(sub => sub.id !== id));
       toast.success('Subscription removed');
     } catch {
+      triggerHaptic('warning');
       toast.error('Failed to remove subscription');
     }
   }

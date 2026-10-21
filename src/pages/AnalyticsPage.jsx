@@ -32,6 +32,7 @@ import { money } from '../lib/format';
 import { calculateHealthScore } from '../lib/healthScore';
 import { generateFinancialStatement } from '../lib/pdfReport';
 import { SUPPORTED_CURRENCIES, getExchangeRate, convertCurrency, formatCurrencyFX } from '../lib/currency';
+import { triggerHaptic } from '../lib/haptics';
 import toast from 'react-hot-toast';
 
 ChartJS.register(
@@ -185,6 +186,7 @@ export default function AnalyticsPage() {
   });
 
   function handleExportCSV() {
+    triggerHaptic('light');
     if (transactions.length === 0) {
       toast.error('No transactions to export');
       return;
@@ -201,6 +203,7 @@ export default function AnalyticsPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    triggerHaptic('success');
     toast.success('Generated CSV Report successfully!');
   }
 
@@ -226,6 +229,7 @@ export default function AnalyticsPage() {
             <Button
               variant="secondary"
               onClick={() => {
+                triggerHaptic('success');
                 generateFinancialStatement({
                   user,
                   periodLabel: '12-Month Annualized Financial Audit',

@@ -18,6 +18,7 @@ import {
   VisualCategorySelect,
 } from '../components/ui/CashewUI';
 import { money } from '../lib/format';
+import { triggerHaptic } from '../lib/haptics';
 
 const COLORS = ['#6fb36e', '#4b82b8', '#d65f87', '#c58a21', '#8a68c3', '#58a79f', '#d7764a', '#7aa95c'];
 const PERIODS = ['monthly', 'weekly', 'yearly'];
@@ -65,12 +66,14 @@ export default function BudgetsPage() {
   const overCount = budgets.filter(budget => Number(budget.spent || budget.spent_amount || 0) > Number(budget.amount)).length;
 
   function openCreate() {
+    triggerHaptic('selection');
     setEditId(null);
     setForm(blankForm());
     setModal(true);
   }
 
   function openEdit(budget) {
+    triggerHaptic('selection');
     setEditId(budget.id);
     setForm({
       name: budget.name,
@@ -91,6 +94,7 @@ export default function BudgetsPage() {
 
   async function saveBudget() {
     if (!form.name || !form.amount) {
+      triggerHaptic('warning');
       toast.error('Name and amount are required');
       return;
     }
@@ -99,24 +103,29 @@ export default function BudgetsPage() {
       if (editId) {
         const { data } = await budgetAPI.update(editId, form);
         setBudgets(prev => prev.map(budget => budget.id === editId ? { ...budget, ...data.data } : budget));
+        triggerHaptic('success');
         toast.success('Budget updated');
       } else {
         const { data } = await budgetAPI.create(form);
         setBudgets(prev => [data.data, ...prev]);
+        triggerHaptic('success');
         toast.success('Budget created');
       }
       closeModal();
     } catch (error) {
+      triggerHaptic('warning');
       toast.error(error.response?.data?.error || 'Failed to save budget');
     }
   }
 
   async function deleteBudget(id) {
     try {
+      triggerHaptic('heavy');
       await budgetAPI.remove(id);
       setBudgets(prev => prev.filter(budget => budget.id !== id));
       toast.success('Budget deleted');
     } catch {
+      triggerHaptic('warning');
       toast.error('Delete failed');
     }
   }

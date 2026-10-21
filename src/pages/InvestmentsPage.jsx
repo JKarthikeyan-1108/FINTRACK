@@ -52,6 +52,7 @@ import {
   TextInput,
 } from '../components/ui/CashewUI';
 import { money } from '../lib/format';
+import { triggerHaptic } from '../lib/haptics';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler);
 
@@ -187,6 +188,7 @@ export default function InvestmentsPage() {
 
   async function addInvestment() {
     if (!form.name) {
+      triggerHaptic('warning');
       toast.error('Investment name is required');
       return;
     }
@@ -196,9 +198,24 @@ export default function InvestmentsPage() {
       setMyInvests(prev => [data.data, ...prev]);
       setModal(false);
       setForm(blankForm());
+      triggerHaptic('success');
       toast.success('Investment added');
     } catch (error) {
+      triggerHaptic('warning');
       toast.error(error.response?.data?.error || 'Failed to add investment');
+    }
+  }
+
+  async function deleteInvestment(id, name) {
+    if (!window.confirm(`Remove "${name || 'this holding'}" from your tracked portfolio?`)) return;
+    try {
+      triggerHaptic('heavy');
+      await investAPI.remove(id);
+      setMyInvests(prev => prev.filter(inv => inv.id !== id));
+      toast.success('Holding removed');
+    } catch {
+      triggerHaptic('warning');
+      toast.error('Failed to remove holding');
     }
   }
 
@@ -761,9 +778,31 @@ export default function InvestmentsPage() {
                             <div className="transaction-title">{inv.name}</div>
                             <div className="transaction-meta">{cat.name}</div>
                           </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <div className={`transaction-amount ${gain >= 0 ? 'amount-income' : 'amount-expense'}`}>{money(inv.current_value)}</div>
-                            <div className="transaction-meta">{gain >= 0 ? '+' : ''}{ret.toFixed(1)}%</div>
+                          <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div>
+                              <div className={`transaction-amount ${gain >= 0 ? 'amount-income' : 'amount-expense'}`}>{money(inv.current_value)}</div>
+                              <div className="transaction-meta">{gain >= 0 ? '+' : ''}{ret.toFixed(1)}%</div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => deleteInvestment(inv.id, inv.name)}
+                              title="Remove holding"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--text-muted)',
+                                cursor: 'pointer',
+                                padding: 6,
+                                borderRadius: 6,
+                                display: 'grid',
+                                placeItems: 'center',
+                                transition: 'color 0.15s ease',
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
                         </div>
                         <div className="budget-row-meta" style={{ marginTop: 10 }}>

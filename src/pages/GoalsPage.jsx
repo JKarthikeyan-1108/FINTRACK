@@ -16,17 +16,21 @@ import {
   VisualCategorySelect,
 } from '../components/ui/CashewUI';
 import { dateShort, daysUntil, money } from '../lib/format';
+import { triggerHaptic } from '../lib/haptics';
 
 const blankForm = () => ({ name: 'Emergency Fund', category_id: 'emergency_fund', target_amount: '', deadline: '', note: '' });
 
 const GOAL_CATEGORIES = [
-  { id: 'laptop', name: 'Laptop', icon: '💻' },
-  { id: 'home', name: 'Home', icon: '🏠' },
-  { id: 'travel', name: 'Travel', icon: '✈️' },
+  { id: 'emergency_fund', name: 'Emergency Fund', icon: '💰' },
+  { id: 'investments', name: 'Mutual Funds / Stocks', icon: '📈' },
+  { id: 'gold', name: 'Gold / SGB', icon: '🪙' },
+  { id: 'retirement', name: 'Retirement Corpus', icon: '🌅' },
+  { id: 'home', name: 'Home & Property', icon: '🏠' },
+  { id: 'laptop', name: 'Tech & Gadgets', icon: '💻' },
+  { id: 'travel', name: 'Travel & Vacation', icon: '✈️' },
   { id: 'education', name: 'Education', icon: '🎓' },
   { id: 'vehicle', name: 'Vehicle', icon: '🚗' },
-  { id: 'emergency_fund', name: 'Emergency Fund', icon: '💰' },
-  { id: 'custom', name: 'Custom', icon: '🎯' },
+  { id: 'custom', name: 'Custom Goal', icon: '🎯' },
 ];
 
 export default function GoalsPage() {
@@ -51,6 +55,7 @@ export default function GoalsPage() {
 
   async function addGoal() {
     if (!form.name || !form.target_amount) {
+      triggerHaptic('warning');
       toast.error('Name and target are required');
       return;
     }
@@ -62,8 +67,10 @@ export default function GoalsPage() {
       setGoals(prev => [data.data, ...prev]);
       setModal(false);
       setForm(blankForm());
+      triggerHaptic('success');
       toast.success('Goal created');
     } catch (error) {
+      triggerHaptic('warning');
       toast.error(error.response?.data?.error || 'Failed to create goal');
     }
   }
@@ -71,6 +78,7 @@ export default function GoalsPage() {
   async function deposit() {
     const amount = Number(depositAmt);
     if (!amount || amount <= 0) {
+      triggerHaptic('warning');
       toast.error('Enter a valid amount');
       return;
     }
@@ -90,18 +98,22 @@ export default function GoalsPage() {
       setGoals(prev => prev.map(item => item.id === goal.id ? data.data : item));
       setDepositModal(null);
       setDepositAmt('');
-      toast.success(nextAchieved ? 'Goal achieved' : 'Money added');
+      triggerHaptic('success');
+      toast.success(nextAchieved ? '🎉 Goal achieved! Congratulations!' : 'Money added');
     } catch (error) {
+      triggerHaptic('warning');
       toast.error(error.response?.data?.error || 'Failed to update goal');
     }
   }
 
   async function deleteGoal(id) {
     try {
+      triggerHaptic('heavy');
       await goalAPI.remove(id);
       setGoals(prev => prev.filter(goal => goal.id !== id));
       toast.success('Goal deleted');
     } catch {
+      triggerHaptic('warning');
       toast.error('Failed to delete goal');
     }
   }

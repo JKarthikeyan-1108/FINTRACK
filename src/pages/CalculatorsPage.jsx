@@ -21,6 +21,7 @@ import {
   TextInput,
 } from '../components/ui/CashewUI';
 import { money } from '../lib/format';
+import { triggerHaptic } from '../lib/haptics';
 import {
   calcEMI,
   simpleInterest,
@@ -196,7 +197,10 @@ export default function CalculatorsPage() {
             <button
               key={id}
               type="button"
-              onClick={() => setActiveTab(id)}
+              onClick={() => {
+                triggerHaptic('selection');
+                setActiveTab(id);
+              }}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',

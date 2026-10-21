@@ -19,6 +19,7 @@ import {
   VisualCategorySelect,
 } from '../components/ui/CashewUI';
 import { money } from '../lib/format';
+import { triggerHaptic } from '../lib/haptics';
 
 const TYPES = ['home', 'car', 'personal', 'education', 'other'];
 const TYPE_INFO = {
@@ -81,6 +82,7 @@ export default function LoansPage() {
   async function addLoan() {
     const { name, type, principal, interest_rate, tenure_months, emi_date, lender, emi_amount } = form;
     if (!name || !principal || !tenure_months) {
+      triggerHaptic('warning');
       toast.error('Name, principal, and tenure are required');
       return;
     }
@@ -108,8 +110,10 @@ export default function LoansPage() {
       }));
       setModal(false);
       setForm(blankForm());
+      triggerHaptic('success');
       toast.success('Loan added');
     } catch (error) {
+      triggerHaptic('warning');
       toast.error(error.response?.data?.error || 'Failed to add loan');
     }
   }
@@ -128,18 +132,22 @@ export default function LoansPage() {
       });
       setLoans(prev => prev.map(item => item.id === loan.id ? data.data : item));
       setPayModal(null);
-      toast.success(done ? 'Loan fully paid' : 'EMI payment recorded');
+      triggerHaptic('success');
+      toast.success(done ? '🎉 Congratulations! Loan fully paid off!' : 'EMI payment recorded');
     } catch {
+      triggerHaptic('warning');
       toast.error('Failed to mark EMI paid');
     }
   }
 
   async function deleteLoan(id) {
     try {
+      triggerHaptic('heavy');
       await loanAPI.remove(id);
       setLoans(prev => prev.filter(loan => loan.id !== id));
       toast.success('Loan deleted');
     } catch {
+      triggerHaptic('warning');
       toast.error('Failed to delete loan');
     }
   }
