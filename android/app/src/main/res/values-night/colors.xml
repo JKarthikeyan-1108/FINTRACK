@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- FinTrack Brand Colors (Dark Mode) -->
+    <color name="colorPrimary">#A83F55</color>
+    <color name="colorPrimaryDark">#702632</color>
+    <color name="colorPrimaryHover">#BF536A</color>
+    <color name="colorAccent">#FDA4AF</color>
+    <color name="colorBrandSoft">#2D1B22</color>
+
+    <!-- System Bars & Backgrounds -->
+    <color name="statusBarColor">#0A0D0E</color>
+    <color name="navigationBarColor">#141819</color>
+    <color name="windowBackground">#0A0D0E</color>
+    <color name="surfaceColor">#191219</color>
+
+    <!-- Semantic Financial Indicators -->
+    <color name="colorPositive">#4ADE80</color>
+    <color name="colorNegative">#F87171</color>
+    <color name="colorWarning">#FBBF24</color>
+    <color name="colorInfo">#38BDF8</color>
+
+    <!-- Typography -->
+    <color name="textPrimary">#F9FAFB</color>
+    <color name="textSecondary">#9CA3AF</color>
+    <color name="textLight">#FFFFFF</color>
+
+    <!-- Splash Screen -->
+    <color name="splashBackground">#0A0D0E</color>
+</resources>
